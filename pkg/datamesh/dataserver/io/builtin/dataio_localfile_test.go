@@ -285,3 +285,247 @@ func TestLocalFileIOChannel_Endpoint(t *testing.T) {
 	channel := NewBuiltinLocalFileIOChannel()
 	assert.Equal(t, utils.BuiltinFlightServerEndpointURI, channel.GetEndpointURI())
 }
+
+func TestIsValidRelativePath(t *testing.T) {
+	t.Parallel()
+
+	// Test valid relative paths
+	assert.True(t, isValidRelativePath("file.txt"))
+	assert.True(t, isValidRelativePath("dir/file.txt"))
+	assert.True(t, isValidRelativePath("path/to/file.txt"))
+	assert.True(t, isValidRelativePath("a/b/c/d/e/f.txt"))
+	assert.True(t, isValidRelativePath("normal-filename_with-dashes.dat"))
+	assert.True(t, isValidRelativePath("normal filename with spaces.txt"))
+
+	// Test path traversal attempts - should return false
+	assert.False(t, isValidRelativePath("../file.txt"))
+	assert.False(t, isValidRelativePath("file/../"))
+	assert.False(t, isValidRelativePath("dir/../../file.txt"))
+	assert.False(t, isValidRelativePath("../dir/file.txt"))
+	assert.False(t, isValidRelativePath("dir/../bill/../../../file.txt"))
+
+	// Test absolute paths - should return false
+	assert.False(t, isValidRelativePath("/file.txt"))
+	assert.False(t, isValidRelativePath("/absolute/path/to/file.txt"))
+	assert.False(t, isValidRelativePath("/"))
+	assert.False(t, isValidRelativePath("/home/user/file.txt"))
+
+	// Test paths with current directory references - should return false
+	assert.False(t, isValidRelativePath("./file.txt"))
+	assert.False(t, isValidRelativePath("dir/./file.txt"))
+	assert.False(t, isValidRelativePath("./dir/file.txt"))
+
+	// Test edge cases
+	assert.False(t, isValidRelativePath(""))
+	assert.True(t, isValidRelativePath(".")) // "." is technically a valid relative path
+	assert.False(t, isValidRelativePath(".."))
+	// Note: "..." is technically valid as it's not "..", but path.Clean(...) != ..., so it should be false
+	assert.False(t, isValidRelativePath("..."))
+	// Note: " " is technically valid and cleaned to " ", so it should be true
+	assert.True(t, isValidRelativePath(" "))
+	// Note: a..b contains "..", so it should be false
+	assert.False(t, isValidRelativePath("a..b"))
+}
+
+func TestLocalFileIOChannel_Read_PathTraversalAttack(t *testing.T) {
+	t.Parallel()
+
+	channel := NewBuiltinLocalFileIOChannel()
+
+	// Create a mock request context
+	conf := initContextTestEnv(t)
+	domainDataService := service.NewDomainDataService(conf)
+	datasourceService := service.NewDomainDataSourceService(conf, nil)
+
+	// First create a valid domain data
+	registLocalFileDomainDataSource(t, conf, "test-ds")
+
+	// For Read test, create a domain data with malicious path directly via the API
+	domainData := &v1alpha1.DomainData{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "malicious-data",
+		},
+		Spec: v1alpha1.DomainDataSpec{
+			Name:        "malicious-data",
+			DataSource:  "test-ds",
+			RelativeURI: "../../../etc/passwd",
+		},
+	}
+
+	// Create the domain data
+	dd, err := conf.KusciaClient.KusciaV1alpha1().DomainDatas(conf.KubeNamespace).Create(context.Background(), domainData, v1.CreateOptions{})
+	assert.NoError(t, err)
+
+	// Create request context
+	ctx, err := utils.NewDataMeshRequestContext(domainDataService, datasourceService, &datamesh.CommandDomainDataQuery{
+		DomaindataId: dd.Name,
+		ContentType:  datamesh.ContentType_RAW,
+	}, common.DomainDataSourceTypeLocalFS)
+	assert.NoError(t, err)
+
+	// Test path traversal - should fail due to invalid path validation
+	err = channel.Read(context.Background(), ctx, nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid relative path")
+
+	// Let's test with absolute path too
+	dd.Spec.RelativeURI = "/etc/hosts"
+	_, err = conf.KusciaClient.KusciaV1alpha1().DomainDatas(conf.KubeNamespace).Update(context.Background(), dd, v1.UpdateOptions{})
+	assert.NoError(t, err)
+
+	err = channel.Read(context.Background(), ctx, nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid relative path")
+
+	// Let's test with empty path
+	dd.Spec.RelativeURI = ""
+	_, err = conf.KusciaClient.KusciaV1alpha1().DomainDatas(conf.KubeNamespace).Update(context.Background(), dd, v1.UpdateOptions{})
+	assert.NoError(t, err)
+
+	err = channel.Read(context.Background(), ctx, nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid relative path")
+}
+
+func TestLocalFileIOChannel_Write_PathTraversalAttack(t *testing.T) {
+	t.Parallel()
+
+	channel := NewBuiltinLocalFileIOChannel()
+
+	// Create a mock request context
+	conf := initContextTestEnv(t)
+	domainDataService := service.NewDomainDataService(conf)
+	datasourceService := service.NewDomainDataSourceService(conf, nil)
+
+	// First create a valid domain data
+	registLocalFileDomainDataSource(t, conf, "test-ds")
+
+	// For Write test, create a domain data with malicious path directly via the API
+	domainData := &v1alpha1.DomainData{
+		ObjectMeta: v1.ObjectMeta{
+			Name: "malicious-write-data",
+		},
+		Spec: v1alpha1.DomainDataSpec{
+			Name:        "malicious-write-data",
+			DataSource:  "test-ds",
+			RelativeURI: "../../../etc/passwd",
+		},
+	}
+
+	// Create the domain data
+	dd, err := conf.KusciaClient.KusciaV1alpha1().DomainDatas(conf.KubeNamespace).Create(context.Background(), domainData, v1.CreateOptions{})
+	assert.NoError(t, err)
+
+	// Create request context
+	ctx, err := utils.NewDataMeshRequestContext(domainDataService, datasourceService, &datamesh.CommandDomainDataUpdate{
+		DomaindataId: dd.Name,
+		ContentType:  datamesh.ContentType_RAW,
+	}, common.DomainDataSourceTypeLocalFS)
+	assert.NoError(t, err)
+
+	// Test path traversal - should fail due to invalid path validation
+	err = channel.Write(context.Background(), ctx, nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid relative path")
+
+	// Let's test with absolute path too
+	dd.Spec.RelativeURI = "/etc/hosts"
+	_, err = conf.KusciaClient.KusciaV1alpha1().DomainDatas(conf.KubeNamespace).Update(context.Background(), dd, v1.UpdateOptions{})
+	assert.NoError(t, err)
+
+	err = channel.Write(context.Background(), ctx, nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid relative path")
+
+	// Let's test with empty path
+	dd.Spec.RelativeURI = ""
+	_, err = conf.KusciaClient.KusciaV1alpha1().DomainDatas(conf.KubeNamespace).Update(context.Background(), dd, v1.UpdateOptions{})
+	assert.NoError(t, err)
+
+	err = channel.Write(context.Background(), ctx, nil)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid relative path")
+}
+
+func TestLocalFileIOChannel_Write_FileExistsAndDirectoryCreationFailures(t *testing.T) {
+	t.Parallel()
+
+	channel := NewBuiltinLocalFileIOChannel()
+
+	// Create a mock request context
+	conf := initContextTestEnv(t)
+	domainDataService := service.NewDomainDataService(conf)
+	datasourceService := service.NewDomainDataSourceService(conf, nil)
+
+	// First create a valid domain data
+	registLocalFileDomainDataSource(t, conf, "test-ds")
+	domainDataID := registDomainData(t, conf, "test-ds", "test-file.txt")
+
+	// Create the request context normally
+	ctx, err := utils.NewDataMeshRequestContext(domainDataService, datasourceService, &datamesh.CommandDomainDataUpdate{
+		DomaindataId: domainDataID,
+		ContentType:  datamesh.ContentType_RAW,
+	}, common.DomainDataSourceTypeLocalFS)
+	assert.NoError(t, err)
+
+	// Get the file path and pre-create a file there
+	data, ds, err := ctx.GetDomainDataAndSource(context.Background())
+	assert.NoError(t, err)
+	filepath := path.Join(ds.Info.Localfs.Path, data.RelativeUri)
+
+	// Create the file first to test the "file exists" branch
+	file, err := os.OpenFile(filepath, os.O_CREATE|os.O_RDWR, 0644)
+	assert.NoError(t, err)
+	_, err = file.WriteString("existing content")
+	assert.NoError(t, err)
+	assert.NoError(t, file.Close())
+
+	// Create a valid reader
+	inputs := getFlightData(t, [][]byte{[]byte("test data")})
+	reader, err := flight.NewRecordReader(&mockDoPutServer{
+		ServerStream: &mockGrpcServerStream{},
+		nextDataList: inputs,
+	})
+	assert.NoError(t, err)
+
+	// Test write - should overwrite the existing file successfully
+	err = channel.Write(context.Background(), ctx, reader)
+	assert.NoError(t, err)
+
+	// Clean up
+	assert.NoError(t, os.Remove(filepath))
+
+	// Test directory creation with a nested path
+	// To properly test this, we need to create a new domain data with nested path
+	nestedFilename := "subdir/nested/deep/file.txt"
+	nestedDomainDataID := registDomainData(t, conf, "test-ds", nestedFilename)
+
+	// Create a new request context for the nested path
+	nestedCtx, err := utils.NewDataMeshRequestContext(domainDataService, datasourceService, &datamesh.CommandDomainDataUpdate{
+		DomaindataId: nestedDomainDataID,
+		ContentType:  datamesh.ContentType_RAW,
+	}, common.DomainDataSourceTypeLocalFS)
+	assert.NoError(t, err)
+
+	// Create reader again
+	inputs = getFlightData(t, [][]byte{[]byte("test data for nested path")})
+	reader, err = flight.NewRecordReader(&mockDoPutServer{
+		ServerStream: &mockGrpcServerStream{},
+		nextDataList: inputs,
+	})
+	assert.NoError(t, err)
+
+	// Should create nested directories and write file successfully
+	err = channel.Write(context.Background(), nestedCtx, reader)
+	assert.NoError(t, err)
+
+	// Verify the nested file was created
+	nestedData, nestedDs, err := nestedCtx.GetDomainDataAndSource(context.Background())
+	assert.NoError(t, err)
+	nestedFilepath := path.Join(nestedDs.Info.Localfs.Path, nestedData.RelativeUri)
+	_, err = os.Stat(nestedFilepath)
+	assert.NoError(t, err)
+
+	// Clean up nested directories
+	assert.NoError(t, os.RemoveAll(path.Join(nestedDs.Info.Localfs.Path, "subdir")))
+}

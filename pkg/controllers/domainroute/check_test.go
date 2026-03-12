@@ -16,16 +16,19 @@ package domainroute
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciafake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	informers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	listers "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
 )
 
 func Test_compareTokens(t *testing.T) {
@@ -125,6 +128,112 @@ func Test_checkEffectiveInstances(t *testing.T) {
 	assert.False(t, controller.checkEffectiveInstances(testdr))
 	testdr.Status.TokenStatus.Tokens[1].EffectiveInstances = []string{"testgw"}
 	assert.True(t, controller.checkEffectiveInstances(testdr))
+}
+
+func Test_checkEffectiveInstances_BFIA(t *testing.T) {
+	testNamespace := "test"
+
+	testdrBFIA := &kusciaapisv1alpha1.DomainRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testdr-bfia",
+			Namespace: testNamespace,
+			Labels: map[string]string{
+				"auth": "test",
+			},
+		},
+		Spec: kusciaapisv1alpha1.DomainRouteSpec{
+			InterConnProtocol: kusciaapisv1alpha1.InterConnBFIA,
+		},
+	}
+
+	activeGateway := &kusciaapisv1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "active-gw",
+			Namespace: testNamespace,
+			Labels: map[string]string{
+				"auth": "test",
+			},
+		},
+		Status: kusciaapisv1alpha1.GatewayStatus{
+			HeartbeatTime: metav1.Time{
+				Time: time.Now(),
+			},
+		},
+	}
+
+	inactiveGateway := &kusciaapisv1alpha1.Gateway{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "inactive-gw",
+			Namespace: testNamespace,
+			Labels: map[string]string{
+				"auth": "test",
+			},
+		},
+		Status: kusciaapisv1alpha1.GatewayStatus{
+			HeartbeatTime: metav1.Time{
+				Time: time.Now().Add(-2 * time.Hour),
+			},
+		},
+	}
+
+	kusciaClient := kusciafake.NewSimpleClientset()
+	kusciaInformerFactory := informers.NewSharedInformerFactory(kusciaClient, time.Second*30)
+	gatewayInformer := kusciaInformerFactory.Kuscia().V1alpha1().Gateways()
+	controller := &controller{
+		gatewayLister:       gatewayInformer.Lister(),
+		gatewayListerSynced: gatewayInformer.Informer().HasSynced,
+	}
+	kusciaInformerFactory.Start(context.Background().Done())
+	cache.WaitForCacheSync(context.Background().Done(), controller.gatewayListerSynced)
+
+	assert.False(t, controller.checkEffectiveInstances(testdrBFIA))
+
+	kusciaClient.KusciaV1alpha1().Gateways(testNamespace).Create(context.Background(), inactiveGateway, metav1.CreateOptions{})
+	time.Sleep(time.Second)
+	assert.False(t, controller.checkEffectiveInstances(testdrBFIA))
+
+	kusciaClient.KusciaV1alpha1().Gateways(testNamespace).Create(context.Background(), activeGateway, metav1.CreateOptions{})
+	time.Sleep(time.Second)
+	assert.True(t, controller.checkEffectiveInstances(testdrBFIA))
+}
+
+type errorGatewayNamespaceLister struct{}
+
+func (e *errorGatewayNamespaceLister) List(_ labels.Selector) ([]*kusciaapisv1alpha1.Gateway, error) {
+	return nil, fmt.Errorf("mock list error")
+}
+
+func (e *errorGatewayNamespaceLister) Get(_ string) (*kusciaapisv1alpha1.Gateway, error) {
+	return nil, fmt.Errorf("mock get error")
+}
+
+type errorGatewayLister struct{}
+
+func (e *errorGatewayLister) Gateways(_ string) listers.GatewayNamespaceLister {
+	return &errorGatewayNamespaceLister{}
+}
+
+func (e *errorGatewayLister) List(_ labels.Selector) ([]*kusciaapisv1alpha1.Gateway, error) {
+	return nil, nil
+}
+
+func Test_checkEffectiveInstances_BFIA_ListError(t *testing.T) {
+	testNamespace := "test"
+	testdrBFIA := &kusciaapisv1alpha1.DomainRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "testdr-bfia-error",
+			Namespace: testNamespace,
+		},
+		Spec: kusciaapisv1alpha1.DomainRouteSpec{
+			InterConnProtocol: kusciaapisv1alpha1.InterConnBFIA,
+		},
+	}
+
+	controller := &controller{
+		gatewayLister: &errorGatewayLister{},
+	}
+
+	assert.False(t, controller.checkEffectiveInstances(testdrBFIA))
 }
 
 func Test_doValidate(t *testing.T) {

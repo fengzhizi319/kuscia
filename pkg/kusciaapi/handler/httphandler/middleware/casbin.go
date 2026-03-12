@@ -44,8 +44,8 @@ var casbinEnforcer *casbin.CachedEnforcer
 func InitConfig(confPath string) {
 	modelPath := path.Join(confPath, modelFile)
 	policyPath := path.Join(confPath, policyFile)
-	_ = os.WriteFile(modelPath, casbinModel, 0644)
-	_ = os.WriteFile(policyPath, casbinPolicy, 0644)
+	_ = os.WriteFile(modelPath, casbinModel, 0600)
+	_ = os.WriteFile(policyPath, casbinPolicy, 0600)
 	casbinEnforcer, _ = casbin.NewCachedEnforcer(modelPath, policyPath)
 }
 

@@ -23,6 +23,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
+	kusciacommon "github.com/secretflow/kuscia/pkg/common"
 	"github.com/secretflow/kuscia/pkg/controllers/kusciatask/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kuscialistersv1alpha1 "github.com/secretflow/kuscia/pkg/crd/listers/kuscia/v1alpha1"
@@ -45,6 +46,15 @@ func (p *CDRCheckPlugin) Permit(ctx context.Context, params interface{}) (bool, 
 	partyKitInfo, ok = params.(common.PartyKitInfo)
 	if !ok {
 		return false, fmt.Errorf("cdr-check could not convert params %v to PartyKitInfo", params)
+	}
+
+	// Check the protocol type. If it is the BFIA protocol, skip the CDR check.
+	if partyKitInfo.KusciaTask.Labels != nil {
+		protocolType := partyKitInfo.KusciaTask.Labels[kusciacommon.LabelInterConnProtocolType]
+		if protocolType == string(kusciaapisv1alpha1.InterConnBFIA) {
+			nlog.Debugf("Skip CDR check for BFIA protocol task: %s", partyKitInfo.KusciaTask.Name)
+			return true, nil
+		}
 	}
 
 	parties := partyKitInfo.KusciaTask.Spec.Parties

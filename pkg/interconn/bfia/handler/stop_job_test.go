@@ -25,6 +25,7 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	"github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1/interconn"
@@ -125,7 +126,7 @@ func Test_stopJobHandler_Handle(t *testing.T) {
 					JobId: "job-1",
 				},
 			},
-			wantCode: http.StatusOK,
+			wantCode: common.InterconnResponseCodeSuccess,
 		},
 		{
 			name: "stop kuscia job failed",
@@ -145,7 +146,7 @@ func Test_stopJobHandler_Handle(t *testing.T) {
 					JobId: "job-2",
 				},
 			},
-			wantCode: http.StatusOK,
+			wantCode: common.InterconnResponseCodeSuccess,
 		},
 	}
 

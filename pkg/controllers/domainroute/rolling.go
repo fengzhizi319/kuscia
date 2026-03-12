@@ -130,7 +130,9 @@ func (c *controller) postRollingDestinationDomainRoute(ctx context.Context, dr *
 	if !dr.Status.TokenStatus.RevisionToken.IsReady && c.checkEffectiveInstances(dr) {
 		dr = dr.DeepCopy()
 		n = len(dr.Status.TokenStatus.Tokens)
-		dr.Status.TokenStatus.Tokens[n-1].IsReady = true
+		if n > 0 {
+			dr.Status.TokenStatus.Tokens[n-1].IsReady = true
+		}
 		dr.Status.TokenStatus.RevisionToken.IsReady = true
 		_, err := c.kusciaClient.KusciaV1alpha1().DomainRoutes(dr.Namespace).UpdateStatus(ctx, dr, metav1.UpdateOptions{})
 		if err == nil {

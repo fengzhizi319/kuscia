@@ -62,7 +62,7 @@ func (h *stopTaskHandler) Validate(ctx *api.BizContext, request api.ProtoRequest
 func (h *stopTaskHandler) Handle(ctx *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
 	req := request.(*interconn.StopTaskRequest)
 	resp := &interconn.CommonResponse{
-		Code: http.StatusOK,
+		Code: bfiacommon.InterconnResponseCodeSuccess,
 	}
 
 	rawKt, err := h.KtLister.KusciaTasks(common.KusciaCrossDomain).Get(req.TaskId)

@@ -63,11 +63,23 @@ func DecompressString(input []byte) (string, error) {
 	}
 	defer reader.Close()
 
+	// Limit the maximum decompressed size to prevent decompression bomb attacks
+	// 10MB limit should be sufficient for most legitimate use cases
+	maxDecompressedSize := int64(10 * 1024 * 1024) // 10MB
+	limitedReader := io.LimitReader(reader, maxDecompressedSize)
+
 	var buffer bytes.Buffer
-	_, err = io.Copy(&buffer, reader)
+	bytesCopied, err := io.Copy(&buffer, limitedReader)
 	if err != nil {
 		return "", err
 	}
+
+	// Check if we hit the limit by comparing bytes copied with the limit
+	// If we copied exactly the limit amount, the original data was likely larger
+	if bytesCopied >= maxDecompressedSize {
+		return "", io.ErrShortBuffer
+	}
+
 	return buffer.String(), nil
 }
 

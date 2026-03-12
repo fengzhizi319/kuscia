@@ -128,7 +128,7 @@ func Test_pollTaskStatusHandler_Handle(t *testing.T) {
 					Role:   "host",
 				},
 			},
-			wantCode: http.StatusOK,
+			wantCode: iccommon.InterconnResponseCodeSuccess,
 		},
 	}
 

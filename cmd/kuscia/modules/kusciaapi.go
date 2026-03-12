@@ -119,7 +119,7 @@ func NewKusciaAPI(d *ModuleRuntimeConfigs) (Module, error) {
 				nlog.Errorf("Generate token file error: %v", err.Error())
 				return nil, err
 			}
-			if err := os.WriteFile(tokenFile, []byte(tokenData[:32]), 0644); err != nil {
+			if err := os.WriteFile(tokenFile, []byte(tokenData[:32]), 0600); err != nil {
 				nlog.Errorf("Write token file error: %v", err.Error())
 				return nil, err
 			}

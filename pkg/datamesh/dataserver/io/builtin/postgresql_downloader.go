@@ -245,7 +245,8 @@ func (d *PostgresqlDownloader) DataProxyContentToFlightStreamSQL(w utils.RecordW
 	for _, name := range orderedNames {
 		backTickColumns = append(backTickColumns, "\""+name+"\"")
 	}
-	tableName := "\"" + d.data.RelativeUri + "\""
+
+	tableName := formatPostgreSQLTableName(d.data.RelativeUri)
 
 	// query
 	sql := sqlbuilder.Select(backTickColumns...).From(tableName).String()

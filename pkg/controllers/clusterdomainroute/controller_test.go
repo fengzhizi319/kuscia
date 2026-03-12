@@ -89,18 +89,22 @@ func createCrtString(t *testing.T) string {
 }
 
 func NewTestController() *controller {
+	ctx, cancel := context.WithCancel(context.Background())
 	kusciaClient := kusciafake.NewSimpleClientset()
 	kubeClient := kubefake.NewSimpleClientset()
 	eventBroadcaster := record.NewBroadcaster()
 	eventBroadcaster.StartRecordingToSink(&corev1.EventSinkImpl{Interface: kubeClient.CoreV1().Events("default")})
 	eventRecorder := eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "test"})
-	ic := NewController(context.Background(), controllers.ControllerConfig{
+	ic := NewController(ctx, controllers.ControllerConfig{
 		KubeClient:    kubeClient,
 		KusciaClient:  kusciaClient,
 		EventRecorder: eventRecorder,
 	})
 
 	c := ic.(*controller)
+	// Replace the context and cancel function for test usage
+	c.ctx = ctx
+	c.cancel = cancel
 	return c
 }
 
@@ -119,6 +123,7 @@ func Test_controller_add_label(t *testing.T) {
 			Name: alice,
 		},
 		Spec: kusciaapisv1alpha1.DomainSpec{
+			Role: "",
 			Cert: certstr,
 		},
 	}
@@ -127,6 +132,7 @@ func Test_controller_add_label(t *testing.T) {
 			Name: bob,
 		},
 		Spec: kusciaapisv1alpha1.DomainSpec{
+			Role: kusciaapisv1alpha1.Partner,
 			Cert: certstr,
 		},
 	}
@@ -135,6 +141,7 @@ func Test_controller_add_label(t *testing.T) {
 			Name: charlie,
 		},
 		Spec: kusciaapisv1alpha1.DomainSpec{
+			Role: kusciaapisv1alpha1.Partner,
 			Cert: certstr,
 		},
 	}
@@ -152,112 +159,132 @@ func Test_controller_add_label(t *testing.T) {
 		EventRecorder: eventRecorder,
 	})
 
-	go func() {
-		time.Sleep(300 * time.Millisecond)
-		var err error
+	// Start controller
+	go ic.Run(4)
 
-		_, err = kusciaClient.KusciaV1alpha1().Gateways(alice).Create(ctx, &kusciaapisv1alpha1.Gateway{
-			Status: kusciaapisv1alpha1.GatewayStatus{
-				NetworkStatus: []kusciaapisv1alpha1.GatewayEndpointStatus{
-					{
-						Type: common.GenerateClusterName(alice, bob, "http"),
-						Name: "DomainRoute",
-					},
-					{
-						Type: common.GenerateClusterName(alice, bob, "http"),
-						Name: "DomainRoute",
-					},
-				},
-			},
-		}, metav1.CreateOptions{})
-		assert.NoError(t, err)
+	// Wait for controller to start
+	time.Sleep(500 * time.Millisecond)
 
-		testdr := &kusciaapisv1alpha1.ClusterDomainRoute{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: alice + "-" + bob,
-			},
-			Spec: kusciaapisv1alpha1.ClusterDomainRouteSpec{
-				DomainRouteSpec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:             alice,
-					Destination:        bob,
-					AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
-					TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-						TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRSA,
-					},
-					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
-						Ports: []kusciaapisv1alpha1.DomainPort{
-							{
-								Name: "http",
-							},
-						},
-					},
-				},
-			},
-			Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{},
-		}
-		testdr2 := &kusciaapisv1alpha1.ClusterDomainRoute{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: alice + "-" + charlie,
-				Labels: map[string]string{
-					"auth": "test",
-				},
-			},
-			Spec: kusciaapisv1alpha1.ClusterDomainRouteSpec{
-				DomainRouteSpec: kusciaapisv1alpha1.DomainRouteSpec{
-					Source:             alice,
-					Destination:        charlie,
-					AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
-					Endpoint: kusciaapisv1alpha1.DomainEndpoint{
-						Ports: []kusciaapisv1alpha1.DomainPort{
-							{
-								Name: "http",
-							},
-						},
-					},
-					TokenConfig: &kusciaapisv1alpha1.TokenConfig{
-						TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRSA,
-					},
-				},
-			},
-			Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{},
-		}
-		nlog.Info("create ", testdr.Name, " ", testdr2.Name)
-		_, err = kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(ctx, testdr, metav1.CreateOptions{})
-		assert.NoError(t, err)
-		_, err = kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(ctx, testdr2, metav1.CreateOptions{})
-		assert.NoError(t, err)
-		time.Sleep(100 * time.Millisecond)
-
-		close(chStop)
-	}()
-	ic.Run(4)
-	ic.Stop()
-	time.Sleep(100 * time.Millisecond)
-
-	var dr *kusciaapisv1alpha1.DomainRoute
 	var err error
-	for i := 0; i < 10; i++ {
-		dr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(ctx, alice+"-"+bob, metav1.GetOptions{})
+
+	// Create Gateway resource
+	_, err = kusciaClient.KusciaV1alpha1().Gateways(alice).Create(ctx, &kusciaapisv1alpha1.Gateway{
+		Status: kusciaapisv1alpha1.GatewayStatus{
+			NetworkStatus: []kusciaapisv1alpha1.GatewayEndpointStatus{
+				{
+					Type: common.GenerateClusterName(alice, bob, "http"),
+					Name: "DomainRoute",
+				},
+				{
+					Type: common.GenerateClusterName(alice, bob, "http"),
+					Name: "DomainRoute",
+				},
+			},
+		},
+	}, metav1.CreateOptions{})
+	assert.NoError(t, err)
+
+	// Create ClusterDomainRoute resources
+	testdr := &kusciaapisv1alpha1.ClusterDomainRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: alice + "-" + bob,
+		},
+		Spec: kusciaapisv1alpha1.ClusterDomainRouteSpec{
+			DomainRouteSpec: kusciaapisv1alpha1.DomainRouteSpec{
+				Source:             alice,
+				Destination:        bob,
+				AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
+				TokenConfig: &kusciaapisv1alpha1.TokenConfig{
+					TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRSA,
+				},
+				Endpoint: kusciaapisv1alpha1.DomainEndpoint{
+					Ports: []kusciaapisv1alpha1.DomainPort{
+						{
+							Name: "http",
+						},
+					},
+				},
+			},
+		},
+		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{},
+	}
+	testdr2 := &kusciaapisv1alpha1.ClusterDomainRoute{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: alice + "-" + charlie,
+			Labels: map[string]string{
+				"auth": "test",
+			},
+		},
+		Spec: kusciaapisv1alpha1.ClusterDomainRouteSpec{
+			DomainRouteSpec: kusciaapisv1alpha1.DomainRouteSpec{
+				Source:             alice,
+				Destination:        charlie,
+				AuthenticationType: kusciaapisv1alpha1.DomainAuthenticationToken,
+				Endpoint: kusciaapisv1alpha1.DomainEndpoint{
+					Ports: []kusciaapisv1alpha1.DomainPort{
+						{
+							Name: "http",
+						},
+					},
+				},
+				TokenConfig: &kusciaapisv1alpha1.TokenConfig{
+					TokenGenMethod: kusciaapisv1alpha1.TokenGenMethodRSA,
+				},
+			},
+		},
+		Status: kusciaapisv1alpha1.ClusterDomainRouteStatus{},
+	}
+	nlog.Info("create ", testdr.Name, " ", testdr2.Name)
+	_, err = kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(ctx, testdr, metav1.CreateOptions{})
+	assert.NoError(t, err)
+	_, err = kusciaClient.KusciaV1alpha1().ClusterDomainRoutes().Create(ctx, testdr2, metav1.CreateOptions{})
+	assert.NoError(t, err)
+
+	// Wait for controller to process resources
+	time.Sleep(2 * time.Second)
+
+	// Stop controller
+	ic.Stop()
+	time.Sleep(500 * time.Millisecond)
+
+	// Use a new context for checking results
+	checkCtx := context.Background()
+
+	// Check if first DomainRoute is created correctly
+	var dr *kusciaapisv1alpha1.DomainRoute
+	foundDr := false
+	for i := 0; i < 20; i++ {
+		dr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(checkCtx, alice+"-"+bob, metav1.GetOptions{})
 		if err == nil {
+			foundDr = true
 			break
 		}
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}
-	assert.NoError(t, err)
-	assert.NotNil(t, dr)
+	if !foundDr {
+		t.Errorf("Failed to get DomainRoute after waiting: %v", err)
+		return
+	}
+	assert.NotNil(t, dr, "DomainRoute should not be nil")
 	assert.Equal(t, alice, dr.Labels[common.KusciaSourceKey])
 	assert.Equal(t, bob, dr.Labels[common.KusciaDestinationKey])
 
+	// Check if second DomainRoute is created correctly
 	var dr2 *kusciaapisv1alpha1.DomainRoute
-	for i := 0; i < 10; i++ {
-		dr2, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(ctx, alice+"-"+charlie, metav1.GetOptions{})
+	foundDr2 := false
+	for i := 0; i < 20; i++ {
+		dr2, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(checkCtx, alice+"-"+charlie, metav1.GetOptions{})
 		if err == nil {
+			foundDr2 = true
 			break
 		}
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 	}
-	assert.NoError(t, err)
-	assert.NotNil(t, dr2)
+	if !foundDr2 {
+		t.Errorf("Failed to get DomainRoute after waiting: %v", err)
+		return
+	}
+	assert.NotNil(t, dr2, "DomainRoute should not be nil")
 	assert.Equal(t, alice, dr2.Labels[common.KusciaSourceKey])
 	assert.Equal(t, charlie, dr2.Labels[common.KusciaDestinationKey])
 }

@@ -295,6 +295,10 @@ func (s *ociStore) TagImage(sourceImage, targetImage *kii.ImageName) error {
 
 // interface [Store]
 func (s *ociStore) LoadImage(tarFile string) error {
+	// Security check: validate file path to prevent path traversal attacks
+	if !isValidFilePath(tarFile) {
+		return fmt.Errorf("invalid file path: %s", tarFile)
+	}
 	if _, err := os.Stat(tarFile); err != nil {
 		return fmt.Errorf("file not exists: %s", tarFile)
 	}

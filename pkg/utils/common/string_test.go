@@ -16,7 +16,9 @@ package common
 
 import (
 	"fmt"
+	"io"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,6 +36,18 @@ func TestCompress(t *testing.T) {
 	assert.NoError(t, err)
 	fmt.Println("Decompressed String: ", decompressedString)
 	assert.Equal(t, originalString, decompressedString)
+}
+
+func TestCompressLargeString(t *testing.T) {
+	// Create a string larger than our 10MB limit to ensure the limit works
+	originalString := strings.Repeat("a", 11*1024*1024) // 11MB string
+	compressedData, err := CompressString(originalString)
+	assert.NoError(t, err)
+
+	// Try to decompress data that exceeds the limit
+	_, err = DecompressString(compressedData)
+	assert.Error(t, err)
+	assert.Equal(t, io.ErrShortBuffer, err)
 }
 
 func TestSliceToAnnotation(t *testing.T) {

@@ -46,7 +46,12 @@ func NewProotStarter(c *InitConfig) (Starter, error) {
 	cmdLine = append(cmdLine, fmt.Sprintf("-b %s:/root", filepath.Join(c.Rootfs, "root")))
 	cmdLine = append(cmdLine, mountArgs...)
 
-	cmdLine = append(cmdLine, c.CmdLine...)
+	// Validate and sanitize command line to prevent command injection
+	sanitizedCmdLine, err := validateCmdLine(c.CmdLine)
+	if err != nil {
+		return nil, err
+	}
+	cmdLine = append(cmdLine, sanitizedCmdLine...)
 
 	if err := paths.EnsureDirectory(filepath.Join(c.Rootfs, c.WorkingDir), true); err != nil {
 		return nil, err

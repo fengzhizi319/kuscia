@@ -226,7 +226,7 @@ func (s *ociStore) flattenImage(old v1.Image) (v1.Image, string, error) {
 
 func (s *ociStore) combineLayers(old v1.Image) (v1.Layer, string, error) {
 	cacheFile := path.Join(s.cachePath, uuid.NewString())
-	file, err := os.OpenFile(cacheFile, os.O_WRONLY|os.O_CREATE, 0644)
+	file, err := os.OpenFile(cacheFile, os.O_WRONLY|os.O_CREATE, 0600)
 	if err != nil {
 		return nil, "", err
 	}

@@ -30,6 +30,31 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
 
+// isValidFilePath checks if the given file path is safe to use, preventing path traversal attacks
+func isValidFilePath(filePath string) bool {
+	// Check for path traversal attempts
+	if strings.Contains(filePath, "..") {
+		return false
+	}
+
+	// Clean the path to remove any . or .. elements
+	cleanPath := filepath.Clean(filePath)
+
+	// Check if the cleaned path is different from the original (indicates potential traversal)
+	if cleanPath != filePath && !filepath.IsAbs(filePath) {
+		return false
+	}
+
+	// Additional check for absolute paths
+	if filepath.IsAbs(cleanPath) {
+		// For absolute paths, we might want to restrict to specific directories
+		// This depends on the specific use case
+		return true
+	}
+
+	return true
+}
+
 type DockerPackageManifestItem struct {
 	Config string `json:"Config"`
 
@@ -84,6 +109,10 @@ func (s *dockerStore) RegisterImage(image, manifestFile string) error {
 }
 
 func (s *dockerStore) LoadImage(tarFile string) error {
+	// Security check: validate file path to prevent path traversal attacks
+	if !isValidFilePath(tarFile) {
+		return fmt.Errorf("invalid file path: %s", tarFile)
+	}
 	imageReader, err := os.Open(tarFile)
 	if err != nil {
 		return err

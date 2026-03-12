@@ -25,6 +25,7 @@ import (
 
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	"github.com/secretflow/kuscia/pkg/interconn/bfia/adapter"
+	bfiacommon "github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1/interconn"
@@ -120,7 +121,7 @@ func Test_createJobHandler_Handle(t *testing.T) {
 					JobId:  icJobInfo.JodID,
 				},
 			},
-			wantCode: http.StatusOK,
+			wantCode: bfiacommon.InterconnResponseCodeSuccess,
 		},
 	}
 	for _, tt := range tests {

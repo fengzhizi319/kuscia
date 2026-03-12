@@ -47,5 +47,5 @@ func (c *ProtoCodec) UnMarshal(b []byte) (*Outbound, error) {
 }
 
 func (c *ProtoCodec) ContentType() string {
-	return "application/proto"
+	return "application/x-protobuf"
 }

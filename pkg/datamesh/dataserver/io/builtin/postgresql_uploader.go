@@ -375,7 +375,8 @@ func (u *PostgresqlUploader) FlightStreamToDataProxyContentPostgresql(reader *fl
 		nlog.Error(err)
 		return err
 	}
-	tableName := "\"" + u.data.RelativeUri + "\""
+
+	tableName := formatPostgreSQLTableName(u.data.RelativeUri)
 	iCount := 0
 
 	// in the end, avoid panic

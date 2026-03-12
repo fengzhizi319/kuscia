@@ -164,6 +164,7 @@ func (h *PendingHandler) buildPartyKitInfos(kusciaTask *kusciaapisv1alpha1.Kusci
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to build domain %v kit info, %v", party.DomainID, err)
 		}
+		nlog.Debugf("build party kit info %+v", kit)
 
 		partyKitInfos[party.DomainID+party.Role] = kit
 
@@ -573,7 +574,6 @@ func (h *PendingHandler) allocatePorts(kusciaTask *kusciaapisv1alpha1.KusciaTask
 	if err != nil {
 		return false, err
 	}
-
 	allocatedPorts := kusciaTask.Status.AllocatedPorts
 	if len(allocatedPorts) > 0 {
 		return false, nil
@@ -581,6 +581,7 @@ func (h *PendingHandler) allocatePorts(kusciaTask *kusciaapisv1alpha1.KusciaTask
 
 	needCounts := map[string]int{}
 	for _, partyKit := range selfPartyKitInfos {
+		nlog.Debugf("allocate ports for party %s/%s", partyKit.DomainID, partyKit.Role)
 		ns := partyKit.DomainID
 		count := needCounts[ns]
 		for _, pod := range partyKit.Pods {

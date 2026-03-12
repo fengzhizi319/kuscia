@@ -21,8 +21,11 @@ import (
 	"strconv"
 	"time"
 
+	"google.golang.org/protobuf/proto"
+
 	"github.com/secretflow/kuscia/pkg/transport/codec"
 	"github.com/secretflow/kuscia/pkg/transport/msq"
+	pb "github.com/secretflow/kuscia/pkg/transport/proto/mesh"
 	"github.com/secretflow/kuscia/pkg/transport/server/common"
 	"github.com/secretflow/kuscia/pkg/transport/transerr"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
@@ -75,7 +78,20 @@ func (s *Server) handleInvoke(r *http.Request) *codec.Outbound {
 		return codec.BuildOutboundByErr(err)
 	}
 
+	// Handle protobuf format requests
+	contentType := r.Header.Get("Content-Type")
+	if contentType == "application/x-protobuf" || contentType == "x-protobuf" {
+		// Try to parse as Inbound structure
+		pushBound := &pb.PushInbound{}
+		if err := proto.Unmarshal(message.Content, pushBound); err == nil {
+			// Extract business payload
+			message.Content = pushBound.Payload
+		} else {
+			nlog.Warnf("Failed to parse protobuf request: %v", err)
+		}
+	}
 	err = s.sm.Push(params.sid, params.topic, message, getTimeout(r))
+
 	return codec.BuildOutboundByErr(err)
 }
 
@@ -84,9 +100,9 @@ func (s *Server) handlePop(r *http.Request) *codec.Outbound {
 	if err != nil {
 		return codec.BuildOutboundByErr(err)
 	}
-
 	msg, err := s.sm.Pop(params.sid, params.topic, getTimeout(r))
 	if err != nil || msg == nil {
+		nlog.Warnf("Pop msg err: %v", err)
 		return codec.BuildOutboundByErr(err)
 	}
 
@@ -153,23 +169,33 @@ func (s *Server) readMessage(r *http.Request) (*msq.Message, *transerr.TransErro
 func getReqParams(r *http.Request, isPush bool) (*ReqParams, *transerr.TransError) {
 	sid := r.Header.Get(codec.PtpSessionID)
 	topic := r.Header.Get(codec.PtpTopicID)
-	var topicPrefix string
-	var nodeID string
-	if isPush {
-		nodeID = codec.PtpSourceNodeID
-	} else {
-		nodeID = codec.PtpTargetNodeID
-	}
-	topicPrefix = r.Header.Get(nodeID)
+	//var topicPrefix string
+	//var nodeID string
+	//if isPush {
+	//	nodeID = codec.PtpSourceNodeID
+	//} else {
+	//	nodeID = codec.PtpTargetNodeID
+	//}
+	//topicPrefix = r.Header.Get(nodeID)
+	//
+	//if len(sid) == 0 || len(topic) == 0 || len(topicPrefix) == 0 {
+	//	nlog.Warnf("Empty session-id or topic or %s", nodeID)
+	//	return nil, transerr.NewTransError(transerr.InvalidRequest)
+	//}
+	//
+	//return &ReqParams{
+	//	sid:   sid,
+	//	topic: fmt.Sprintf("%s-%s", topicPrefix, topic),
+	//}, nil
 
-	if len(sid) == 0 || len(topic) == 0 || len(topicPrefix) == 0 {
-		nlog.Warnf("Empty session-id or topic or %s", nodeID)
+	if len(sid) == 0 || len(topic) == 0 {
+		nlog.Warn("Empty session-id or topic")
 		return nil, transerr.NewTransError(transerr.InvalidRequest)
 	}
 
 	return &ReqParams{
 		sid:   sid,
-		topic: fmt.Sprintf("%s-%s", topicPrefix, topic),
+		topic: topic,
 	}, nil
 }
 

@@ -42,6 +42,26 @@ func compareTokens(tokens1, tokens2 []kusciaapisv1alpha1.DomainRouteToken) bool 
 }
 
 func (c *controller) checkEffectiveInstances(dr *kusciaapisv1alpha1.DomainRoute) bool {
+	// The BFIA protocol does not require tokens; it directly checks for an active gateway.
+	if dr.Spec.InterConnProtocol == kusciaapisv1alpha1.InterConnBFIA {
+		gateways, err := c.gatewayLister.Gateways(dr.Namespace).List(labels.Everything())
+		if err != nil {
+			nlog.Errorf("Domainroute %s/%s checkEffectiveInstances error: List gateways  failed with %v", dr.Namespace, dr.Name, err)
+			return false
+		}
+		if gateways == nil || len(gateways) == 0 {
+			nlog.Warnf("Domainroute %s/%s checkEffectiveInstances error: not found effective gateway in %s, please deploy first", dr.Namespace, dr.Name, dr.Namespace)
+			return false
+		}
+
+		for _, gw := range gateways {
+			if time.Since(gw.Status.HeartbeatTime.Time) < common.GatewayLiveTimeout {
+				return true
+			}
+		}
+		return false
+	}
+
 	if len(dr.Status.TokenStatus.Tokens) == 0 {
 		nlog.Warnf("Domainroute %s/%s checkEffectiveInstances failed: tokens is nil, please check the result of handshake in instance's log ", dr.Namespace, dr.Name)
 		return false

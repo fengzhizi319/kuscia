@@ -249,6 +249,23 @@ func makeTestTaskInputConfig2(t *testing.T) string {
 			},
 		},
 	}
+
+	var err error
+	taskInputConfig.TaskParams.Host, err = structpb.NewStruct(map[string]interface{}{
+		"0": map[string]interface{}{
+			"name":      "host_test_file",
+			"namespace": "testspace",
+		},
+	})
+	assert.NoError(t, err)
+	taskInputConfig.TaskParams.Guest, err = structpb.NewStruct(map[string]interface{}{
+		"0": map[string]interface{}{
+			"name":      "guest_test_file",
+			"namespace": "testspace",
+		},
+	})
+	assert.NoError(t, err)
+
 	taskInputConfigBytes, err := json.Marshal(taskInputConfig)
 	assert.NoError(t, err)
 	return string(taskInputConfigBytes)
@@ -262,6 +279,9 @@ func makeTestTask1(t *testing.T, job *kusciaapisv1alpha1.KusciaJob) *kusciaapisv
 			Labels: map[string]string{
 				pkgcommon.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnBFIA),
 				pkgcommon.LabelTaskUnschedulable:     pkgcommon.True,
+			},
+			Annotations: map[string]string{
+				pkgcommon.JobIDAnnotationKey: job.Name,
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(job, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("KusciaJob")),
@@ -277,7 +297,11 @@ func makeTestTask1(t *testing.T, job *kusciaapisv1alpha1.KusciaJob) *kusciaapisv
 					Role:        "host",
 					Template: kusciaapisv1alpha1.PartyTemplate{
 						Spec: kusciaapisv1alpha1.PodSpec{
-							Containers: []kusciaapisv1alpha1.Container{},
+							Containers: []kusciaapisv1alpha1.Container{
+								{
+									Name: "container_a",
+								},
+							},
 						},
 					},
 				},
@@ -287,7 +311,11 @@ func makeTestTask1(t *testing.T, job *kusciaapisv1alpha1.KusciaJob) *kusciaapisv
 					Role:        "guest",
 					Template: kusciaapisv1alpha1.PartyTemplate{
 						Spec: kusciaapisv1alpha1.PodSpec{
-							Containers: []kusciaapisv1alpha1.Container{},
+							Containers: []kusciaapisv1alpha1.Container{
+								{
+									Name: "container_a",
+								},
+							},
 						},
 					},
 				},
@@ -306,6 +334,9 @@ func makeTestTask2(t *testing.T, job *kusciaapisv1alpha1.KusciaJob) *kusciaapisv
 			Labels: map[string]string{
 				pkgcommon.LabelInterConnProtocolType: string(kusciaapisv1alpha1.InterConnBFIA),
 				pkgcommon.LabelTaskUnschedulable:     pkgcommon.True,
+			},
+			Annotations: map[string]string{
+				pkgcommon.JobIDAnnotationKey: job.Name,
 			},
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(job, kusciaapisv1alpha1.SchemeGroupVersion.WithKind("KusciaJob")),
@@ -383,7 +414,7 @@ func TestController_syncTaskHandler(t *testing.T) {
 	assert.Equal(t, "alice", envs["config.inst_id.host.0"])
 	assert.Equal(t, "bob", envs["config.inst_id.guest.0"])
 	assert.Equal(t, "host.0", envs["config.self_role"])
-	assert.Equal(t, "session_"+task1.Name, envs["config.session_id"])
+	assert.Equal(t, "session_job001", envs["config.session_id"])
 	assert.Equal(t, "trace_"+task1.Name, envs["config.trace_id"])
 	assert.Equal(t, "token_"+task1.Name, envs["config.token"])
 	assert.Equal(t, "component_a", envs["runtime.component.name"])
@@ -402,7 +433,7 @@ func TestController_syncTaskHandler(t *testing.T) {
 	assert.Equal(t, "alice", envs["config.inst_id.host.0"])
 	assert.Equal(t, "bob", envs["config.inst_id.guest.0"])
 	assert.Equal(t, "guest.0", envs["config.self_role"])
-	assert.Equal(t, "session_"+task2.Name, envs["config.session_id"])
+	assert.Equal(t, "session_job001", envs["config.session_id"])
 	assert.Equal(t, "trace_"+task2.Name, envs["config.trace_id"])
 	assert.Equal(t, "token_"+task2.Name, envs["config.token"])
 	assert.Equal(t, "component_b", envs["runtime.component.name"])
@@ -419,6 +450,10 @@ func TestController_syncTaskHandler(t *testing.T) {
 
 func getTestPartyTaskEnvMap(party *kusciaapisv1alpha1.PartyInfo) map[string]string {
 	envMap := map[string]string{}
+
+	if len(party.Template.Spec.Containers) == 0 {
+		return envMap
+	}
 
 	for _, env := range party.Template.Spec.Containers[0].Env {
 		envMap[env.Name] = env.Value

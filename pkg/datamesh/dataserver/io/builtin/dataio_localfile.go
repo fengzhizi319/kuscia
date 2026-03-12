@@ -18,6 +18,7 @@ import (
 	"context"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/apache/arrow/go/v13/arrow/flight"
 	"github.com/pkg/errors"
@@ -27,6 +28,34 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/datamesh"
 )
+
+// isValidRelativePath checks if the given relative path is safe, preventing path traversal attacks
+func isValidRelativePath(relativePath string) bool {
+	// Check for path traversal attempts
+	if strings.Contains(relativePath, "..") {
+		return false
+	}
+
+	// Check for absolute paths
+	if path.IsAbs(relativePath) {
+		return false
+	}
+
+	// Clean the path to remove any . or .. elements
+	cleanPath := path.Clean(relativePath)
+
+	// Check if the cleaned path is different from the original
+	if cleanPath != relativePath {
+		return false
+	}
+
+	// Additional check for empty path
+	if cleanPath == "" {
+		return false
+	}
+
+	return true
+}
 
 type BuiltinLocalFileIO struct {
 	batchReadSize int
@@ -46,6 +75,10 @@ func (fio *BuiltinLocalFileIO) Read(ctx context.Context, rc *utils.DataMeshReque
 		return err
 	}
 
+	// Security check: validate relative path to prevent path traversal attacks
+	if !isValidRelativePath(data.RelativeUri) {
+		return errors.Errorf("invalid relative path: %s", data.RelativeUri)
+	}
 	filePath := path.Join(ds.Info.Localfs.Path, data.RelativeUri)
 
 	if _, err := os.Stat(filePath); err != nil {
@@ -77,7 +110,10 @@ func (fio *BuiltinLocalFileIO) Write(ctx context.Context, rc *utils.DataMeshRequ
 	if err != nil {
 		return err
 	}
-
+	// Security check: validate relative path to prevent path traversal attacks
+	if !isValidRelativePath(data.RelativeUri) {
+		return errors.Errorf("invalid relative path: %s", data.RelativeUri)
+	}
 	filePath := path.Join(ds.Info.Localfs.Path, data.RelativeUri)
 
 	nlog.Infof("DomainData(%s) try save to file(%s)", data.DomaindataId, filePath)
@@ -92,7 +128,7 @@ func (fio *BuiltinLocalFileIO) Write(ctx context.Context, rc *utils.DataMeshRequ
 		return err
 	}
 
-	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(filePath, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0600)
 	if err != nil {
 		nlog.Warnf("DomainData(%s) opening file(%s) to write with error: %s", data.DomaindataId, filePath, err.Error())
 		return err

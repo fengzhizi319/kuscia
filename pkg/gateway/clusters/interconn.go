@@ -18,8 +18,11 @@ import (
 	"fmt"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+
+	kusciatoken "github.com/secretflow/kuscia-envoy/kuscia/api/filters/http/kuscia_token_auth/v3"
 
 	"github.com/secretflow/kuscia/pkg/gateway/config"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
@@ -64,6 +67,23 @@ func addTransportCluster(namespace string, clusterConfig *config.ClusterConfig) 
 		nlog.Fatalf("Clone virtual host fail")
 	}
 	externalVh.Name = fmt.Sprintf("%s-external", transportService)
+
+	// For transport service that may receive BFIA protocol requests,
+	// we need to disable kuscia_token_auth filter
+	disableTokenAuth, _ := proto.Marshal(&kusciatoken.FilterConfigPerRoute{
+		Disabled: true,
+	})
+
+	// Ensure TypedPerFilterConfig is initialized
+	if externalVh.Routes[0].TypedPerFilterConfig == nil {
+		externalVh.Routes[0].TypedPerFilterConfig = make(map[string]*anypb.Any)
+	}
+
+	externalVh.Routes[0].TypedPerFilterConfig["envoy.filters.http.kuscia_token_auth"] = &anypb.Any{
+		TypeUrl: "type.googleapis.com/envoy.extensions.filters.http.kuscia_token_auth.v3.FilterConfigPerRoute",
+		Value:   disableTokenAuth,
+	}
+
 	if err := xds.AddOrUpdateVirtualHost(externalVh, xds.ExternalRoute); err != nil {
 		return err
 	}
@@ -81,6 +101,23 @@ func addSchedulerCluster(namespace string, clusterConfig *config.ClusterConfig) 
 	}
 	externalVh := generateInterConnInternalVirtualHost(schedulerService, cluster.Name, namespace)
 	externalVh.Name = fmt.Sprintf("%s-external", schedulerService)
+
+	// For scheduler service that may receive BFIA protocol requests,
+	// we need to disable kuscia_token_auth filter
+	disableTokenAuth, _ := proto.Marshal(&kusciatoken.FilterConfigPerRoute{
+		Disabled: true,
+	})
+
+	// Ensure TypedPerFilterConfig is initialized
+	if externalVh.Routes[0].TypedPerFilterConfig == nil {
+		externalVh.Routes[0].TypedPerFilterConfig = make(map[string]*anypb.Any)
+	}
+
+	externalVh.Routes[0].TypedPerFilterConfig["envoy.filters.http.kuscia_token_auth"] = &anypb.Any{
+		TypeUrl: "type.googleapis.com/envoy.extensions.filters.http.kuscia_token_auth.v3.FilterConfigPerRoute",
+		Value:   disableTokenAuth,
+	}
+
 	if err := xds.AddOrUpdateVirtualHost(externalVh, xds.ExternalRoute); err != nil {
 		return err
 	}

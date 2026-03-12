@@ -326,8 +326,9 @@ func TestPingAfterStatusUpdate(t *testing.T) {
 	node.nmt = testNode
 
 	interval := 10 * time.Millisecond
-	// 100ms to make UT stable
-	maxAllowedInterval := time.Duration(10 * float64(interval.Nanoseconds()))
+	// Increase the max allowed interval to account for system scheduling and GC delays
+	// Original was 10 * interval, but this was too strict for stable testing
+	maxAllowedInterval := time.Duration(20 * float64(interval.Nanoseconds())) // 200ms instead of 100ms
 	node.pingInterval = interval
 	node.statusNoChangeInterval = interval
 

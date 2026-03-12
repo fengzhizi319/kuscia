@@ -34,7 +34,13 @@ type chrootStarter struct {
 func NewChrootStarter(c *InitConfig) (Starter, error) {
 	s := &chrootStarter{config: c}
 
-	cmdLine := wrapCommand(c.CmdLine)
+	// Validate and sanitize command line to prevent command injection
+	sanitizedCmdLine, err := validateCmdLine(c.CmdLine)
+	if err != nil {
+		return nil, err
+	}
+
+	cmdLine := wrapCommand(sanitizedCmdLine)
 	s.Cmd = exec.Command(cmdLine[0], cmdLine[1:]...)
 	s.Cmd.Env = c.Env
 
@@ -45,7 +51,7 @@ func NewChrootStarter(c *InitConfig) (Starter, error) {
 	s.Cmd.SysProcAttr.Chroot = c.Rootfs
 	s.Cmd.Dir = c.WorkingDir
 
-	if err := paths.EnsureDirectory(filepath.Join(c.Rootfs, c.WorkingDir), true); err != nil {
+	if err = paths.EnsureDirectory(filepath.Join(c.Rootfs, c.WorkingDir), true); err != nil {
 		return nil, err
 	}
 

@@ -29,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/cache"
 
+	pcommon "github.com/secretflow/kuscia/pkg/common"
 	pkgcommon "github.com/secretflow/kuscia/pkg/common"
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/interconn/bfia/common"
@@ -120,6 +121,8 @@ func (c *Controller) syncTaskHandler(ctx context.Context, key string) (err error
 	nlog.Infof("Inject task env for bfia task %s", task.Name)
 	for i := range task.Spec.Parties {
 		if injectErr := c.injectPartyTaskEnv(&task.Spec.Parties[i], task); injectErr != nil {
+			nlog.Errorf("Failed to inject task %v env for party %v:%v, %v",
+				task.Name, task.Spec.Parties[i].DomainID, task.Spec.Parties[i].Role, injectErr)
 			return fmt.Errorf("failed to inject task %v env for party %v:%v, %v",
 				task.Name, task.Spec.Parties[i].DomainID, task.Spec.Parties[i].Role, injectErr)
 		}
@@ -129,6 +132,7 @@ func (c *Controller) syncTaskHandler(ctx context.Context, key string) (err error
 
 	_, err = c.kusciaClient.KusciaV1alpha1().KusciaTasks(task.Namespace).Update(ctx, task, metav1.UpdateOptions{})
 	if err != nil {
+		nlog.Errorf("Failed to update task %v, %v", task, err)
 		return fmt.Errorf("failed to update task %v, %v", task, err)
 	}
 
@@ -145,6 +149,12 @@ func (c *Controller) injectPartyTaskEnv(party *kusciaapisv1alpha1.PartyInfo, tas
 		return fmt.Errorf("failed to unmarsh task input config, detail-> %v", err)
 	}
 
+	// get jobid from annotation
+	jobID, ok := task.Annotations[pcommon.JobIDAnnotationKey]
+	if !ok {
+		return fmt.Errorf("kt:%s failed to get jobid from annotation", task.Name)
+	}
+
 	envs := []corev1.EnvVar{
 		{
 			Name:  envConfigTaskID,
@@ -152,7 +162,7 @@ func (c *Controller) injectPartyTaskEnv(party *kusciaapisv1alpha1.PartyInfo, tas
 		},
 		{
 			Name:  envConfigSessionID,
-			Value: "session_" + task.Name,
+			Value: "session_" + jobID,
 		},
 		{
 			Name:  envConfigTraceID,

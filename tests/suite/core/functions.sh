@@ -20,7 +20,7 @@ LITE_ALICE_CONTAINER=${USER}-kuscia-lite-alice
 LITE_BOB_CONTAINER=${USER}-kuscia-lite-bob
 AUTONOMY_ALICE_CONTAINER=${USER}-kuscia-autonomy-alice
 AUTONOMY_BOB_CONTAINER=${USER}-kuscia-autonomy-bob
-TTP_SERVER="ttp-server"
+
 
 TIMEOUT_DURATION_SECONDS=10
 
@@ -260,41 +260,25 @@ function start_bfia() {
   mkdir -p "${test_suite_run_kuscia_dir}"
   docker cp ${AUTONOMY_ALICE_CONTAINER}:/home/kuscia/scripts/user/bfia/ "${test_suite_run_kuscia_dir}"
 
-  # Set ttp server
-  ${test_suite_run_kuscia_dir}/bfia/deploy_ttp_server.sh
+  
+  # Copy test data files to containers
+  docker cp ${test_suite_run_kuscia_dir}/bfia/breast_hetero_guest.csv ${AUTONOMY_ALICE_CONTAINER}:/home/kuscia/var/storage/data/
+  docker cp ${test_suite_run_kuscia_dir}/bfia/breast_hetero_host.csv ${AUTONOMY_ALICE_CONTAINER}:/home/kuscia/var/storage/data/
+  docker cp ${test_suite_run_kuscia_dir}/bfia/breast_hetero_guest.csv ${AUTONOMY_BOB_CONTAINER}:/home/kuscia/var/storage/data/
+  docker cp ${test_suite_run_kuscia_dir}/bfia/breast_hetero_host.csv ${AUTONOMY_BOB_CONTAINER}:/home/kuscia/var/storage/data/
 
-  # Register ss_lr image to container
-  ${test_suite_run_kuscia_dir}/bfia/prepare_ss_lr_image.sh -k ${AUTONOMY_ALICE_CONTAINER}
-  ${test_suite_run_kuscia_dir}/bfia/prepare_ss_lr_image.sh -k ${AUTONOMY_BOB_CONTAINER}
-
-  # Prepare job config
-  cat <<EOF >${test_suite_run_kuscia_dir}/kuscia-job.yaml
-apiVersion: kuscia.secretflow/v1alpha1
-kind: KusciaJob
-metadata:
-  name: job-ss-lr
-  namespace: cross-domain
-spec:
-  initiator: alice
-  tasks:
-  - alias: ss_lr_1
-    appImage: ss-lr
-    parties:
-    - domainID: alice
-      role: host
-    - domainID: bob
-      role: guest
-    taskInputConfig: '{"name":"ss_lr_1","module_name":"ss_lr","output":[{"type":"dataset","key":"result"}],"role":{"host":["alice"],"guest":["bob"]},"initiator":{"role":"host","node_id":"alice"},"task_params":{"host":{"0":{"has_label":true,"name":"perfect_logit_a.csv","namespace":"data"}},"guest":{"0":{"has_label":false,"name":"perfect_logit_b.csv","namespace":"data"}},"common":{"skip_rows":1,"algo":"ss_lr","protocol_families":"ss","batch_size":21,"last_batch_policy":"discard","num_epoch":1,"l0_norm":0,"l1_norm":0,"l2_norm":0.5,"optimizer":"sgd","learning_rate":0.0001,"sigmoid_mode":"minimax_1","protocol":"semi2k","field":64,"fxp_bits":18,"trunc_mode":"probabilistic","shard_serialize_format":"raw","use_ttp":true,"ttp_server_host":"ttp-server:9449","ttp_session_id":"interconnection-root","ttp_adjust_rank":0}}}'
-    tolerable: false
-EOF
-  docker cp ${test_suite_run_kuscia_dir}/kuscia-job.yaml ${AUTONOMY_ALICE_CONTAINER}:/home/kuscia
+  # Copy and apply new AppImage configuration
+  docker cp ${test_suite_run_kuscia_dir}/bfia/ic-ecdh.yaml ${AUTONOMY_ALICE_CONTAINER}:/home/kuscia/ic-ecdh.yaml
+  docker exec -it ${AUTONOMY_ALICE_CONTAINER} kubectl apply -f /home/kuscia/ic-ecdh.yaml
+  docker cp ${test_suite_run_kuscia_dir}/bfia/ic-ecdh.yaml ${AUTONOMY_BOB_CONTAINER}:/home/kuscia/ic-ecdh.yaml
+  docker exec -it ${AUTONOMY_BOB_CONTAINER} kubectl apply -f /home/kuscia/ic-ecdh.yaml
   unset test_suite_run_kuscia_dir autonomy_alice_container_state autonomy_bob_container_state
 }
 
 # Stop bfia
 function stop_bfia() {
-  docker stop "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}" "${TTP_SERVER}"
-  docker rm "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}" "${TTP_SERVER}"
+  docker stop "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}"
+  docker rm "${AUTONOMY_ALICE_CONTAINER}" "${AUTONOMY_BOB_CONTAINER}"
   docker volume rm "${AUTONOMY_ALICE_CONTAINER}-containerd" "${AUTONOMY_BOB_CONTAINER}-containerd"
 }
 

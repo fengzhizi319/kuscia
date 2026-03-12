@@ -70,4 +70,6 @@ message Component {
     string version = 4;
     repeated ComponentIO input = 5;
     repeated ComponentIO output = 6;
+    string componentName = 7;
+    string provider = 8;
 }

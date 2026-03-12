@@ -84,9 +84,12 @@ func GenerateInterConnJobInfoFrom(kusciaJob *kusciaapisv1alpha1.KusciaJob, appIm
 			Code:       task.AppImage,
 			Name:       taskInputConfig.Name,
 			ModuleName: taskInputConfig.ModuleName,
-			Version:    aimg.Spec.Image.Tag,
-			Input:      taskInputConfig.Input,
-			Output:     taskInputConfig.Output,
+			// Version:    aimg.Spec.Image.Tag,
+			ComponentName: taskInputConfig.ComponentName,
+			Version:       taskInputConfig.Version,
+			Provider:      taskInputConfig.Provider,
+			Input:         taskInputConfig.Input,
+			Output:        taskInputConfig.Output,
 		}
 
 		jobInfo.DAG.Components = append(jobInfo.DAG.Components, cpt)
@@ -250,6 +253,7 @@ func buildJobParams(role *interconn.ConfigRole) (*interconn.ConfigParams, error)
 		}
 		a.Fields[strconv.Itoa(idx)] = structpb.NewStructValue(emptyStruct)
 		jobParams.Arbiter = a
+
 	}
 
 	for idx := range role.Host {
@@ -385,13 +389,16 @@ func validateComponentCode(code string) error {
 // buildTaskInputConfigAndPartiesFrom builds taskInputConfig and parties from interconn job component and config.
 func buildTaskInputConfigAndPartiesFrom(cpt *interconn.Component, config *interconn.Config) (string, []kusciaapisv1alpha1.Party, error) {
 	taskInputConfig := &interconn.TaskInputConfig{
-		Name:       cpt.Name,
-		ModuleName: cpt.ModuleName,
-		Input:      cpt.Input,
-		Output:     cpt.Output,
-		Role:       config.Role,
-		Initiator:  config.Initiator,
-		TaskParams: &interconn.ConfigParams{},
+		Name:          cpt.Name,
+		ModuleName:    cpt.ModuleName,
+		Input:         cpt.Input,
+		Output:        cpt.Output,
+		Role:          config.Role,
+		Initiator:     config.Initiator,
+		TaskParams:    &interconn.ConfigParams{},
+		ComponentName: cpt.ComponentName,
+		Version:       cpt.Version,
+		Provider:      cpt.Provider,
 	}
 
 	var parties []kusciaapisv1alpha1.Party

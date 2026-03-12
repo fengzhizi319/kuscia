@@ -61,4 +61,10 @@ message TaskInputConfig {
     ConfigInitiator initiator = 6;
     // Parameters of task
     ConfigParams task_params = 7;
+    // Component name
+    string componentName = 8;
+    // Version of component
+    string version = 9;
+    // Provider of component
+    string provider = 10;
 }

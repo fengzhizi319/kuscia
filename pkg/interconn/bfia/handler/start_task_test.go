@@ -25,6 +25,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	"github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1/interconn"
@@ -141,7 +142,7 @@ func Test_startTaskHandler_Handle(t *testing.T) {
 					TaskName: "hetero_logistic_regression_1",
 				},
 			},
-			wantCode: http.StatusOK,
+			wantCode: common.InterconnResponseCodeSuccess,
 		},
 	}
 

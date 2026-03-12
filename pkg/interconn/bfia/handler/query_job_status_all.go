@@ -30,10 +30,10 @@ import (
 )
 
 // QueryJobStatusAllRequest defines the request body info for querying job status.
-type QueryJobStatusAllRequest struct {
-	api.ProtoRequest
-	JobID string `form:"job_id"`
-}
+// type QueryJobStatusAllRequest struct {
+// 	api.ProtoRequest
+// 	JobID string `form:"job_id"`
+// }
 
 // queryJobStatusAllHandler defines the handler info for querying job status.
 type queryJobStatusAllHandler struct {
@@ -49,28 +49,28 @@ func NewQueryJobStatusAllHandler(rm *ResourcesManager) api.ProtoHandler {
 
 // Validate is used to validate request.
 func (h *queryJobStatusAllHandler) Validate(ctx *api.BizContext, request api.ProtoRequest, errs *errorcode.Errs) {
-	req, ok := request.(*QueryJobStatusAllRequest)
+	req, ok := request.(*interconn.QueryJobStatusAllRequest)
 	if !ok {
 		errs.AppendErr(fmt.Errorf("query job status request type is invalid"))
 		return
 	}
 
-	if req.JobID == "" {
+	if req.JobId == "" {
 		errs.AppendErr(fmt.Errorf("parameter job_id can't be empty"))
 	}
 }
 
 // Handle is used to handle request.
 func (h *queryJobStatusAllHandler) Handle(ctx *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
-	req := request.(*QueryJobStatusAllRequest)
+	req := request.(*interconn.QueryJobStatusAllRequest)
 	resp := &interconn.CommonResponse{
-		Code: http.StatusOK,
+		Code: bfiacommon.InterconnResponseCodeSuccess,
 	}
 
-	kj, err := h.KjLister.KusciaJobs(common.KusciaCrossDomain).Get(req.JobID)
+	kj, err := h.KjLister.KusciaJobs(common.KusciaCrossDomain).Get(req.JobId)
 	if k8serrors.IsNotFound(err) {
-		if h.IsJobExist(req.JobID) {
-			h.buildResp(resp, nil)
+		if h.IsJobExist(req.JobId) {
+			h.buildResp(resp, nil, "")
 			return resp
 		}
 	}
@@ -86,19 +86,22 @@ func (h *queryJobStatusAllHandler) Handle(ctx *api.BizContext, request api.Proto
 		statusContent[taskID] = bfiacommon.KusciaTaskPhaseToInterConnTaskPhase[taskStatus]
 	}
 
-	h.buildResp(resp, statusContent)
+	h.buildResp(resp, statusContent, bfiacommon.KusciaJobPhaseToInterConJobPhase[kj.Status.Phase])
 	return resp
 }
 
 // GetType is used to get request and response type.
 func (h *queryJobStatusAllHandler) GetType() (reqType, respType reflect.Type) {
-	return reflect.TypeOf(QueryJobStatusAllRequest{}), reflect.TypeOf(interconn.CommonResponse{})
+	return reflect.TypeOf(interconn.QueryJobStatusAllRequest{}), reflect.TypeOf(interconn.CommonResponse{})
 }
 
 // buildResp builds response.
-func (h *queryJobStatusAllHandler) buildResp(resp *interconn.CommonResponse, content map[string]interface{}) {
+func (h *queryJobStatusAllHandler) buildResp(resp *interconn.CommonResponse, content map[string]interface{}, jobStatus string) {
 	status := map[string]interface{}{
 		"status": content,
+	}
+	if jobStatus != "" {
+		status["jobStatus"] = jobStatus
 	}
 
 	data, err := structpb.NewStruct(status)

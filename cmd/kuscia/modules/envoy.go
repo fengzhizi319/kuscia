@@ -78,7 +78,7 @@ func NewEnvoy(i *ModuleRuntimeConfigs) (Module, error) {
 }
 
 func (s *envoyModule) Run(ctx context.Context) error {
-	if err := os.MkdirAll(filepath.Join(s.rootDir, common.LogPrefix, "envoy/"), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(s.rootDir, common.LogPrefix, "envoy/"), 0750); err != nil {
 		return err
 	}
 	deltaArgs, err := s.readCommandArgs()

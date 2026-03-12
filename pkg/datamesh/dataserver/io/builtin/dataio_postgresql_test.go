@@ -44,7 +44,7 @@ import (
 )
 
 func dbInfoToDsnPg(info *datamesh.DatabaseDataSourceInfo) string {
-	return fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=5432",
+	return fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=5432 sslmode=disable",
 		info.User,
 		info.Password,
 		info.Endpoint,

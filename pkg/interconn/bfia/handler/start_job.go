@@ -62,7 +62,7 @@ func (h *startJobHandler) Validate(ctx *api.BizContext, request api.ProtoRequest
 func (h *startJobHandler) Handle(ctx *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
 	req := request.(*interconn.StartJobRequest)
 	resp := &interconn.CommonResponse{
-		Code: http.StatusOK,
+		Code: bfiacommon.InterconnResponseCodeSuccess,
 	}
 
 	rawKj, err := h.KjLister.KusciaJobs(common.KusciaCrossDomain).Get(req.JobId)

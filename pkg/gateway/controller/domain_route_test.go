@@ -737,13 +737,13 @@ func TestGenerateInternalRoute(t *testing.T) {
 		}
 		if val.Prefix == "/v1/interconn/chan/push" {
 			findPushPrefix = true
-			assert.Equal(t, 4, len(route.RequestHeadersToAdd))
+			assert.Equal(t, 6, len(route.RequestHeadersToAdd))
 			assert.True(t, route.RequestHeadersToAdd[1].Header.Key == "x-ptp-source-inst-id")
 			assert.True(t, route.RequestHeadersToAdd[2].Header.Key == "x-ptp-source-node-id")
 		}
 		if val.Prefix == "/v1/interconn/schedule/" {
 			findSchedulePrefix = true
-			assert.Equal(t, 2, len(route.RequestHeadersToAdd))
+			assert.Equal(t, 3, len(route.RequestHeadersToAdd))
 		}
 		if findPushPrefix || findSchedulePrefix {
 			assert.True(t, route.RequestHeadersToAdd[0].Header.Key == "x-interconn-protocol")

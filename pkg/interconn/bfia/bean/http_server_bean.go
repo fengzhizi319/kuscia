@@ -153,7 +153,7 @@ func (b *httpServerBean) buildGroupRouters(engine *engine.Engine) router.GroupsR
 					Handlers:     []gin.HandlerFunc{protoDecorator(engine, handler.NewStartJobHandler(b.ResourcesManager))},
 				},
 				{
-					HTTPMethod:   http.MethodGet,
+					HTTPMethod:   http.MethodPost,
 					RelativePath: "status_all",
 					Handlers:     []gin.HandlerFunc{protoDecorator(engine, handler.NewQueryJobStatusAllHandler(b.ResourcesManager))},
 				},

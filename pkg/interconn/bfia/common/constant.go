@@ -62,3 +62,7 @@ const (
 	ErrFindTaskFailed       = "failed to find the task"
 	ErrTaskNameDoesNotExist = "failed to find the task by task name"
 )
+
+const (
+	InterconnResponseCodeSuccess = 0
+)

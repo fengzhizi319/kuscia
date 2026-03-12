@@ -17,6 +17,7 @@ package builtin
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/apache/arrow/go/v13/arrow"
@@ -246,4 +247,20 @@ func ParseStr2Timestamp(bldr array.Builder, str string) error {
 
 	bldr.(*array.TimestampBuilder).Append(arrow.Timestamp(t.Unix()))
 	return nil
+}
+
+// formatPostgreSQLTableName formats a table name for PostgreSQL, handling schema.table format
+// and ensuring proper quoting for case-sensitive identifiers.
+func formatPostgreSQLTableName(relativeUri string) string {
+	if strings.Contains(relativeUri, ".") {
+		parts := strings.SplitN(relativeUri, ".", 2) // Split only at the first dot
+		if len(parts) == 2 {
+			// Handle schema and table names separately, preserving original case
+			schemaName := parts[0]
+			tableOnly := parts[1]
+			return "\"" + schemaName + "\".\"" + tableOnly + "\""
+		}
+	}
+	// Single table name or table names with multiple dots
+	return "\"" + relativeUri + "\""
 }

@@ -105,3 +105,79 @@ func TestStore_LoadImage(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, s.CheckImageExist(image))
 }
+
+func TestIsValidFilePath(t *testing.T) {
+	tests := []struct {
+		name     string
+		filePath string
+		expected bool
+	}{
+		{
+			name:     "normal relative path",
+			filePath: "normal/path/file.txt",
+			expected: true,
+		},
+		{
+			name:     "path traversal with double dots",
+			filePath: "../../../etc/passwd",
+			expected: false,
+		},
+		{
+			name:     "relative path with double dots",
+			filePath: "dir/../file.txt",
+			expected: false,
+		},
+		{
+			name:     "absolute path",
+			filePath: "/absolute/path/file.txt",
+			expected: true,
+		},
+		{
+			name:     "absolute path with double dots",
+			filePath: "/var/../etc/passwd",
+			expected: false,
+		},
+		{
+			name:     "current directory",
+			filePath: "./current/file.txt",
+			expected: false,
+		},
+		{
+			name:     "empty string",
+			filePath: "",
+			expected: false,
+		},
+		{
+			name:     "single dot path",
+			filePath: "./file.txt",
+			expected: false,
+		},
+		{
+			name:     "Windows style path",
+			filePath: "C:\\Windows\\file.txt",
+			expected: true,
+		},
+		{
+			name:     "path traversal at beginning",
+			filePath: "../file.txt",
+			expected: false,
+		},
+		{
+			name:     "path traversal in middle",
+			filePath: "dir/../../file.txt",
+			expected: false,
+		},
+		{
+			name:     "nested normal path",
+			filePath: "a/b/c/d/file.txt",
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isValidFilePath(tt.filePath)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

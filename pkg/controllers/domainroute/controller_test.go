@@ -88,34 +88,79 @@ func Test_controller_with_token(t *testing.T) {
 		destdr.Status.TokenStatus.RevisionToken.Revision = 1
 		destdr.Status.TokenStatus.RevisionToken.EffectiveInstances = []string{bobgateway.Name}
 
-		srcdr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Create(ctx, srcdr, metav1.CreateOptions{})
+		_, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Create(ctx, srcdr, metav1.CreateOptions{})
 		assert.NoError(t, err)
 		_, err = kusciaClient.KusciaV1alpha1().DomainRoutes(bob).Create(ctx, destdr, metav1.CreateOptions{})
 		assert.NoError(t, err)
 
-		time.Sleep(100 * time.Millisecond)
+		// Wait for initial token synchronization to complete, using retry mechanism instead of fixed time sleep
+		assert.Eventually(t, func() bool {
+			srcdr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(context.Background(), srcdr.Name, metav1.GetOptions{})
+			if err != nil {
+				nlog.Errorf("Failed to get source DomainRoute: %v", err)
+				return false
+			}
+			destdr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(bob).Get(context.Background(), destdr.Name, metav1.GetOptions{})
+			if err != nil {
+				nlog.Errorf("Failed to get destination DomainRoute: %v", err)
+				return false
+			}
 
-		srcdr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(context.Background(), srcdr.Name, metav1.GetOptions{})
-		assert.NoError(t, err)
-		destdr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(bob).Get(context.Background(), destdr.Name, metav1.GetOptions{})
-		assert.NoError(t, err)
-		assert.Equal(t, 1, len(destdr.Status.TokenStatus.Tokens))
-		assert.True(t, destdr.Status.TokenStatus.RevisionToken.IsReady)
-		assert.Equal(t, "bobtestToken", destdr.Status.TokenStatus.Tokens[0].Token)
-		assert.True(t, destdr.Status.TokenStatus.Tokens[0].IsReady)
-		assert.Equal(t, 0, len(srcdr.Status.TokenStatus.Tokens))
+			// Check if destination token status meets expected conditions
+			if len(destdr.Status.TokenStatus.Tokens) != 1 {
+				nlog.Debugf("Destination token count doesn't match expected, expected 1, actual %d", len(destdr.Status.TokenStatus.Tokens))
+				return false
+			}
+			if !destdr.Status.TokenStatus.RevisionToken.IsReady {
+				nlog.Debug("Destination RevisionToken.IsReady is false")
+				return false
+			}
+			if destdr.Status.TokenStatus.Tokens[0].Token != "bobtestToken" {
+				nlog.Debugf("Destination token value doesn't match expected, expected 'bobtestToken', actual '%s'", destdr.Status.TokenStatus.Tokens[0].Token)
+				return false
+			}
+			if !destdr.Status.TokenStatus.Tokens[0].IsReady {
+				nlog.Debug("Destination Tokens[0].IsReady is false")
+				return false
+			}
+			if len(srcdr.Status.TokenStatus.Tokens) != 0 {
+				nlog.Debugf("Source token count doesn't match expected, expected 0, actual %d", len(srcdr.Status.TokenStatus.Tokens))
+				return false
+			}
+			return true
+		}, 5*time.Second, 100*time.Millisecond, "Timeout waiting for initial token synchronization to complete")
 		srcdr.Status.TokenStatus.RevisionToken.IsReady = true
 		_, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Update(context.Background(), srcdr, metav1.UpdateOptions{})
 		assert.NoError(t, err)
-		time.Sleep(100 * time.Millisecond)
 
-		srcdr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(context.Background(), srcdr.Name, metav1.GetOptions{})
-		assert.NoError(t, err)
-		nlog.Debug(srcdr.Status.TokenStatus.RevisionToken, srcdr.Status.TokenStatus.Tokens)
-		assert.Equal(t, 1, len(srcdr.Status.TokenStatus.Tokens))
-		assert.True(t, srcdr.Status.TokenStatus.RevisionToken.IsReady)
-		assert.Equal(t, "alicetestToken", srcdr.Status.TokenStatus.Tokens[0].Token)
-		assert.True(t, srcdr.Status.TokenStatus.Tokens[0].IsReady)
+		// Wait for token synchronization to complete, using retry mechanism instead of fixed time sleep
+		assert.Eventually(t, func() bool {
+			srcdr, err = kusciaClient.KusciaV1alpha1().DomainRoutes(alice).Get(context.Background(), srcdr.Name, metav1.GetOptions{})
+			if err != nil {
+				nlog.Errorf("Failed to get DomainRoute: %v", err)
+				return false
+			}
+			nlog.Debug(srcdr.Status.TokenStatus.RevisionToken, srcdr.Status.TokenStatus.Tokens)
+
+			// Check if token status meets expected conditions
+			if len(srcdr.Status.TokenStatus.Tokens) != 1 {
+				nlog.Debugf("Token count doesn't match expected, expected 1, actual %d", len(srcdr.Status.TokenStatus.Tokens))
+				return false
+			}
+			if !srcdr.Status.TokenStatus.RevisionToken.IsReady {
+				nlog.Debug("RevisionToken.IsReady is false")
+				return false
+			}
+			if srcdr.Status.TokenStatus.Tokens[0].Token != "alicetestToken" {
+				nlog.Debugf("Token value doesn't match expected, expected 'alicetestToken', actual '%s'", srcdr.Status.TokenStatus.Tokens[0].Token)
+				return false
+			}
+			if !srcdr.Status.TokenStatus.Tokens[0].IsReady {
+				nlog.Debug("Tokens[0].IsReady is false")
+				return false
+			}
+			return true
+		}, 5*time.Second, 100*time.Millisecond, "Timeout waiting for token synchronization to complete")
 
 		time.Sleep(200 * time.Millisecond)
 		close(chStop)

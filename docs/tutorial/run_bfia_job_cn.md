@@ -1,12 +1,12 @@
 # 如何运行一个互联互通银联 BFIA 协议作业
 
-> **Tips：由于内部 Kuscia P2P 协议升级，当前版本暂不支持银联 BFIA 协议，适配银联 BFIA 正在进行中。**
-
 若您使用第三方算法镜像提交互联互通作业，强烈建议您检查镜像安全性。
 
-本教程以秘密分享-逻辑回归（SS-LR）算子为示例，介绍如何通过互联互通银联 BFIA（Beijing FinTech Industry Alliance 北京金融科技产业联盟）协议运行一个包含两方任务的作业。
+本教程以隐语 ECDH 算法互联互通算子为示例，介绍如何通过互联互通银联 BFIA（Beijing FinTech Industry Alliance 北京金融科技产业联盟）协议运行一个包含两方任务的作业。
 
 在本教程中，通过两个 Kuscia Autonomy 节点来模拟不同框架底座的节点。在这两个节点之间，通过互联互通银联 BFIA 协议运行一个包含两方任务的作业。
+
+**注意：** 银联 BFIA 协议请参考：https://github.com/secretflow/InterOp
 
 ## 准备环境
 
@@ -21,66 +21,58 @@
 ./kuscia.sh p2p -P bfia -a none
 ```
 
-### 准备工具脚本
+### 应用 AppImage 配置
 
-```shell
-docker cp ${USER}-kuscia-autonomy-alice:/home/kuscia/scripts/user/bfia/ .
-```
+将 AppImage 配置文件应用到 Kuscia 集群中，该配置定义了隐语 ECDH 算法互联互通的镜像和部署模板。配置文件在容器的 `/home/kuscia/scripts/user/bfia/ic-ecdh.yaml`。
 
-### 准备秘密分享-逻辑回归（SS-LR）算子镜像
-
-1. 准备 Alice 节点中算子镜像
+1. 在 Alice 节点应用配置
 
     ```shell
-    ./bfia/prepare_ss_lr_image.sh -k ${USER}-kuscia-autonomy-alice
+    docker exec -it ${USER}-kuscia-autonomy-alice kubectl apply -f /home/kuscia/scripts/user/bfia/ic-ecdh.yaml
     ```
 
-2. 准备 Bob 节点中算子镜像
+2. 在 Bob 节点应用配置
 
     ```shell
-    ./bfia/prepare_ss_lr_image.sh -k ${USER}-kuscia-autonomy-bob
+    docker exec -it ${USER}-kuscia-autonomy-bob kubectl apply -f /home/kuscia/scripts/user/bfia/ic-ecdh.yaml
     ```
 
-3. 工具帮助信息
+### 准备数据
+
+Kuscia 容器中已经包含了示例数据文件，需要将数据文件复制到数据存储目录。
+
+#### 复制示例数据文件
+
+将容器中的示例数据文件复制到数据存储目录：
+
+1. 在 Alice 节点复制数据文件
 
     ```shell
-    ./bfia/prepare_ss_lr_image.sh -h
+    docker exec -it ${USER}-kuscia-autonomy-alice cp /home/kuscia/scripts/user/bfia/breast_hetero_guest.csv /home/kuscia/var/storage/data/
+    docker exec -it ${USER}-kuscia-autonomy-alice cp /home/kuscia/scripts/user/bfia/breast_hetero_host.csv /home/kuscia/var/storage/data/
     ```
 
-### 部署 TTP Server 服务
-
-因为秘密分享-逻辑回归（SS-LR）算子依赖一个可信第三方 TTP（Trusted Third Party）Server，所以本教程使用本地 Docker 容器的方式和运行银联 BFIA 协议的节点容器部署在同一套环境中，从而方便快速搭建运行互联互通银联 BFIA 协议作业的体验环境。
-
-1. 部署 TTP Server 服务
+2. 在 Bob 节点复制数据文件
 
     ```shell
-    ./bfia/deploy_ttp_server.sh
+    docker exec -it ${USER}-kuscia-autonomy-bob cp /home/kuscia/scripts/user/bfia/breast_hetero_guest.csv /home/kuscia/var/storage/data/
+    docker exec -it ${USER}-kuscia-autonomy-bob cp /home/kuscia/scripts/user/bfia/breast_hetero_host.csv /home/kuscia/var/storage/data/
     ```
-
-2. 工具帮助信息
-
-    ```shell
-    ./bfia/deploy_ttp_server.sh -h
-    ```
-
-## 准备数据
-
-您可以使用 Kuscia 中自带的数据文件，或者使用您自己的数据文件。
-
-在 Kuscia 中，节点数据文件的存放路径为节点容器的 `/home/kuscia/var/storage`，您可以在容器中查看这个数据文件。
 
 ### 查看 Kuscia 示例数据
 
 #### 查看 Alice 节点示例数据
 
 ```shell
-docker exec -it ${USER}-kuscia-autonomy-alice more /home/kuscia/var/storage/data/perfect_logit_a.csv
+docker exec -it ${USER}-kuscia-autonomy-alice more /home/kuscia/var/storage/data/breast_hetero_guest.csv
+docker exec -it ${USER}-kuscia-autonomy-alice more /home/kuscia/var/storage/data/breast_hetero_host.csv
 ```
 
 #### 查看 Bob 节点示例数据
 
 ```shell
-docker exec -it ${USER}-kuscia-autonomy-bob more /home/kuscia/var/storage/data/perfect_logit_b.csv
+docker exec -it ${USER}-kuscia-autonomy-bob more /home/kuscia/var/storage/data/breast_hetero_guest.csv
+docker exec -it ${USER}-kuscia-autonomy-bob more /home/kuscia/var/storage/data/breast_hetero_host.csv
 ```
 
 ### 准备您自己的数据
@@ -114,29 +106,29 @@ docker exec -it ${USER}-kuscia-autonomy-alice bash
 
 下面的示例展示了一个 KusciaJob， 该作业包含 1 个任务
 
-- 算子通过读取 alice 和 bob 的数据文件，完成秘密分享逻辑回归任务。
+- 算子通过读取 alice 和 bob 的数据文件，完成 ECDH PSI（隐私集合求交）任务。
 
-- KusciaJob 的名称为 job-ss-lr，在一个 Kuscia 集群中，这个名称必须是唯一的，由 `.metadata.name` 指定。
+- KusciaJob 的名称为 job-ic-ecdh，在一个 Kuscia 集群中，这个名称必须是唯一的，由 `.metadata.name` 指定。
 
-在 Alice 容器中，创建文件 job-ss-lr.yaml，内容如下：
+在 Alice 容器中，创建文件 job-ic-ecdh.yaml，内容如下：
 
 ```yaml
 apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
-  name: job-ss-lr
+  name: job-ic-ecdh
   namespace: cross-domain
 spec:
   initiator: alice
   tasks:
-  - alias: ss_lr_1
-    appImage: ss-lr
+  - alias: ic_psi_ecdh_1
+    appImage: ic-ecdh
     parties:
     - domainID: alice
-      role: host
-    - domainID: bob
       role: guest
-    taskInputConfig: '{"name":"ss_lr_1","module_name":"ss_lr","output":[{"type":"dataset","key":"result"}],"role":{"host":["alice"],"guest":["bob"]},"initiator":{"role":"host","node_id":"alice"},"task_params":{"host":{"0":{"has_label":true,"name":"perfect_logit_a.csv","namespace":"data"}},"guest":{"0":{"has_label":false,"name":"perfect_logit_b.csv","namespace":"data"}},"common":{"skip_rows":1,"algo":"ss_lr","protocol_families":"ss","batch_size":21,"last_batch_policy":"discard","num_epoch":1,"l0_norm":0,"l1_norm":0,"l2_norm":0.5,"optimizer":"sgd","learning_rate":0.0001,"sigmoid_mode":"minimax_1","protocol":"semi2k","field":64,"fxp_bits":18,"trunc_mode":"probabilistic","shard_serialize_format":"raw","use_ttp":true,"ttp_server_host":"ttp-server:9449","ttp_session_id":"interconnection-root","ttp_adjust_rank":0}}}'
+    - domainID: bob
+      role: host
+    taskInputConfig: '{"name":"ic_psi_ecdh_1","module_name":"ic-ecdh","output":[{"type":"dataset","key":"data"},{"type":"report","key":"summary"}],"role":{"host":["bob"],"guest":["alice"]},"initiator":{"role":"guest","node_id":"alice"},"task_params":{"host":{"0":{"rank":1,"field_names":"id","name":"breast_hetero_host.csv","namespace":"data"}},"guest":{"0":{"namespace":"data","name":"breast_hetero_guest.csv","rank":0,"field_names":"id"}},"common":{"result_to_rank":-1,"algo":"ecdh_psi","protocol_families":"ecc","curve_type":"curve25519","hash_type":"sha_256","hash2curve_strategy":"direct_hash_as_point_x","point_octet_format":"uncompressed","bit_length_after_truncated":-1}}}'
     tolerable: false
 ```
 
@@ -144,15 +136,15 @@ spec:
 
 KusciaJob 中算子参数由 `taskInputConfig` 字段定义，对于不同的算子，算子的参数不同
 
-- 秘密分享-逻辑回归（SS-LR）算子相关信息可参考 [SS-LR 参考实现](https://github.com/secretflow/interconnection-impl)
-- 本教程秘密分享-逻辑回归（SS-LR）算子对应的 KusciaJob TaskInputConfig 结构可参考 [TaskInputConfig 结构示例](#ss-lr-task-input-config)
+- ECDH PSI 算子相关信息可参考 https://github.com/secretflow/InterOp
+- 本教程 ECDH PSI 算子对应的 KusciaJob TaskInputConfig 结构可参考 [TaskInputConfig 结构示例](#ic-ecdh-task-input-config)
 
 #### 提交 KusciaJob
 
 现在已经配置好了一个 KusciaJob，接下来，让运行以下命令提交这个 KusciaJob。
 
 ```shell
-kubectl apply -f job-ss-lr.yaml
+kubectl apply -f job-ic-ecdh.yaml
 ```
 
 ### 通过银联 BFIA 协议 API 接口提交作业
@@ -167,13 +159,82 @@ docker exec -it ${USER}-kuscia-autonomy-alice bash
 最后，InterConn 控制器在 Kuscia 中创建 KusciaJob 资源。
 
 ```shell
-curl -v -X POST 'http://127.0.0.1:8084/v1/interconn/schedule/job/create' \
+curl -X POST 'http://127.0.0.1:8084/v1/interconn/schedule/job/create' \
 --header 'Content-Type: application/json' \
--d '{"job_id":"job-ss-lr","dag":{"version":"2.0.0","components":[{"code":"ss-lr","name":"ss_lr_1","module_name":"ss_lr","version":"v1.0.0","input":[],"output":[{"type":"dataset","key":"result"}]}]},"config":{"role":{"host":["alice"],"guest":["bob"]},"initiator":{"role":"host","node_id":"alice"},"job_params":{"host":{"0":{}},"guest":{"0":{}}},"task_params":{"host":{"0":{"ss_lr_1":{"name":"perfect_logit_a.csv","namespace":"data","has_label":true}}},"arbiter":{},"guest":{"0":{"ss_lr_1":{"name":"perfect_logit_b.csv","namespace":"data","has_label":false}}},"common":{"ss_lr_1":{"skip_rows":1,"algo":"ss_lr","protocol_families":"ss","batch_size":21,"last_batch_policy":"discard","num_epoch":1,"l0_norm":0,"l1_norm":0,"l2_norm":0.5,"optimizer":"sgd","learning_rate":0.0001,"sigmoid_mode":"minimax_1","protocol":"semi2k","field":64,"fxp_bits":18,"trunc_mode":"probabilistic","shard_serialize_format":"raw","use_ttp":true,"ttp_server_host":"ttp-server:9449","ttp_session_id":"interconnection-root","ttp_adjust_rank":0}}},"version":"2.0.0"}}'
-
+-d '{
+  "job_id": "job-ic-ecdh",
+  "dag": {
+    "version": "1.0.0",
+    "components": [{
+      "code": "ic-ecdh",
+      "name": "ic_psi_ecdh_1",
+      "module_name": "ic-ecdh",
+      "componentName": "ic-ecdh",
+      "provider": "morse",
+      "version": "1.0.0",
+      "input": [],
+      "output": [
+        {"type": "dataset", "key": "data"},
+        {"type": "report", "key": "summary"}
+      ]
+    }]
+  },
+  "config": {
+    "role": {
+      "host": ["bob"],
+      "guest": ["alice"]
+    },
+    "initiator": {
+      "role": "guest",
+      "node_id": "alice"
+    },
+    "job_params": {
+      "common": {"sync_type": "poll"},
+      "guest": {"0": {"resources": {"cpu": -1, "memory": -1, "disk": -1}}},
+      "host": {"0": {"resources": {"cpu": -1, "memory": -1, "disk": -1}}},
+      "arbiter": {}
+    },
+    "task_params": {
+      "host": {
+        "0": {
+          "ic_psi_ecdh_1": {
+            "rank": 1,
+            "field_names": "id",
+            "name": "breast_hetero_host.csv",
+            "namespace": "data"
+          }
+        }
+      },
+      "arbiter": {},
+      "guest": {
+        "0": {
+          "ic_psi_ecdh_1": {
+            "namespace": "data",
+            "name": "breast_hetero_guest.csv",
+            "rank": 0,
+            "field_names": "id"
+          }
+        }
+      },
+      "common": {
+        "ic_psi_ecdh_1": {
+          "result_to_rank": -1,
+          "algo": "ecdh_psi",
+          "protocol_families": "ecc",
+          "curve_type": "curve25519",
+          "hash_type": "sha_256",
+          "hash2curve_strategy": "direct_hash_as_point_x",
+          "point_octet_format": "uncompressed",
+          "bit_length_after_truncated": -1
+        }
+      }
+    },
+    "version": "1.0.0"
+  }
+}'
 ```
 
-提交作业接口请求参数内容结构请参考 [提交 SS-LR 作业接口请求内容示例](#bfia-create-job-req-body)。
+提交作业接口请求参数内容结构请参考 [提交 ECDH PSI 作业接口请求内容示例](#bfia-create-job-req-body)。
 
 {#get-kuscia-job-phase}
 
@@ -192,17 +253,17 @@ kubectl get kj -n cross-domain
 
 ```shell
 NAME            STARTTIME   COMPLETIONTIME   LASTRECONCILETIME   PHASE
-job-ss-lr       3s                           3s                  Running
+job-ic-ecdh     3s                           3s                  Running
 ```
 
-> job-ss-lr  就是刚刚创建出来的 KusciaJob。
+> job-ic-ecdh  就是刚刚创建出来的 KusciaJob。
 
 ### 查看运行中的 KusciaJob 的详细状态
 
-通过指定 `-o yaml` 参数，能够以 Yaml 的形式看到 KusciaJob 的详细状态。job-ss-lr 是提交的作业名称。
+通过指定 `-o yaml` 参数，能够以 Yaml 的形式看到 KusciaJob 的详细状态。job-ic-ecdh 是提交的作业名称。
 
 ```shell
-kubectl get kj job-ss-lr -n cross-domain -o yaml
+kubectl get kj job-ic-ecdh -n cross-domain -o yaml
 ```
 
 如果任务成功了，您可以看到如下输出：
@@ -211,54 +272,53 @@ kubectl get kj job-ss-lr -n cross-domain -o yaml
 apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
 metadata:
-  creationTimestamp: "2023-07-01T02:21:04Z"
-  generation: 3
+  annotations:
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"kuscia.secretflow/v1alpha1","kind":"KusciaJob","metadata":{"annotations":{},"name":"job-ic-ecdh","namespace":"cross-domain"},"spec":{"initiator":"alice","tasks":[{"alias":"ic_psi_ecdh_1","appImage":"ic-ecdh","parties":[{"domainID":"alice","role":"guest"},{"domainID":"bob","role":"host"}],"taskInputConfig":"{\"name\":\"ic_psi_ecdh_1\",\"module_name\":\"ic-ecdh\",\"output\":[{\"type\":\"dataset\",\"key\":\"data\"},{\"type\":\"report\",\"key\":\"summary\"}],\"role\":{\"host\":[\"bob\"],\"guest\":[\"alice\"]},\"initiator\":{\"role\":\"guest\",\"node_id\":\"alice\"},\"task_params\":{\"host\":{\"0\":{\"rank\":1,\"field_names\":\"id\",\"name\":\"breast_hetero_host.csv\",\"namespace\":\"data\"}},\"guest\":{\"0\":{\"namespace\":\"data\",\"name\":\"breast_hetero_guest.csv\",\"rank\":0,\"field_names\":\"id\"}},\"common\":{\"result_to_rank\":-1,\"algo\":\"ecdh_psi\",\"protocol_families\":\"ecc\",\"curve_type\":\"curve25519\",\"hash_type\":\"sha_256\",\"hash2curve_strategy\":\"direct_hash_as_point_x\",\"point_octet_format\":\"uncompressed\",\"bit_length_after_truncated\":-1}}}","tolerable":false}]}}
+    kuscia.secretflow/initiator: alice
+    kuscia.secretflow/interconn-bfia-parties: bob
+    kuscia.secretflow/interconn-self-parties: alice
+    kuscia.secretflow/self-cluster-as-initiator: "true"
+  creationTimestamp: "2026-02-26T02:26:32Z"
+  generation: 2
   labels:
     kuscia.secretflow/interconn-protocol-type: bfia
-    kuscia.secretflow/self-cluster-as-initiator: "true"
-  name: job-ss-lr
+    kuscia.secretflow/job-stage: Start
+    kuscia.secretflow/job-stage-trigger: alice
+    kuscia.secretflow/job-stage-version: "1"
+  name: job-ic-ecdh
   namespace: cross-domain
-  resourceVersion: "50438"
-  uid: 408a03ae-69c2-4fa8-a638-b47b6dbf530f
+  resourceVersion: "2998"
+  uid: 084c4ada-4458-4745-9bbf-bf2b87edacaa
 spec:
   initiator: alice
-  maxParallelism: 2
+  maxParallelism: 1
   scheduleMode: Strict
-  stage: Start
   tasks:
-  - alias: ss_lr_1
-    appImage: ss-lr
+  - alias: ic_psi_ecdh_1
+    appImage: ic-ecdh
     parties:
     - domainID: alice
-      role: host
-    - domainID: bob
       role: guest
-    taskID: job-ss-lr-26e3489ac66e
-    taskInputConfig: '{"name":"ss_lr_1","module_name":"ss_lr","output":[{"type":"dataset","key":"result"}],"role":{"host":["alice"],"guest":["bob"]},"initiator":{"role":"host","node_id":"alice"},"task_params":{"host":{"0":{"has_label":true,"name":"perfect_logit_a.csv","namespace":"data"}},"guest":{"0":{"has_label":false,"name":"perfect_logit_b.csv","namespace":"data"}},"common":{"algo":"ss_lr","batch_size":21,"field":64,"fxp_bits":18,"l0_norm":0,"l1_norm":0,"l2_norm":0.5,"last_batch_policy":"discard","learning_rate":0.0001,"num_epoch":1,"optimizer":"sgd","protocol":"semi2k","protocol_families":"ss","shard_serialize_format":"raw","sigmoid_mode":"minimax_1","skip_rows":1,"trunc_mode":"probabilistic","ttp_adjust_rank":0,"ttp_server_host":"ttp-server:9449","ttp_session_id":"interconnection-root","use_ttp":true}}}'
+    - domainID: bob
+      role: host
+    taskID: job-ic-ecdh-e8f1df611d09
+    taskInputConfig: '{"name":"ic_psi_ecdh_1","module_name":"ic-ecdh","output":[{"type":"dataset","key":"data"},{"type":"report","key":"summary"}],"role":{"host":["bob"],"guest":["alice"]},"initiator":{"role":"guest","node_id":"alice"},"task_params":{"host":{"0":{"rank":1,"field_names":"id","name":"breast_hetero_host.csv","namespace":"data"}},"guest":{"0":{"namespace":"data","name":"breast_hetero_guest.csv","rank":0,"field_names":"id"}},"common":{"result_to_rank":-1,"algo":"ecdh_psi","protocol_families":"ecc","curve_type":"curve25519","hash_type":"sha_256","hash2curve_strategy":"direct_hash_as_point_x","point_octet_format":"uncompressed","bit_length_after_truncated":-1}}}'
     tolerable: false
 status:
-  completionTime: "2023-07-01T02:21:14Z"
+  completionTime: "2026-02-26T02:32:52Z"
   conditions:
-  - lastTransitionTime: "2023-07-01T02:21:04Z"
+  - lastTransitionTime: "2026-02-26T02:26:32Z"
     status: "True"
     type: JobValidated
-  - lastTransitionTime: "2023-07-01T02:21:04Z"
-    status: "True"
-    type: JobCreateInitialized
-  - lastTransitionTime: "2023-07-01T02:21:04Z"
-    status: "True"
-    type: JobCreateSucceeded
-  - lastTransitionTime: "2023-07-01T02:21:04Z"
-    status: "True"
-    type: JobStartInitialized
-  - lastTransitionTime: "2023-07-01T02:21:04Z"
-    status: "True"
-    type: JobStartSucceeded
-  lastReconcileTime: "2023-07-01T02:21:14Z"
+  lastReconcileTime: "2026-02-26T02:32:52Z"
   phase: Succeeded
-  startTime: "2023-07-01T02:21:04Z"
+  stageStatus:
+    alice: JobStartStageSucceeded
+    bob: JobStartStageSucceeded
+  startTime: "2026-02-26T02:26:32Z"
   taskStatus:
-    job-ss-lr-26e3489ac66e: Succeeded
+    job-ic-ecdh-e8f1df611d09: Succeeded
 ```
 
 - `status` 字段记录了 KusciaJob 的运行状态，`.status.phase` 字段描述了 KusciaJob 的整体状态，而 `.status.taskStatus` 则描述了包含的 KusciaTask 的状态。
@@ -269,12 +329,12 @@ status:
 KusciaJob 中的每一个 KusciaTask 都有一个 `taskID`，通过 `taskID` 我们可以查看 KusciaTask 的详细状态。
 
 ```shell
-kubectl get kt job-ss-lr-26e3489ac66e -n cross-domain -o yaml
+kubectl get kt job-ic-ecdh-{random-id} -n cross-domain -o yaml
 ```
 
 KusciaTask 的介绍，请参考 [KusciaTask](../reference/concepts/kusciatask_cn.md)。
 
-## 查看 SS-LR 算子运行结果
+## 查看 ECDH PSI 算子运行结果
 
 可以通过 [查看 KusciaJob 运行状态](#get-kuscia-job-phase) 查询作业的运行状态。 当作业状态 PHASE 变成 `Succeeded` 时，可以查看算子输出结果。
 
@@ -292,21 +352,21 @@ KusciaTask 的介绍，请参考 [KusciaTask](../reference/concepts/kusciatask_c
 2. 查看 KusciaJob 作业状态
 
     ```shell
-    kubectl get kj job-ss-lr -n cross-domain
-    NAME        STARTTIME   COMPLETIONTIME   LASTRECONCILETIME   PHASE
-    job-ss-lr   13s         2s               2s                  Succeeded
+    kubectl get kj job-ic-ecdh -n cross-domain
+    NAME            STARTTIME   COMPLETIONTIME   LASTRECONCILETIME   PHASE
+    job-ic-ecdh     13s         2s               2s                  Succeeded
     ```
 
-3. 查看 SS-LR 算子输出结果
+3. 查看 ECDH PSI 算子输出结果
 
-    输出内容表示 SS-LR 算子权重向量的密态分片
+    输出内容表示 ECDH PSI 算子的求交结果和统计报告
 
     ```shell
     # View the output result in the alice container
-    more /home/kuscia/var/storage/job-ss-lr-host-0/job-ss-lr-{random-id}-result
+    more /home/kuscia/var/storage/job-ic-ecdh-guest-0/{kt-name}-data
 
     # View the output result in the bob container
-    more /home/kuscia/var/storage/job-ss-lr-guest-0/job-ss-lr-{random-id}-result
+    more /home/kuscia/var/storage/job-ic-ecdh-host-0/{kt-name}-data
     ```
 
 ## 删除 KusciaJob
@@ -314,71 +374,66 @@ KusciaTask 的介绍，请参考 [KusciaTask](../reference/concepts/kusciatask_c
 当您想清理这个 KusciaJob 时，您可以通过下面的命令完成：
 
 ```shell
-kubectl delete kj job-ss-lr -n cross-domain
+kubectl delete kj job-ic-ecdh -n cross-domain
 ```
 
 当这个 KusciaJob 被清理时， 这个 KusciaJob 创建的 KusciaTask 也会一起被清理。
 
 ## 参考
 
-{#ss-lr-task-input-config}
+{#ic-ecdh-task-input-config}
 
-### SS-LR 算子对应的 TaskInputConfig 结构示例
+### ECDH PSI 算子对应的 TaskInputConfig 结构示例
 
 ```json
 {
-  "name": "ss_lr_1",
-  "module_name": "ss_lr",
-  "input":[],
-  "output": [{
-    "type": "dataset",
-    "key": "result"
-  }],
+  "name": "ic_psi_ecdh_1",
+  "module_name": "ic-ecdh",
+  "input": [],
+  "output": [
+    {
+      "type": "dataset",
+      "key": "data"
+    },
+    {
+      "type": "report",
+      "key": "summary"
+    }
+  ],
   "role": {
-    "host": ["alice"],
-    "guest": ["bob"]
+    "host": ["bob"],
+    "guest": ["alice"]
   },
   "initiator": {
-    "role": "host",
+    "role": "guest",
     "node_id": "alice"
   },
   "task_params": {
     "host": {
       "0": {
-        "has_label": true,
-        "name": "perfect_logit_a.csv",
+        "rank": 1,
+        "field_names": "id",
+        "name": "breast_hetero_host.csv",
         "namespace": "data"
       }
     },
     "guest": {
       "0": {
-        "has_label": false,
-        "name": "perfect_logit_b.csv",
-        "namespace": "data"
+        "namespace": "data",
+        "name": "breast_hetero_guest.csv",
+        "rank": 0,
+        "field_names": "id"
       }
     },
     "common": {
-      "skip_rows": 1,
-      "algo": "ss_lr",
-      "protocol_families": "ss",
-      "batch_size": 21,
-      "last_batch_policy": "discard",
-      "num_epoch": 1,
-      "l0_norm": 0,
-      "l1_norm": 0,
-      "l2_norm": 0.5,
-      "optimizer": "sgd",
-      "learning_rate": 0.0001,
-      "sigmoid_mode": "minimax_1",
-      "protocol": "semi2k",
-      "field": 64,
-      "fxp_bits": 18,
-      "trunc_mode": "probabilistic",
-      "shard_serialize_format": "raw",
-      "use_ttp": true,
-      "ttp_server_host": "ttp-server:9449",
-      "ttp_session_id": "interconnection-root",
-      "ttp_adjust_rank": 0
+      "result_to_rank": -1,
+      "algo": "ecdh_psi",
+      "protocol_families": "ecc",
+      "curve_type": "curve25519",
+      "hash_type": "sha_256",
+      "hash2curve_strategy": "direct_hash_as_point_x",
+      "point_octet_format": "uncompressed",
+      "bit_length_after_truncated": -1
     }
   }
 }
@@ -396,89 +451,102 @@ kubectl delete kj job-ss-lr -n cross-domain
 
 {#bfia-create-job-req-body}
 
-### 提交 SS-LR 作业接口请求内容示例
+### 提交 ECDH PSI 作业接口请求内容示例
 
 ```json
 {
-  "job_id": "job-ss-lr",
+  "job_id": "job-ic-ecdh",
   "dag": {
-    "version": "2.0.0",
+    "version": "1.0.0",
     "components": [{
-      "code": "ss-lr",
-      "name": "ss_lr_1",
-      "module_name": "ss_lr",
-      "version": "v1.0.0",
+      "code": "ic-ecdh",
+      "name": "ic_psi_ecdh_1",
+      "module_name": "ic-ecdh",
+      "componentName": "ic-ecdh",
+      "provider": "morse",
+      "version": "1.0.0",
       "input": [],
-      "output": [{
-        "type": "dataset",
-        "key": "result"
-      }]
+      "output": [
+        {
+          "type": "dataset",
+          "key": "data"
+        },
+        {
+          "type": "report",
+          "key": "summary"
+        }
+      ]
     }]
   },
   "config": {
     "role": {
-      "host": ["alice"],
-      "guest": ["bob"]
+      "host": ["bob"],
+      "guest": ["alice"]
     },
     "initiator": {
-      "role": "host",
+      "role": "guest",
       "node_id": "alice"
     },
     "job_params": {
-      "host": {
-        "0": {}
+      "common": {
+        "sync_type": "poll"
       },
       "guest": {
-        "0": {}
-      }
+        "0": {
+          "resources": {
+            "cpu": -1,
+            "memory": -1,
+            "disk": -1
+          }
+        }
+      },
+      "host": {
+        "0": {
+          "resources": {
+            "cpu": -1,
+            "memory": -1,
+            "disk": -1
+          }
+        }
+      },
+      "arbiter": {}
     },
     "task_params": {
       "host": {
         "0": {
-          "ss_lr_1": {
-            "name": "perfect_logit_a.csv",
-            "namespace": "data",
-            "has_label": true
+          "ic_psi_ecdh_1": {
+            "rank": 1,
+            "field_names": "id",
+            "name": "breast_hetero_host.csv",
+            "namespace": "data"
           }
         }
       },
       "arbiter": {},
       "guest": {
         "0": {
-          "ss_lr_1": {
-            "name": "perfect_logit_b.csv",
+          "ic_psi_ecdh_1": {
             "namespace": "data",
-            "has_label": false
+            "name": "breast_hetero_guest.csv",
+            "rank": 0,
+            "field_names": "id"
           }
         }
       },
       "common": {
-        "ss_lr_1": {
-          "skip_rows": 1,
-          "algo": "ss_lr",
-          "protocol_families": "ss",
-          "batch_size": 21,
-          "last_batch_policy": "discard",
-          "num_epoch": 1,
-          "l0_norm": 0,
-          "l1_norm": 0,
-          "l2_norm": 0.5,
-          "optimizer": "sgd",
-          "learning_rate": 0.0001,
-          "sigmoid_mode": "minimax_1",
-          "protocol": "semi2k",
-          "field": 64,
-          "fxp_bits": 18,
-          "trunc_mode": "probabilistic",
-          "shard_serialize_format": "raw",
-          "use_ttp": true,
-          "ttp_server_host": "ttp-server:9449",
-          "ttp_session_id": "interconnection-root",
-          "ttp_adjust_rank": 0
+        "ic_psi_ecdh_1": {
+          "result_to_rank": -1,
+          "algo": "ecdh_psi",
+          "protocol_families": "ecc",
+          "curve_type": "curve25519",
+          "hash_type": "sha_256",
+          "hash2curve_strategy": "direct_hash_as_point_x",
+          "point_octet_format": "uncompressed",
+          "bit_length_after_truncated": -1
         }
       }
     },
-    "version": "2.0.0"
+    "version": "1.0.0"
   }
 }
 ```

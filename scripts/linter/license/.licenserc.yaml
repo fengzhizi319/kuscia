@@ -96,6 +96,7 @@ header:
     - 'scripts/tools/register_app_image/*.yaml'
     - 'thirdparty/fate/scripts/templates/**/*.yaml'
     - 'thirdparty/fate/build/dockerfile/conf/fate_deploy.yaml'
+    - 'scripts/user/bfia/*.yaml'
 
     # For pkg go files.
     - 'pkg/agent/container/testing/mock_runtime_cache.go'

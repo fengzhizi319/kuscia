@@ -36,11 +36,93 @@ function oneTimeTearDown() {
 }
 
 function test_bfia_job() {
-  local job_id=job-ss-lr
-  docker exec -it "${AUTONOMY_ALICE_CONTAINER}" kubectl create -f kuscia-job.yaml
+  local job_id=job-ic-ecdh
+  
+  # Create BFIA job via HTTP API inside alice container
+  docker exec -it ${AUTONOMY_ALICE_CONTAINER} bash -c 'curl -X POST "http://127.0.0.1:8084/v1/interconn/schedule/job/create" \
+    --header "Content-Type: application/json" \
+    -d "{
+      \"job_id\": \"'${job_id}'\",
+      \"dag\": {
+        \"version\": \"1.0.0\",
+        \"components\": [{
+          \"code\": \"ic-ecdh\",
+          \"name\": \"ic_psi_ecdh_1\",
+          \"module_name\": \"ic-ecdh\",
+          \"componentName\": \"ic-ecdh\",
+          \"provider\": \"morse\",
+          \"version\": \"1.0.0\",
+          \"input\": [],
+          \"output\": [
+            {\"type\": \"dataset\", \"key\": \"data\"},
+            {\"type\": \"report\", \"key\": \"summary\"}
+          ]
+        }]
+      },
+      \"config\": {
+        \"role\": {
+          \"host\": [\"bob\"],
+          \"guest\": [\"alice\"]
+        },
+        \"initiator\": {
+          \"role\": \"guest\",
+          \"node_id\": \"alice\"
+        },
+        \"job_params\": {
+          \"common\": {\"sync_type\": \"poll\"},
+          \"guest\": {\"0\": {\"resources\": {\"cpu\": -1, \"memory\": -1, \"disk\": -1}}},
+          \"host\": {\"0\": {\"resources\": {\"cpu\": -1, \"memory\": -1, \"disk\": -1}}},
+          \"arbiter\": {}
+        },
+        \"task_params\": {
+          \"host\": {
+            \"0\": {
+              \"ic_psi_ecdh_1\": {
+                \"rank\": 1,
+                \"field_names\": \"id\",
+                \"name\": \"breast_hetero_host.csv\",
+                \"namespace\": \"data\"
+              }
+            }
+          },
+          \"arbiter\": {},
+          \"guest\": {
+            \"0\": {
+              \"ic_psi_ecdh_1\": {
+                \"namespace\": \"data\",
+                \"name\": \"breast_hetero_guest.csv\",
+                \"rank\": 0,
+                \"field_names\": \"id\"
+              }
+            }
+          },
+          \"common\": {
+            \"ic_psi_ecdh_1\": {
+              \"result_to_rank\": -1,
+              \"algo\": \"ecdh_psi\",
+              \"protocol_families\": \"ecc\",
+              \"curve_type\": \"curve25519\",
+              \"hash_type\": \"sha_256\",
+              \"hash2curve_strategy\": \"direct_hash_as_point_x\",
+              \"point_octet_format\": \"uncompressed\",
+              \"bit_length_after_truncated\": -1
+            }
+          }
+        },
+        \"version\": \"1.0.0\"
+      }
+    }"'
+  
+  # Wait for job completion using the new job ID format
   assertEquals "Kuscia job failed" "Succeeded" "$(wait_kuscia_job_until "${AUTONOMY_ALICE_CONTAINER}" 600 ${job_id})"
-  assertEquals "Kuscia data file exist" "Y" "$(exist_container_file "${AUTONOMY_ALICE_CONTAINER}" var/storage/${job_id}-host-0)"
-  unset job_id
+
+  # Get kusciatask name by kusciajob
+  local kt_name=$(docker exec -it ${AUTONOMY_ALICE_CONTAINER} kubectl get kt -n cross-domain -o jsonpath='{.items[?(@.metadata.annotations.kuscia\.secretflow/job-id=="'${job_id}'")].metadata.name}')
+  
+  # Verify output files exist (adjust path based on new job structure)
+  assertEquals "Kuscia report file exist" "Y" "$(exist_container_file "${AUTONOMY_ALICE_CONTAINER}" var/storage/${job_id}-guest-0/${kt_name}-data)"
+  
+  unset job_id kt_name
 }
 
 . ./test/vendor/shunit2

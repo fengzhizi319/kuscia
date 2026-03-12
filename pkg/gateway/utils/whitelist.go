@@ -48,7 +48,7 @@ func NewWhitelistChecker(whitelist string) (*Whitelist, error) {
 		return nil, nil
 	}
 
-	f, err := os.OpenFile(whitelist, os.O_RDONLY, 0644)
+	f, err := os.OpenFile(whitelist, os.O_RDONLY, 0600)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open whitelist file: %s", whitelist)
 	}

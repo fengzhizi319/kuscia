@@ -20,7 +20,8 @@ package org.ppc.ptp;
 option go_package = "github.com/secretflow/kuscia/transport/proto/ptp";
 
 message TransportOutbound {
-  bytes payload = 1;                  // 二进制报文
-  string code = 2;                    // 状态码
-  string message = 3;                 // 状态说明
+  map<string, string>  metadata = 1;  // Check the protocol type. If it is the BFIA protocol, skip the CDR check.
+  bytes payload = 2;                  // Binary message
+  string code = 3;                    // Status code
+  string message = 4;                 // Status Description
 }

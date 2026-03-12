@@ -20,9 +20,13 @@ import (
 	envoycluster "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	core "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	route "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	grpcreversebridge "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/grpc_http1_reverse_bridge/v3"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	"github.com/secretflow/kuscia/pkg/gateway/xds"
+	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
 const (
@@ -80,6 +84,20 @@ func (handler *BFIAHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainR
 				},
 				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 			},
+			{
+				Header: &core.HeaderValue{
+					Key:   "x-ptp-uri",
+					Value: "https://ptp.cn/v1/interconn/chan/push",
+				},
+				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+			},
+			{
+				Header: &core.HeaderValue{
+					Key:   "x-ptp-version",
+					Value: "1",
+				},
+				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+			},
 		},
 	}
 
@@ -107,8 +125,38 @@ func (handler *BFIAHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.DomainR
 				},
 				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
 			},
+			{
+				Header: &core.HeaderValue{
+					Key:   "x-target-node-id",
+					Value: dr.Spec.Destination,
+				},
+				AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,
+			},
 		},
 	}
+
+	// Add typed_per_filter_config to disable grpc_http1_reverse_bridge
+	disable := &grpcreversebridge.FilterConfigPerRoute{
+		Disabled: true,
+	}
+	b, err := proto.Marshal(disable)
+	if err != nil {
+		nlog.Errorf("Marshal grpc reverse bridge config failed with %v", err)
+	} else {
+		transportRoute.TypedPerFilterConfig = map[string]*anypb.Any{
+			"envoy.filters.http.grpc_http1_reverse_bridge": {
+				TypeUrl: "type.googleapis.com/envoy.extensions.filters.http.grpc_http1_reverse_bridge.v3.FilterConfigPerRoute",
+				Value:   b,
+			},
+		}
+		scheduleRoute.TypedPerFilterConfig = map[string]*anypb.Any{
+			"envoy.filters.http.grpc_http1_reverse_bridge": {
+				TypeUrl: "type.googleapis.com/envoy.extensions.filters.http.grpc_http1_reverse_bridge.v3.FilterConfigPerRoute",
+				Value:   b,
+			},
+		}
+	}
+
 	return []*route.Route{transportRoute, scheduleRoute}
 }
 

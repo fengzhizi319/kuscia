@@ -25,6 +25,7 @@ import (
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	"github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1/interconn"
@@ -126,7 +127,7 @@ func Test_stopTaskHandler_Handle(t *testing.T) {
 					TaskId: "task-1",
 				},
 			},
-			wantCode: http.StatusOK,
+			wantCode: common.InterconnResponseCodeSuccess,
 		},
 		{
 			name: "stop task failed",
@@ -146,7 +147,7 @@ func Test_stopTaskHandler_Handle(t *testing.T) {
 					TaskId: "task-2",
 				},
 			},
-			wantCode: http.StatusOK,
+			wantCode: common.InterconnResponseCodeSuccess,
 		},
 		{
 			name: "stop task succeeded",
@@ -156,7 +157,7 @@ func Test_stopTaskHandler_Handle(t *testing.T) {
 					TaskId: "task-2",
 				},
 			},
-			wantCode: http.StatusOK,
+			wantCode: common.InterconnResponseCodeSuccess,
 		},
 	}
 	for _, tt := range tests {

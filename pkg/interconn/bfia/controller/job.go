@@ -277,6 +277,10 @@ func (c *Controller) createJob(ctx context.Context, kj *kusciaapisv1alpha1.Kusci
 	go func(cacheKeyName string) {
 		defer c.inflightRequestCache.Set(cacheKeyName, "", finishedInflightRequestCacheExpiration)
 		wg.Wait()
+		if len(errs) > 0 {
+			nlog.Errorf("create interconn job %v request failed, %v", kj.Name, errs.String())
+		}
+
 		if err = c.updateJobStatus(kj, false, true); err != nil {
 			nlog.Errorf("Update kuscia job %v status condition failed, %v", kj.Name, err)
 		}
@@ -445,6 +449,11 @@ func (c *Controller) startJob(ctx context.Context, kj *kusciaapisv1alpha1.Kuscia
 	go func(cacheKeyName string) {
 		defer c.inflightRequestCache.Set(cacheKeyName, "", finishedInflightRequestCacheExpiration)
 		wg.Wait()
+
+		if len(errs) > 0 {
+			nlog.Errorf("start interconn job %v request failed, %v", kj.Name, errs.String())
+		}
+
 		if err := c.updateJobStatus(kj, false, true); err != nil {
 			nlog.Errorf("Update kuscia job %v status condition failed, %v", kj.Name, err)
 		}

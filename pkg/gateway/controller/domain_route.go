@@ -278,6 +278,11 @@ func (c *DomainRouteController) syncHandler(ctx context.Context, key string) err
 		(dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenMethodRSA || dr.Spec.TokenConfig.TokenGenMethod == kusciaapisv1alpha1.TokenGenUIDRSA) {
 		if dr.Spec.Source == c.gateway.Namespace && dr.Status.TokenStatus.RevisionInitializer == c.gateway.Name {
 			if dr.Status.TokenStatus.RevisionToken.Token == "" {
+				// BFIA protocol does not require a token; it directly invokes the updateDomainRoute function.
+				if dr.Spec.InterConnProtocol == kusciaapisv1alpha1.InterConnBFIA {
+					return c.updateDomainRoute(dr)
+				}
+
 				_, ok := c.handshakeCache.Get(dr.Name)
 				if !ok {
 					_ = c.handshakeCache.Add(dr.Name, dr.Name, 2*time.Minute)
@@ -365,6 +370,15 @@ func (c *DomainRouteController) updateDomainRoute(dr *kusciaapisv1alpha1.DomainR
 
 	if len(tokens) == 0 {
 		nlog.Debugf("DomainRoute %s has no available token", key)
+		// BFIA protocol does not require tokens and can proceed with processing.
+		if dr.Spec.InterConnProtocol == kusciaapisv1alpha1.InterConnBFIA {
+			// For the BFIA protocol, routing is generated even without a token.
+			if err := c.updateEnvoyRule(dr, tokens); err != nil {
+				return err
+			}
+			c.drCache.Store(key, dr)
+			return nil
+		}
 		return nil
 	}
 
@@ -499,13 +513,22 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 		nlog.Info("Update rule to master success")
 		return nil
 	} else if dr.Spec.Source == c.gateway.Namespace { // internal
-		token := tokens[len(tokens)-1]
+		// BFIA token is null, kuscia token is not null
+		var token *Token
+		if len(tokens) > 0 {
+			token = tokens[len(tokens)-1]
+		}
+		var tokenStr string
+		if token != nil {
+			tokenStr = token.Token
+		}
+
 		grpcDegrade := false
 		if dr.Labels[grpcDegradeLabel] == "True" {
 			grpcDegrade = true
 		}
 
-		if dr.Spec.BodyEncryption != nil {
+		if dr.Spec.BodyEncryption != nil && token != nil {
 			if err := c.updateEncryptRule(dr, token); err != nil {
 				return err
 			}
@@ -528,7 +551,7 @@ func (c *DomainRouteController) updateEnvoyRule(dr *kusciaapisv1alpha1.DomainRou
 			return nil
 		}
 		// case2: direct route, add virtualhost: source-to-dest-Protocol
-		if err := xds.AddOrUpdateVirtualHost(generateInternalVirtualHost(dr, token.Token, grpcDegrade),
+		if err := xds.AddOrUpdateVirtualHost(generateInternalVirtualHost(dr, tokenStr, grpcDegrade),
 			xds.InternalRoute); err != nil {
 			return err
 		}
@@ -833,7 +856,9 @@ func generateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1al
 			}
 		}
 
-		if !grpcDegrade || dp.Protocol == "GRPC" {
+		// Add the grpc_http1_reverse_bridge configuration only when it is not a BFIA protocol.
+		// Because BFIAHandler has already handled this configuration.
+		if dr.Spec.InterConnProtocol != kusciaapisv1alpha1.InterConnBFIA && (!grpcDegrade || dp.Protocol == "GRPC") {
 			disable := &grpcreversebridge.FilterConfigPerRoute{
 				Disabled: true,
 			}

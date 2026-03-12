@@ -102,16 +102,16 @@ func (d *ModuleRuntimeConfigs) LoadCaDomainKeyAndCert() error {
 }
 
 func (d *ModuleRuntimeConfigs) EnsureDir() error {
-	if err := os.MkdirAll(filepath.Join(d.RootDir, common.CertPrefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(d.RootDir, common.CertPrefix), 0750); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Join(d.RootDir, common.LogPrefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(d.RootDir, common.LogPrefix), 0750); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Join(d.RootDir, common.StdoutPrefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(d.RootDir, common.StdoutPrefix), 0750); err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Join(d.RootDir, common.TmpPrefix), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Join(d.RootDir, common.TmpPrefix), 0750); err != nil {
 		return err
 	}
 	return nil

@@ -1111,6 +1111,10 @@ func (h *RunningHandler) buildPartyTemplate(p kusciaapisv1alpha1.Party, appImage
 	}
 
 	deployTemplate = *ptrDT
+	if deployTemplate.Replicas == nil {
+		var replicas int32 = 1
+		deployTemplate.Replicas = &replicas
+	}
 	totalInstances := len(deployTemplate.Spec.Containers) * int(*(deployTemplate.Replicas))
 
 	var limitResource = corev1.ResourceList{}

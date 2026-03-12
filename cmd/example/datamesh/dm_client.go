@@ -336,7 +336,7 @@ func (m *MockFlightClient) getData(domainDataID string, useRawData bool) error {
 		return err
 	}
 
-	file, err := os.OpenFile(m.outputCSVFilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0644)
+	file, err := os.OpenFile(m.outputCSVFilePath, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
 	if err != nil {
 		nlog.Warnf("Open file:%s", err)
 		return err

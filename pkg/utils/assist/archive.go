@@ -247,9 +247,19 @@ func writeOneFile(header *tar.Header, tr *tar.Reader, targetWd, target string, a
 						header.Name, header.Linkname, err)
 				}
 				srcPath = filepath.Join(absTargetWd, srcPath)
+				// Ensure the target path is within the destination directory
+				relPath, err := filepath.Rel(absTargetWd, srcPath)
+				if err != nil || strings.HasPrefix(relPath, "..") {
+					return fmt.Errorf("invalid file path in tar archive: %s escapes destination directory1", srcPath)
+				}
 			}
 		} else {
 			srcPath = filepath.Join(targetWd, srcPath)
+			// Ensure the target path is within the destination directory
+			relPath, err := filepath.Rel(targetWd, srcPath)
+			if err != nil || strings.HasPrefix(relPath, "..") {
+				return fmt.Errorf("invalid file path in tar archive: %s escapes destination directory2", srcPath)
+			}
 		}
 
 		if err := paths.Link(srcPath, target, false); err != nil {
@@ -264,6 +274,11 @@ func writeOneFile(header *tar.Header, tr *tar.Reader, targetWd, target string, a
 					header.Name, header.Linkname, err)
 			}
 			srcPath = filepath.Join(absTargetWd, srcPath)
+			// Ensure the target path is within the destination directory
+			relPath, err := filepath.Rel(absTargetWd, srcPath)
+			if err != nil || strings.HasPrefix(relPath, "..") {
+				return fmt.Errorf("invalid file path in tar archive: %s escapes destination directory3", srcPath)
+			}
 		}
 
 		if err := paths.Link(srcPath, target, true); err != nil {

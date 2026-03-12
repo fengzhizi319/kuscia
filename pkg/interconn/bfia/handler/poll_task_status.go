@@ -63,7 +63,7 @@ func (h *pollTaskStatusHandler) Validate(ctx *api.BizContext, request api.ProtoR
 func (h *pollTaskStatusHandler) Handle(ctx *api.BizContext, request api.ProtoRequest) api.ProtoResponse {
 	req := request.(*interconn.PollTaskStatusRequest)
 	resp := &interconn.CommonResponse{
-		Code: http.StatusOK,
+		Code: bfiacommon.InterconnResponseCodeSuccess,
 	}
 
 	kt, err := h.KtLister.KusciaTasks(common.KusciaCrossDomain).Get(req.TaskId)

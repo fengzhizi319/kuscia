@@ -25,7 +25,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/proto/api/v1/interconn"
 )
 
@@ -42,11 +41,11 @@ const (
 )
 
 const (
-	authSignHeader  = "X-Auth-Sign"
-	nodeIDHeader    = "X-Node-Id"
-	nonceHeader     = "X-Nonce"
-	traceIDHeader   = "X-Trace-Id"
-	timestampHeader = "X-Timestamp"
+	authSignHeader     = "X-Auth-Sign"
+	sourceNodeIDHeader = "X-Source-Node-Id"
+	nonceHeader        = "X-Nonce"
+	traceIDHeader      = "X-Trace-Id"
+	timestampHeader    = "X-Timestamp"
 )
 
 const (
@@ -123,8 +122,17 @@ func (c *Client) StartJob(ctx context.Context, requesterID, host, jobID string) 
 
 // QueryJobStatusAll is used to send query job status request to other party.
 func (c *Client) QueryJobStatusAll(ctx context.Context, requesterID, host, jobID string) (*interconn.CommonResponse, error) {
-	url := fmt.Sprintf("%s%s%s?job_id=%s", httpPrefix, host, queryJobStatusAPI, jobID)
-	return c.do(ctx, requesterID, host, http.MethodGet, url, nil)
+	req := &interconn.QueryJobStatusAllRequest{
+		JobId: jobID,
+	}
+
+	body, err := json.Marshal(req)
+	if err != nil {
+		return nil, err
+	}
+	return c.do(ctx, requesterID, host, http.MethodPost, fmt.Sprintf("%s%s%s", httpPrefix, host, queryJobStatusAPI), body)
+	// url := fmt.Sprintf("%s%s%s?job_id=%s", httpPrefix, host, queryJobStatusAPI, jobID)
+	// return c.do(ctx, requesterID, host, http.MethodGet, url, nil)
 }
 
 // StopTask is used to send stop-task request to other party.
@@ -177,13 +185,13 @@ func (c *Client) do(ctx context.Context, requesterID, host, method, url string, 
 		return nil, err
 	}
 
-	nlog.Infof("bfia client send request path: %v, body: %v", req.URL.RequestURI(), string(body))
-	req.Header.Set(nodeIDHeader, requesterID)
+	req.Header.Set(sourceNodeIDHeader, requesterID)
 	req.Header.Set(timestampHeader, strconv.FormatInt(time.Now().Unix(), 10))
 	if method == http.MethodPost {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Host = host
+
 	var resp *http.Response
 	for i := 0; ; i++ {
 		resp, err = c.httpClient.Do(req)
@@ -196,6 +204,7 @@ func (c *Client) do(ctx context.Context, requesterID, host, method, url string, 
 		}
 		time.Sleep(200 * time.Millisecond)
 	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +215,6 @@ func (c *Client) do(ctx context.Context, requesterID, host, method, url string, 
 		return nil, fmt.Errorf("read response body failed, %v", err)
 	}
 
-	nlog.Infof("response body: %v", string(respBody))
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("response status code: %v, body: %v", resp.StatusCode, string(respBody))
 	}
@@ -217,7 +225,7 @@ func (c *Client) do(ctx context.Context, requesterID, host, method, url string, 
 		return nil, err
 	}
 
-	if commonResp.Code != http.StatusOK {
+	if commonResp.Code != 0 {
 		return nil, fmt.Errorf("status code: %v, message: %v", commonResp.Code, commonResp.Msg)
 	}
 	return commonResp, nil

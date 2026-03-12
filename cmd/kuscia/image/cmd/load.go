@@ -49,7 +49,7 @@ kuscia image load --input app.tar
 			tmpFile := ""
 			if input == "" {
 				tmpFile = path.Join("/tmp", uuid.NewString())
-				file, err := os.OpenFile(tmpFile, os.O_WRONLY|os.O_CREATE, 0666)
+				file, err := os.OpenFile(tmpFile, os.O_WRONLY|os.O_CREATE, 0600)
 				if err != nil {
 					nlog.Fatalf("open tmp file(%s) failed with %s", tmpFile, err.Error())
 				}

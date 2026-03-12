@@ -181,7 +181,7 @@ func TestPopWithData(t *testing.T) {
 
 	go func() {
 		time.Sleep(time.Millisecond * 100)
-		err := server.sm.Push("session3", "node0-topic2", &msq.Message{Content: NewRandomStr(10)}, time.Second)
+		err := server.sm.Push("session3", "topic2", &msq.Message{Content: NewRandomStr(10)}, time.Second)
 		assert.Nil(t, err)
 	}()
 

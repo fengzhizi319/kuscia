@@ -25,6 +25,7 @@ import (
 	"github.com/secretflow/kuscia/pkg/common"
 	kusciaclientsetfake "github.com/secretflow/kuscia/pkg/crd/clientset/versioned/fake"
 	kusciainformers "github.com/secretflow/kuscia/pkg/crd/informers/externalversions"
+	bfiacommon "github.com/secretflow/kuscia/pkg/interconn/bfia/common"
 	"github.com/secretflow/kuscia/pkg/web/api"
 	"github.com/secretflow/kuscia/pkg/web/errorcode"
 	"github.com/secretflow/kuscia/proto/api/v1/interconn"
@@ -65,7 +66,7 @@ func Test_queryJobStatusAllHandler_GetType(t *testing.T) {
 	}{
 		{
 			name:         "get req and resp type",
-			wantReqType:  reflect.TypeOf(QueryJobStatusAllRequest{}),
+			wantReqType:  reflect.TypeOf(interconn.QueryJobStatusAllRequest{}),
 			wantRespType: reflect.TypeOf(interconn.CommonResponse{}),
 		},
 	}
@@ -110,8 +111,8 @@ func Test_queryJobStatusAllHandler_Handle(t *testing.T) {
 			name: "kuscia job doesn't exist",
 			args: args{
 				ctx: nil,
-				request: &QueryJobStatusAllRequest{
-					JobID: "job-2",
+				request: &interconn.QueryJobStatusAllRequest{
+					JobId: "job-2",
 				},
 			},
 			wantCode: http.StatusBadRequest,
@@ -120,11 +121,11 @@ func Test_queryJobStatusAllHandler_Handle(t *testing.T) {
 			name: "kuscia job exist",
 			args: args{
 				ctx: nil,
-				request: &QueryJobStatusAllRequest{
-					JobID: "job-1",
+				request: &interconn.QueryJobStatusAllRequest{
+					JobId: "job-1",
 				},
 			},
-			wantCode: http.StatusOK,
+			wantCode: bfiacommon.InterconnResponseCodeSuccess,
 		},
 	}
 
@@ -166,7 +167,7 @@ func Test_queryJobStatusAllHandler_Validate(t *testing.T) {
 			name: "req job id is empty",
 			args: args{
 				ctx:     nil,
-				request: &QueryJobStatusAllRequest{},
+				request: &interconn.QueryJobStatusAllRequest{},
 				errs:    &errorcode.Errs{},
 			},
 			wantErr: true,
@@ -175,8 +176,8 @@ func Test_queryJobStatusAllHandler_Validate(t *testing.T) {
 			name: "req is valid",
 			args: args{
 				ctx: nil,
-				request: &QueryJobStatusAllRequest{
-					JobID: "job-1",
+				request: &interconn.QueryJobStatusAllRequest{
+					JobId: "job-1",
 				},
 				errs: &errorcode.Errs{},
 			},
@@ -223,7 +224,7 @@ func Test_queryJobStatusAllHandler_buildResp(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			hh := h.(*queryJobStatusAllHandler)
-			hh.buildResp(tt.args.resp, tt.args.content)
+			hh.buildResp(tt.args.resp, tt.args.content, "")
 			data := tt.args.resp.Data.AsMap()
 			assert.Equal(t, tt.wantContent, data["status"])
 		})

@@ -17,12 +17,57 @@ package starter
 import (
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	mnt "github.com/secretflow/kuscia/pkg/agent/local/runtime/process/mount"
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 	"github.com/secretflow/kuscia/pkg/utils/paths"
 )
+
+// validateCmdLine validates and sanitizes command line arguments to prevent command injection
+func validateCmdLine(cmdLine []string) ([]string, error) {
+	if len(cmdLine) == 0 {
+		return nil, syscall.EINVAL
+	}
+
+	// Validate each argument for potentially dangerous characters
+	sanitized := make([]string, 0, len(cmdLine))
+	for i, arg := range cmdLine {
+		// Command (first argument) validation
+		if i == 0 {
+			// Check for potentially dangerous characters in the command path
+			if strings.Contains(arg, ";") || strings.Contains(arg, "&") ||
+				strings.Contains(arg, "|") || strings.Contains(arg, "`") ||
+				strings.Contains(arg, "$") || strings.Contains(arg, "(") ||
+				strings.Contains(arg, ")") || strings.Contains(arg, "<") ||
+				strings.Contains(arg, ">") || strings.Contains(arg, "\"") ||
+				strings.Contains(arg, "'") {
+				nlog.Warnf("Potentially unsafe command detected: %s", arg)
+				// For the command, we'll be more restrictive and reject it
+				return nil, syscall.EINVAL
+			}
+			// Ensure the command is an absolute path or a simple filename
+			if strings.Contains(arg, "/") && !strings.HasPrefix(arg, "/") {
+				// If it contains a path separator but doesn't start with /, it's a relative path
+				return nil, syscall.EINVAL
+			}
+		} else {
+			// Argument validation - more permissive but still restrict shell meta-characters
+			if strings.Contains(arg, ";") || strings.Contains(arg, "&") ||
+				strings.Contains(arg, "|") || strings.Contains(arg, "`") ||
+				strings.Contains(arg, "$") ||
+				(strings.Contains(arg, "(") && strings.Contains(arg, ")")) ||
+				(strings.Contains(arg, "<") && strings.Contains(arg, ">")) {
+				nlog.Warnf("Potentially unsafe argument detected, rejecting: %s", arg)
+				return nil, syscall.EINVAL
+			}
+		}
+		sanitized = append(sanitized, arg)
+	}
+
+	return sanitized, nil
+}
 
 type rawStarter struct {
 	*exec.Cmd
@@ -33,7 +78,13 @@ type rawStarter struct {
 func NewRawStarter(c *InitConfig) (Starter, error) {
 	s := &rawStarter{config: c}
 
-	s.Cmd = exec.Command(c.CmdLine[0], c.CmdLine[1:]...)
+	// Validate and sanitize command line to prevent command injection
+	sanitizedCmdLine, err := validateCmdLine(c.CmdLine)
+	if err != nil {
+		return nil, err
+	}
+
+	s.Cmd = exec.Command(sanitizedCmdLine[0], sanitizedCmdLine[1:]...)
 	s.Cmd.Env = c.Env
 
 	s.Cmd.SysProcAttr = &syscall.SysProcAttr{
@@ -41,7 +92,7 @@ func NewRawStarter(c *InitConfig) (Starter, error) {
 	}
 
 	s.Cmd.Dir = filepath.Join(c.Rootfs, c.WorkingDir)
-	if err := paths.EnsureDirectory(s.Cmd.Dir, true); err != nil {
+	if err = paths.EnsureDirectory(s.Cmd.Dir, true); err != nil {
 		return nil, err
 	}
 

@@ -161,7 +161,7 @@ func Test_startJobHandler_Handle(t *testing.T) {
 					JobId: "job-2",
 				},
 			},
-			wantCode: http.StatusOK,
+			wantCode: common.InterconnResponseCodeSuccess,
 		},
 	}
 

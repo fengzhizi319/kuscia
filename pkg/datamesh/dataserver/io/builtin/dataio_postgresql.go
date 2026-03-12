@@ -72,7 +72,7 @@ func (o *BuiltinPostgresqlIO) newPostgresqlSession(config *datamesh.DatabaseData
 		params = strings.ReplaceAll(params, "&", " ")
 		dsn = fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s %s", config.GetUser(), config.GetPassword(), host, config.GetDatabase(), port, params)
 	} else {
-		dsn = fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s", config.GetUser(), config.GetPassword(), host, config.GetDatabase(), port)
+		dsn = fmt.Sprintf("user=%s password=%s host=%s dbname=%s port=%s sslmode=disable", config.GetUser(), config.GetPassword(), host, config.GetDatabase(), port)
 	}
 
 	db, err := sql.Open(o.driverName, dsn)
