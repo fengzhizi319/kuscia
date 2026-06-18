@@ -48,8 +48,8 @@ require (
 	github.com/samber/lo v1.47.0
 	github.com/secretflow/kuscia-envoy v0.0.0-20240402083426-b0884d002f48
 	github.com/shirou/gopsutil/v3 v3.22.6
-	github.com/spf13/cobra v1.8.1
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/cobra v1.10.2
+	github.com/spf13/pflag v1.0.9
 	github.com/stathat/consistent v1.0.0
 	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/match v1.1.1
