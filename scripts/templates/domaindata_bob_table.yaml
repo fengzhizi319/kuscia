@@ -1,20 +1,36 @@
+# API版本：Kuscia自定义资源定义的API版本
 apiVersion: kuscia.secretflow/v1alpha1
+# 资源类型：定义这是一个DomainData资源对象
 kind: DomainData
+# 元数据部分：包含资源的基本信息
 metadata:
+  # 标签：用于标识和分类资源
   labels:
+    # 指定域数据类型为表格
     kuscia.secretflow/domaindata-type: table
+    # 指定数据来源为手动创建
     kuscia.secretflow/domaindata-vendor: manual
+    # 指定互连协议类型为kuscia
     kuscia.secretflow/interconn-protocol-type: kuscia
+    # 指定发起方域ID，使用模板变量替换
     kuscia.secretflow/initiator: {{.DOMAIN_ID}}
+  # 资源名称：bob-table
   name: bob-table
+  # 命名空间：使用模板变量替换为实际的域ID
   namespace: {{.DOMAIN_ID}}
+# 规格部分：定义资源的具体配置
 spec:
+  # 属性：包含额外的元数据信息
   attributes:
+    # 描述：说明这是某个域的演示数据，使用模板变量替换
     description: "{{.DOMAIN_ID}} demo data"
+  # 列定义：定义表格中各列的结构
   columns:
+    # ID列：字符串类型的ID字段
     - comment: ""
       name: id2
       type: str
+    # 联系方式列：电话联系相关字段
     - comment: ""
       name: contact_cellular
       type: float
@@ -24,6 +40,7 @@ spec:
     - comment: ""
       name: contact_unknown
       type: float
+    # 月份列：表示不同月份的数值字段
     - comment: ""
       name: month_apr
       type: float
@@ -60,6 +77,7 @@ spec:
     - comment: ""
       name: month_sep
       type: float
+    # 前期结果列：表示之前活动结果的字段
     - comment: ""
       name: poutcome_failure
       type: float
@@ -72,12 +90,19 @@ spec:
     - comment: ""
       name: poutcome_unknown
       type: float
+    # 目标列：整型的目标变量
     - comment: ""
       name: "y"
       type: int
+  # 数据源：指定使用的数据源名称
   dataSource: default-data-source
+  # 数据名称：CSV文件名
   name: bob.csv
+  # 数据类型：指定为表格类型
   type: table
+  # 相对路径：指定数据文件的相对路径
   relativeURI: bob.csv
+  # 供应商：指明数据提供者为手动创建
   vendor: manual
+  # 作者：指定数据创建者，使用模板变量替换
   author: {{.DOMAIN_ID}}
