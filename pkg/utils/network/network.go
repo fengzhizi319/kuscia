@@ -35,10 +35,28 @@ func GetHostIP() (string, error) {
 		}
 	}
 
-	if iface == nil {
-		return "", errors.New("host IP unknown")
+	if iface != nil {
+		if addr, err := getIPv4Addr(iface); err == nil {
+			return addr, nil
+		}
 	}
 
+	// Fallback: use the first non-loopback interface that has an IPv4 address.
+	// This makes local tests / WSL / container environments with non-standard
+	// interface names (e.g. eth2) work without requiring explicit host IP config.
+	for i := range ifaces {
+		if ifaces[i].Flags&net.FlagUp == 0 || ifaces[i].Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		if addr, err := getIPv4Addr(&ifaces[i]); err == nil {
+			return addr, nil
+		}
+	}
+
+	return "", errors.New("host IP unknown")
+}
+
+func getIPv4Addr(iface *net.Interface) (string, error) {
 	addrs, err := iface.Addrs()
 	if err != nil {
 		return "", err
@@ -60,7 +78,7 @@ func GetHostIP() (string, error) {
 
 		address = ip.String()
 		if ip.To4() != nil {
-			break
+			return address, nil
 		}
 	}
 

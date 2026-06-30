@@ -1,4 +1,4 @@
-# Kuscia 中 Kubernetes 配置与运行模式详解
+func (s *k3sModule) Run(ctx context.Context)# Kuscia 中 Kubernetes 配置与运行模式详解
 
 ## 目录
 
@@ -18,7 +18,103 @@
 
 ## 核心问题解答
 
-### 问题1：为什么不直接运行在容器中，Kubernetes 配置还起作用吗？
+### Kubernetes 与 K3s 的区别
+
+**K3s 是什么？**
+
+K3s 是 Rancher Labs 开发的轻量级 Kubernetes 发行版，专为资源受限环境设计。
+
+**主要区别对比**：
+
+| 特性 | Kubernetes (标准版) | K3s | Kuscia 中的 K3s |
+|------|-------------------|-----|----------------|
+| **二进制大小** | > 2GB | ~100MB | ~100MB |
+| **内存占用** | > 2GB | 512MB-1GB | ~300MB (空闲) |
+| **CPU 要求** | 多核 (推荐 2C+) | 1核即可 | 1核即可 |
+| **依赖组件** | 需要独立安装 etcd, CNI, CoreDNS 等 | 集成 SQLite 默认存储 | 内置 etcd，精简组件 |
+| **部署复杂度** | 复杂，需要多组件协调 | 简单，单二进制文件 | 作为 Kuscia 子进程 |
+| **启动时间** | 几分钟 | 30-60秒 | 10-30秒 |
+| **适用场景** | 大规模生产集群 | 边缘计算、IoT、开发测试 | 隐私计算、联邦学习 |
+| **认证授权** | 完整的 RBAC、OIDC 等 | 支持标准 RBAC | 支持 RBAC，与 Kuscia 集成 |
+| **网络插件** | 支持多种 CNI 插件 | 内置 Flannel，默认支持多种 | 禁用 Flannel，自定义网络方案 |
+| **存储插件** | 支持多种 CSI 插件 | 支持 CSI 和本地存储 | 主要使用 etcd 存储 CRD |
+| **组件完整性** | 完整的 K8s 组件 | 精简版，移除非必要组件 | 进一步精简，仅保留核心功能 |
+
+**K3s 的精简策略**：
+
+K3s 通过以下方式实现轻量化：
+
+1. **移除非必要组件**：
+   - 移除了 alpha 特性
+   - 移除了非默认的 storage drivers
+   - 移除了非默认的云提供商插件
+
+2. **集成关键组件**：
+   - 集成了 SQLite 作为默认存储（可选）
+   - 集成了 CoreDNS
+   - 集成了 Traefik ingress controller
+
+3. **优化依赖**：
+   - 用 SQLite 替代 etcd 作为默认存储
+   - 将多个组件打包到单个二进制文件中
+
+**Kuscia 中的特殊定制**：
+
+Kuscia 使用的 K3s 进行了额外定制：
+
+```go
+// 来自 cmd/kuscia/modules/k3s.go
+args := []string{
+    "server",
+    "--disable-agent",              // 禁用 Kubelet（不需要节点代理）
+    "--disable-scheduler",          // 禁用默认调度器（Kuscia 有自己的调度器）
+    "--flannel-backend=none",       // 禁用网络插件（使用自定义网络）
+    "--disable=traefik",            // 禁用 Ingress（使用 Kuscia Gateway）
+    "--disable=coredns",            // 禁用 DNS（使用自定义方案）
+    "--disable=servicelb",          // 禁用负载均衡
+    "--disable=local-storage",      // 禁用本地存储
+    "--disable=metrics-server",     // 禁用监控（使用自定义监控）
+}
+```
+
+**性能对比**：
+
+| 指标 | 标准 K8s | K3s | Kuscia K3s |
+|------|----------|-----|------------|
+| 内存占用 | >2GB | 512MB-1GB | ~300MB |
+| CPU 占用 | 多核 | 单核 | 单核 |
+| 启动时间 | >5分钟 | 1分钟内 | ~30秒 |
+| 磁盘占用 | >10GB | ~500MB | ~500MB |
+
+**为什么 Kuscia 选择定制 K3s 而不是标准 K8s？**
+
+1. **资源效率**：Kuscia 通常部署在资源受限环境，需要更轻量的解决方案
+2. **集成度**：K3s 可以更容易地嵌入到 Kuscia 中作为子进程运行
+3. **定制化**：可以根据隐私计算场景的需要移除不必要的功能
+4. **部署简化**：单二进制文件部署，降低运维复杂度
+5. **兼容性**：保持与 Kubernetes API 的兼容性，可以使用相同的客户端库
+
+**功能保留情况**：
+
+尽管进行了大量精简，Kuscia 中的 K3s 仍保留了核心功能：
+
+✅ **API Server** - 提供完整的 Kubernetes API
+
+✅ **etcd 存储** - 存储 CRD 和系统对象
+
+✅ **CRD 支持** - 可以定义和使用自定义资源 
+
+✅ **RBAC** - 完整的权限控制系统 
+
+✅ **Informer 机制** - 支持控制器模式
+
+✅ **Namespace 隔离** - 提供逻辑隔离
+
+这些核心功能足以支撑 Kuscia 的隐私计算和联邦学习工作负载，同时避免了标准 K8s 的复杂性和资源开销。
+
+---
+
+### 问题1：如果kuscia不运行在容器中，Kubernetes 配置还起作用吗？
 
 **简短回答：是的，完全起作用！**
 
@@ -169,6 +265,22 @@ func initKusciaEnvAfterReady(ctx context.Context) error {
     return nil
 }
 ```
+
+**详细解释：Kuscia 会自动注册所有自定义资源定义（CRD）**
+
+1. **CRD 定义来源**：Kuscia 预定义了一系列 CRD 文件，存储在 `crds/v1alpha1/` 目录下，包括但不限于：
+   - `kuscia.secretflow_domaindatas.yaml` - 定义 DomainData 资源
+   - `kuscia.secretflow_domaindatagrants.yaml` - 定义 DomainDataGrant 资源
+   - `kuscia.secretflow_domains.yaml` - 定义 Domain 资源
+   - `kuscia.secretflow_kusciajobs.yaml` - 定义 KusciaJob 资源
+   - `kuscia.secretflow_kusciatasks.yaml` - 定义 KusciaTask 资源
+   - 以及其他业务相关的 CRD 定义
+
+2. **自动注册时机**：在 K3s 启动并就绪后，Kuscia 会自动执行 CRD 注册流程，确保所有自定义资源类型在系统启动时就已经可用。
+
+3. **注册方式**：通过调用内置的 kubectl 命令，将 CRD 定义应用到 K3s 集群中，使 API Server 能够识别和处理这些自定义资源。
+
+4. **注册效果**：一旦 CRD 注册成功，用户就可以通过标准的 Kubernetes API 来创建、更新、删除和查询这些自定义资源，就像使用原生的 Pod、Service 等资源一样。
 
 **第五步：创建 Namespace**
 

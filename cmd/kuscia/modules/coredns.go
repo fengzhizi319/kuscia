@@ -28,6 +28,8 @@ import (
 	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
+	_ "github.com/coredns/coredns/plugin/forward"  // register forward plugin for Corefile parsing
+	_ "github.com/coredns/coredns/plugin/template" // register template plugin for Corefile parsing
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/secretflow/kuscia/pkg/common"
@@ -102,11 +104,9 @@ func NewCoreDNS(conf *ModuleRuntimeConfigs) (Module, error) {
 
 func (s *CorednsModule) Run(ctx context.Context) error {
 	defer close(s.readyChan)
-	if common.IsRootUser() {
-		if err := prepareResolvConf(s.rootDir); err != nil {
-			nlog.Errorf("Failed to prepare coredns resolv.conf, %v", err)
-			return err
-		}
+	if err := prepareResolvConf(s.rootDir); err != nil {
+		nlog.Errorf("Failed to prepare coredns resolv.conf, %v", err)
+		return err
 	}
 
 	plugin.Register(
@@ -191,8 +191,12 @@ func prepareResolvConf(rootDir string) error {
 		}
 	}
 
-	if err = updateResolvConf(resolvConf, hostIP, true); err != nil {
-		return err
+	// Only mutate the system /etc/resolv.conf when running as root.
+	// Tests and non-root deployments still get a valid backup file.
+	if common.IsRootUser() {
+		if err = updateResolvConf(resolvConf, hostIP, true); err != nil {
+			return err
+		}
 	}
 
 	nlog.Info("Finish preparing coredns resolv.conf")
