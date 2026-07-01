@@ -21,9 +21,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/spf13/cobra"  // Cobra库，用于构建现代CLI应用程序
+	"github.com/spf13/cobra" // Cobra库，用于构建现代CLI应用程序
 
-	"github.com/secretflow/kuscia/cmd/kuscia/conflistener"  // 配置文件监听器，用于热重载配置
+	"github.com/secretflow/kuscia/cmd/kuscia/conflistener" // 配置文件监听器，用于热重载配置
 	"github.com/secretflow/kuscia/cmd/kuscia/confloader"   // 配置加载器，用于加载和解析配置文件
 	"github.com/secretflow/kuscia/cmd/kuscia/modules"      // 模块管理器，用于管理Kuscia的各种功能模块
 	"github.com/secretflow/kuscia/cmd/kuscia/utils"        // 工具函数库，提供各种实用工具
@@ -35,8 +35,8 @@ import (
 
 // startConfig 启动配置结构体，包含启动所需的配置参数
 type startConfig struct {
-	configFile        string  // 配置文件路径
-	logLevelHotReload bool    // 是否启用日志级别热重载
+	configFile        string // 配置文件路径
+	logLevelHotReload bool   // 是否启用日志级别热重载
 }
 
 // NewStartCommand 创建启动命令
@@ -137,8 +137,8 @@ func Start(ctx context.Context, configFile string) error {
 	mm := NewModuleManager()
 	// 8. 注册各功能模块及其支持的运行模式
 	// 根据不同运行模式注册对应的模块
-	mm.Regist("coredns", modules.NewCoreDNS, autonomy, lite, master)  // CoreDNS模块，支持所有模式
-	mm.Regist("k3s", modules.NewK3s, autonomy, master)              // K3s模块，仅支持Autonomy和Master模式
+	mm.Regist("coredns", modules.NewCoreDNS, autonomy, lite, master) // CoreDNS模块，支持所有模式
+	mm.Regist("k3s", modules.NewK3s, autonomy, master)               // K3s模块，仅支持Autonomy和Master模式
 	mm.Regist("agent", modules.NewAgent, autonomy, lite)             // Agent模块，支持Autonomy和Lite模式
 	mm.Regist("envoy", modules.NewEnvoy, autonomy, lite, master)     // Envoy模块，支持所有模式
 	// 如果启用了containerd，则注册containerd模块
@@ -147,14 +147,14 @@ func Start(ctx context.Context, configFile string) error {
 	}
 
 	// 继续注册其他模块
-	mm.Regist("config", modules.NewConfManager, autonomy, lite, master)        // 配置管理模块
-	mm.Regist("controllers", modules.NewControllersModule, autonomy, master)   // 控制器模块
-	mm.Regist("datamesh", modules.NewDataMesh, autonomy, lite)                 // 数据网格模块
-	mm.Regist("domainroute", modules.NewDomainRoute, autonomy, master, lite)   // 域路由模块
-	mm.Regist("interconn", modules.NewInterConn, autonomy, master)             // 互联模块
-	mm.Regist("kusciaapi", modules.NewKusciaAPI, autonomy, lite, master)      // Kuscia API模块
-	mm.Regist("metricexporter", modules.NewMetricExporter, autonomy, lite, master)  // 指标导出模块
-	mm.Regist("nodeexporter", modules.NewNodeExporter, autonomy, lite, master)      // 节点指标导出模块
+	mm.Regist("config", modules.NewConfManager, autonomy, lite, master)            // 配置管理模块
+	mm.Regist("controllers", modules.NewControllersModule, autonomy, master)       // 控制器模块
+	mm.Regist("datamesh", modules.NewDataMesh, autonomy, lite)                     // 数据网格模块
+	mm.Regist("domainroute", modules.NewDomainRoute, autonomy, master, lite)       // 域路由模块
+	mm.Regist("interconn", modules.NewInterConn, autonomy, master)                 // 互联模块
+	mm.Regist("kusciaapi", modules.NewKusciaAPI, autonomy, lite, master)           // Kuscia API模块
+	mm.Regist("metricexporter", modules.NewMetricExporter, autonomy, lite, master) // 指标导出模块
+	mm.Regist("nodeexporter", modules.NewNodeExporter, autonomy, lite, master)     // 节点指标导出模块
 	mm.Regist("ssexporter", modules.NewSsExporter, autonomy, lite, master)         // 系统状态导出模块
 	mm.Regist("scheduler", modules.NewScheduler, autonomy, master)                 // 调度器模块
 	mm.Regist("transport", modules.NewTransport, autonomy, lite)                   // 传输模块
@@ -170,40 +170,42 @@ func Start(ctx context.Context, configFile string) error {
 		// 否则agent不依赖containerd
 		mm.SetDependencies("agent", "envoy", "k3s", "kusciaapi")
 	}
-	mm.SetDependencies("envoy", "k3s")                    // envoy依赖k3s
-	mm.SetDependencies("controllers", "k3s")              // controllers依赖k3s
-	mm.SetDependencies("config", "k3s", "envoy", "domainroute", "controllers")  // config依赖多个模块
-	mm.SetDependencies("datamesh", "k3s", "config", "envoy", "domainroute")    // datamesh依赖多个模块
-	mm.SetDependencies("domainroute", "k3s")              // domainroute依赖k3s
-	mm.SetDependencies("interconn", "k3s")                // interconn依赖k3s
-	mm.SetDependencies("kusciaapi", "k3s", "config", "domainroute")           // kusciaapi依赖多个模块
-	mm.SetDependencies("scheduler", "k3s")                // scheduler依赖k3s
-	mm.SetDependencies("ssexporter", "envoy")             // ssexporter依赖envoy
-	mm.SetDependencies("metricexporter", "agent", "envoy", "ssexporter", "nodeexporter")  // metricexporter依赖多个模块
-	mm.SetDependencies("transport", "envoy")              // transport依赖envoy
-	mm.SetDependencies("k3s", "coredns")                  // k3s依赖coredns
-	mm.SetDependencies("reporter", "k3s", "kusciaapi")    // reporter依赖k3s和kusciaapi
-	mm.SetDependencies("diagnose", "k3s")                 // diagnose依赖k3s
+	mm.SetDependencies("envoy", "k3s")                                                   // envoy依赖k3s
+	mm.SetDependencies("controllers", "k3s")                                             // controllers依赖k3s
+	mm.SetDependencies("config", "k3s", "envoy", "domainroute", "controllers")           // config依赖多个模块
+	mm.SetDependencies("datamesh", "k3s", "config", "envoy", "domainroute")              // datamesh依赖多个模块
+	mm.SetDependencies("domainroute", "k3s")                                             // domainroute依赖k3s
+	mm.SetDependencies("interconn", "k3s")                                               // interconn依赖k3s
+	mm.SetDependencies("kusciaapi", "k3s", "config", "domainroute")                      // kusciaapi依赖多个模块
+	mm.SetDependencies("scheduler", "k3s")                                               // scheduler依赖k3s
+	mm.SetDependencies("ssexporter", "envoy")                                            // ssexporter依赖envoy
+	mm.SetDependencies("metricexporter", "agent", "envoy", "ssexporter", "nodeexporter") // metricexporter依赖多个模块
+	mm.SetDependencies("transport", "envoy")                                             // transport依赖envoy
+	mm.SetDependencies("k3s", "coredns")                                                 // k3s依赖coredns
+	mm.SetDependencies("reporter", "k3s", "kusciaapi")                                   // reporter依赖k3s和kusciaapi
+	mm.SetDependencies("diagnose", "k3s")                                                // diagnose依赖k3s
 
 	// 10. 添加就绪钩子
 	// 定义在特定模块就绪后执行的钩子函数
 	mm.AddReadyHook(func(ctx context.Context, mdls map[string]modules.Module) error {
-		nlog.Info("Start... coredns controllers")  // 记录启动CoreDNS控制器的日志
+		nlog.Info("Start... coredns controllers") // 记录启动CoreDNS控制器的日志
 		// 获取coredns模块实例
 		cdsModule, ok := mdls["coredns"].(*modules.CorednsModule)
 		// 如果模块存在且类型正确，启动CoreDNS控制器
 		if ok && cdsModule != nil {
 			// 使用Kubernetes客户端启动CoreDNS控制器
 			cdsModule.StartControllers(ctx, conf.Clients.KubeClient)
-			return nil  // 返回nil表示执行成功
+			return nil // 返回nil表示执行成功
 		}
 		// 如果模块类型不正确，返回错误
 		return errors.New("coredns module type is invalid")
-	}, "k3s", "coredns", "envoy", "domainroute")  // 指定钩子函数在这些模块就绪后执行
+	}, "k3s", "coredns", "envoy", "domainroute") // 指定钩子函数在这些模块就绪后执行
 
 	// 11. 启动模块管理器
 	// 根据配置的运行模式启动所有注册的模块
 	// 将运行模式转换为小写并与模块管理器配置匹配
+	// 不是每个模块占用一个线程。Kuscia 使用的是 goroutine（Go 协程）而不是操作系统线程来并发执行模块。
+	//每个模块在一个独立的 goroutine 中运行，这允许多个模块并发执行而不会阻塞彼此，这比操作系统线程更加轻量级和高效。
 	err = mm.Start(ctx, strings.ToLower(commonConfig.Mode), conf)
 
 	// 12. 记录关闭日志
