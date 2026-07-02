@@ -32,3 +32,4 @@ bazel-*
 .DS_Store
 
 **.mo
+.local-kuscia/
