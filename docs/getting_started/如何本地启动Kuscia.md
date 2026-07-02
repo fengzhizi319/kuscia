@@ -167,7 +167,7 @@ Kuscia 支持多种组网模式：
 仓库已提供 `scripts/deploy/run_docker_quickstart.sh`，支持 p2p / center / cxc / cxp 四种模式：
 
 ```bash
-cd /path/to/kuscia
+cd ../../
 
 # 点对点组网（推荐初学者）
 bash scripts/deploy/run_docker_quickstart.sh p2p
@@ -239,8 +239,7 @@ kubectl get nodes
 仓库已提供 `scripts/run_local_kuscia.sh`，默认以 **master** 模式启动：
 
 ```bash
-cd /path/to/kuscia
-
+cd ../../
 # 启动本地 master 节点
 bash scripts/run_local_kuscia.sh
 
@@ -266,7 +265,7 @@ KUSCIA_HOME=/tmp/kuscia-local bash scripts/run_local_kuscia.sh
 #### 步骤 1：编译 Kuscia
 
 ```bash
-cd /path/to/kuscia
+cd ../../
 make build
 
 # 验证编译结果

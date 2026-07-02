@@ -19,54 +19,54 @@ import (
 	"fmt"
 	"os"
 
-	_ "github.com/coredns/caddy/onevent"  // 导入CoreDNS事件插件，用于处理事件
-	_ "github.com/coredns/coredns/plugin/acl"  // 导入ACL插件，用于访问控制
-	_ "github.com/coredns/coredns/plugin/any"  // 导入ANY插件，处理ANY查询
-	_ "github.com/coredns/coredns/plugin/auto"  // 导入AUTO插件，用于自动配置
-	_ "github.com/coredns/coredns/plugin/autopath"  // 导入AUTOPATH插件，自动解析路径
-	_ "github.com/coredns/coredns/plugin/bind"  // 导入BIND插件，处理BIND相关功能
-	_ "github.com/coredns/coredns/plugin/bufsize"  // 导入BUFSIZE插件，设置缓冲区大小
-	_ "github.com/coredns/coredns/plugin/cache"  // 导入CACHE插件，提供DNS缓存功能
-	_ "github.com/coredns/coredns/plugin/cancel"  // 导入CANCEL插件，取消查询
-	_ "github.com/coredns/coredns/plugin/chaos"  // 导入CHAOS插件，处理CHAOSt查询
-	_ "github.com/coredns/coredns/plugin/debug"  // 导入DEBUG插件，提供调试功能
-	_ "github.com/coredns/coredns/plugin/dnssec"  // 导入DNSSEC插件，处理DNS安全扩展
-	_ "github.com/coredns/coredns/plugin/dnstap"  // 导入DNSTAP插件，提供DNS数据输出
-	_ "github.com/coredns/coredns/plugin/erratic"  // 导入ERRATIC插件，模拟错误行为
-	_ "github.com/coredns/coredns/plugin/errors"  // 导入ERRORS插件，处理错误
-	_ "github.com/coredns/coredns/plugin/file"  // 导入FILE插件，从文件读取数据
-	_ "github.com/coredns/coredns/plugin/forward"  // 导入FORWARD插件，转发DNS查询
-	_ "github.com/coredns/coredns/plugin/health"  // 导入HEALTH插件，健康检查
-	_ "github.com/coredns/coredns/plugin/hosts"  // 导入HOSTS插件，处理hosts文件
-	_ "github.com/coredns/coredns/plugin/loadbalance"  // 导入LOADBALANCE插件，负载均衡
-	_ "github.com/coredns/coredns/plugin/log"  // 导入LOG插件，日志记录
-	_ "github.com/coredns/coredns/plugin/loop"  // 导入LOOP插件，循环检测
-	_ "github.com/coredns/coredns/plugin/metadata"  // 导入METADATA插件，提供元数据
-	_ "github.com/coredns/coredns/plugin/metrics"  // 导入METRICS插件，提供指标
-	_ "github.com/coredns/coredns/plugin/nsid"  // 导入NSID插件，提供名称服务器ID
-	_ "github.com/coredns/coredns/plugin/pprof"  // 导入PPROF插件，性能分析
-	_ "github.com/coredns/coredns/plugin/ready"  // 导入READY插件，准备状态检查
-	_ "github.com/coredns/coredns/plugin/reload"  // 导入RELOAD插件，热重载
-	_ "github.com/coredns/coredns/plugin/rewrite"  // 导入REWRITE插件，查询重写
-	_ "github.com/coredns/coredns/plugin/root"  // 导入ROOT插件，根服务器配置
-	_ "github.com/coredns/coredns/plugin/route53"  // 导入ROUTE53插件，AWS Route53集成
-	_ "github.com/coredns/coredns/plugin/secondary"  // 导入SECONDARY插件，辅助服务器
-	_ "github.com/coredns/coredns/plugin/sign"  // 导入SIGN插件，DNS记录签名
-	_ "github.com/coredns/coredns/plugin/template"  // 导入TEMPLATE插件，模板处理
-	_ "github.com/coredns/coredns/plugin/transfer"  // 导入TRANSFER插件，区域传输
-	_ "github.com/coredns/coredns/plugin/whoami"  // 导入WHOAMI插件，返回客户端信息
-	"github.com/spf13/cobra"  // Cobra库，用于构建现代CLI应用程序
-	"github.com/spf13/pflag"  // POSIX风格的命令行标志解析库
-	kubectlcmd "k8s.io/kubectl/pkg/cmd"  // Kubernetes kubectl命令实现
+	_ "github.com/coredns/caddy/onevent"              // 导入CoreDNS事件插件，用于处理事件
+	_ "github.com/coredns/coredns/plugin/acl"         // 导入ACL插件，用于访问控制
+	_ "github.com/coredns/coredns/plugin/any"         // 导入ANY插件，处理ANY查询
+	_ "github.com/coredns/coredns/plugin/auto"        // 导入AUTO插件，用于自动配置
+	_ "github.com/coredns/coredns/plugin/autopath"    // 导入AUTOPATH插件，自动解析路径
+	_ "github.com/coredns/coredns/plugin/bind"        // 导入BIND插件，处理BIND相关功能
+	_ "github.com/coredns/coredns/plugin/bufsize"     // 导入BUFSIZE插件，设置缓冲区大小
+	_ "github.com/coredns/coredns/plugin/cache"       // 导入CACHE插件，提供DNS缓存功能
+	_ "github.com/coredns/coredns/plugin/cancel"      // 导入CANCEL插件，取消查询
+	_ "github.com/coredns/coredns/plugin/chaos"       // 导入CHAOS插件，处理CHAOSt查询
+	_ "github.com/coredns/coredns/plugin/debug"       // 导入DEBUG插件，提供调试功能
+	_ "github.com/coredns/coredns/plugin/dnssec"      // 导入DNSSEC插件，处理DNS安全扩展
+	_ "github.com/coredns/coredns/plugin/dnstap"      // 导入DNSTAP插件，提供DNS数据输出
+	_ "github.com/coredns/coredns/plugin/erratic"     // 导入ERRATIC插件，模拟错误行为
+	_ "github.com/coredns/coredns/plugin/errors"      // 导入ERRORS插件，处理错误
+	_ "github.com/coredns/coredns/plugin/file"        // 导入FILE插件，从文件读取数据
+	_ "github.com/coredns/coredns/plugin/forward"     // 导入FORWARD插件，转发DNS查询
+	_ "github.com/coredns/coredns/plugin/health"      // 导入HEALTH插件，健康检查
+	_ "github.com/coredns/coredns/plugin/hosts"       // 导入HOSTS插件，处理hosts文件
+	_ "github.com/coredns/coredns/plugin/loadbalance" // 导入LOADBALANCE插件，负载均衡
+	_ "github.com/coredns/coredns/plugin/log"         // 导入LOG插件，日志记录
+	_ "github.com/coredns/coredns/plugin/loop"        // 导入LOOP插件，循环检测
+	_ "github.com/coredns/coredns/plugin/metadata"    // 导入METADATA插件，提供元数据
+	_ "github.com/coredns/coredns/plugin/metrics"     // 导入METRICS插件，提供指标
+	_ "github.com/coredns/coredns/plugin/nsid"        // 导入NSID插件，提供名称服务器ID
+	_ "github.com/coredns/coredns/plugin/pprof"       // 导入PPROF插件，性能分析
+	_ "github.com/coredns/coredns/plugin/ready"       // 导入READY插件，准备状态检查
+	_ "github.com/coredns/coredns/plugin/reload"      // 导入RELOAD插件，热重载
+	_ "github.com/coredns/coredns/plugin/rewrite"     // 导入REWRITE插件，查询重写
+	_ "github.com/coredns/coredns/plugin/root"        // 导入ROOT插件，根服务器配置
+	_ "github.com/coredns/coredns/plugin/route53"     // 导入ROUTE53插件，AWS Route53集成
+	_ "github.com/coredns/coredns/plugin/secondary"   // 导入SECONDARY插件，辅助服务器
+	_ "github.com/coredns/coredns/plugin/sign"        // 导入SIGN插件，DNS记录签名
+	_ "github.com/coredns/coredns/plugin/template"    // 导入TEMPLATE插件，模板处理
+	_ "github.com/coredns/coredns/plugin/transfer"    // 导入TRANSFER插件，区域传输
+	_ "github.com/coredns/coredns/plugin/whoami"      // 导入WHOAMI插件，返回客户端信息
+	"github.com/spf13/cobra"                          // Cobra库，用于构建现代CLI应用程序
+	"github.com/spf13/pflag"                          // POSIX风格的命令行标志解析库
+	kubectlcmd "k8s.io/kubectl/pkg/cmd"               // Kubernetes kubectl命令实现
 
-	"github.com/secretflow/kuscia/cmd/kuscia/container"  // Kuscia容器管理子命令
-	"github.com/secretflow/kuscia/cmd/kuscia/diagnose"   // Kuscia诊断子命令
-	"github.com/secretflow/kuscia/cmd/kuscia/image"      // Kuscia镜像管理子命令
-	"github.com/secretflow/kuscia/cmd/kuscia/kusciainit"  // Kuscia初始化子命令
-	"github.com/secretflow/kuscia/cmd/kuscia/start"      // Kuscia启动子命令
-	_ "github.com/secretflow/kuscia/pkg/agent/middleware/plugins"  // Kuscia代理中间件插件
-	"github.com/secretflow/kuscia/pkg/utils/meta"         // Kuscia元数据工具
-	"github.com/secretflow/kuscia/pkg/utils/signals"      // Kuscia信号处理工具
+	"github.com/secretflow/kuscia/cmd/kuscia/container"           // Kuscia容器管理子命令
+	"github.com/secretflow/kuscia/cmd/kuscia/diagnose"            // Kuscia诊断子命令
+	"github.com/secretflow/kuscia/cmd/kuscia/image"               // Kuscia镜像管理子命令
+	"github.com/secretflow/kuscia/cmd/kuscia/kusciainit"          // Kuscia初始化子命令
+	"github.com/secretflow/kuscia/cmd/kuscia/start"               // Kuscia启动子命令
+	_ "github.com/secretflow/kuscia/pkg/agent/middleware/plugins" // Kuscia代理中间件插件
+	"github.com/secretflow/kuscia/pkg/utils/meta"                 // Kuscia元数据工具
+	"github.com/secretflow/kuscia/pkg/utils/signals"              // Kuscia信号处理工具
 )
 
 // main.go 是 Kuscia 项目的主入口文件，定义了根命令和多个子命令

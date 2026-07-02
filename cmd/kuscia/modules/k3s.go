@@ -55,26 +55,26 @@ import (
 
 type k3sModule struct {
 	// rootDir 是 Kuscia 的运行根目录，日志、证书、配置、二进制等都从这里派生。
-	rootDir           string
+	rootDir string
 	// kubeconfigFile 是 K3s 启动后生成或使用的 kubeconfig 路径，后续 kubectl/client-go 都依赖它访问 apiserver。
-	kubeconfigFile    string
+	kubeconfigFile string
 	// bindAddress / listenPort 决定嵌入式 apiserver 的监听地址与端口。
-	bindAddress       string
-	listenPort        string
+	bindAddress string
+	listenPort  string
 	// dataDir 是 K3s 数据目录，包含 etcd/WAL/证书等关键运行时文件。
-	dataDir           string
+	dataDir string
 	// datastoreEndpoint 可选地指向外部 MySQL/Postgres/etcd；为空时使用本地嵌入式存储。
 	datastoreEndpoint string
 	// clusterToken 用于 K3s 集群鉴权与节点加入；单机模式下也保持配置一致性。
-	clusterToken      string
+	clusterToken string
 	// hostIP 会传递给 K3s 的 --node-ip，用于声明当前节点对外可见地址。
-	hostIP            string
+	hostIP string
 	// enableAudit 用于控制是否开启 apiserver audit log。
-	enableAudit       bool
+	enableAudit bool
 	// LogConfig 决定 K3s 独立日志的输出位置与轮转策略。
-	LogConfig         nlog.LogConfig
+	LogConfig nlog.LogConfig
 	// conf 持有模块运行时上下文，后续初始化 CRD、KubeClient、Domain 等都要使用。
-	conf              *ModuleRuntimeConfigs
+	conf *ModuleRuntimeConfigs
 
 	// readyCh/readyError 用于把“K3s 可用且 Kuscia 初始化完成”的结果异步通知给模块管理器。
 	// 注意这里的 ready 不仅表示进程启动，还表示 CRD、资源、kubeconfig 等初始化链路已经完成。
