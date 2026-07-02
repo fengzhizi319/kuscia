@@ -32,3 +32,6 @@ bazel-*
 .DS_Store
 
 **.mo
+
+# Local Kuscia runtime directory (used by scripts/run-local-master.sh)
+/.local-kuscia/
