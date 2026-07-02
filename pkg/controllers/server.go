@@ -60,6 +60,7 @@ type Server struct {
 	electionCheckerTimeout  time.Duration
 	controllers             []IController
 	controllerConstructions []ControllerConstruction
+	crdReadyCh              chan struct{}
 }
 
 func buildEventRecorder(kubeClient kubernetes.Interface, name string) record.EventRecorder {
@@ -79,6 +80,7 @@ func NewServer(opts *Options, clients *kubeconfig.KubeClients, controllerConstru
 		extensionClient:         clients.ExtensionsClient,
 		electionCheckerTimeout:  leaderHealthzAdaptorTimeout,
 		controllerConstructions: controllerConstructions,
+		crdReadyCh:              make(chan struct{}),
 	}
 	leaderElector := election.NewElector(
 		s.kubeClient,
@@ -110,6 +112,7 @@ func (s *Server) Run(ctx context.Context) error {
 	if err := CheckCRDExists(ctx, s.extensionClient, crdNames); err != nil {
 		return fmt.Errorf("check crd whether exist failed: %v", err.Error())
 	}
+	close(s.crdReadyCh)
 	if err := kusciascheme.AddToScheme(scheme.Scheme); err != nil {
 		return fmt.Errorf("failed to add scheme, detail-> %v", err)
 	}
@@ -212,7 +215,12 @@ func (s *Server) runHealthCheckServer() {
 }
 
 func (s *Server) WaitReady(ctx context.Context) error {
-	return ctx.Err()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-s.crdReadyCh:
+		return nil
+	}
 }
 
 func (s *Server) Name() string {

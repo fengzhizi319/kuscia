@@ -113,6 +113,7 @@ func (s *envoyModule) Run(ctx context.Context) error {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Env = os.Environ()
+		cmd.Dir = s.rootDir
 		return &ModuleCMD{
 			cmd:   cmd,
 			score: &envoyOOMScore,

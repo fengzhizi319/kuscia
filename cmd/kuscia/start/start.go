@@ -177,7 +177,7 @@ func Start(ctx context.Context, configFile string) error {
 	mm.SetDependencies("domainroute", "k3s")                                             // domainroute依赖k3s
 	mm.SetDependencies("interconn", "k3s")                                               // interconn依赖k3s
 	mm.SetDependencies("kusciaapi", "k3s", "config", "domainroute")                      // kusciaapi依赖多个模块
-	mm.SetDependencies("scheduler", "k3s")                                               // scheduler依赖k3s
+	mm.SetDependencies("scheduler", "k3s", "controllers")                                // scheduler依赖k3s和controllers（确保CRD已注册）
 	mm.SetDependencies("ssexporter", "envoy")                                            // ssexporter依赖envoy
 	mm.SetDependencies("metricexporter", "agent", "envoy", "ssexporter", "nodeexporter") // metricexporter依赖多个模块
 	mm.SetDependencies("transport", "envoy")                                             // transport依赖envoy
