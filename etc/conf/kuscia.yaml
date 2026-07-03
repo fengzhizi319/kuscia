@@ -17,80 +17,119 @@
 #############################################################################
 ############                       Common Configs                ############
 #############################################################################
-# Deploy mode
+# 部署模式：指定当前节点的角色类型
+# - master: 主控节点，负责集群管理和任务调度，不执行计算任务
+# - lite: 轻量级工作节点，执行计算任务，需要连接到 Master 节点
+# - autonomy: 自治节点，具备完整的控制和执行能力，可独立运行或点对点组网
 mode: lite
-# Domain ID
+
+# 域ID：当前节点的标识符，用于区分不同的参与方（如 alice、bob 等）
 domainID: alice
-# Domain RSA private key encoded with base64。
+
+# 域RSA私钥（Base64编码）：用于节点间安全通信和身份认证的私钥
+# 注意：生产环境应使用安全的密钥管理方案，不要直接在此明文存储
 domainKeyData: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNRDhDQVFBQ0NRREdsY1Y3MTd5V3l3SURBUUFCQWdrQXR5RGVueG0wUGVFQ0JRRHJVTGUvQWdVQTJBcUQ5UUlFCmFuYkxtd0lFZWFaYUxRSUZBSjZ1S2tjPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo
-# Logging level, INFO、DEBUG、WARN
+
+# 日志级别：控制日志输出的详细程度
+# - DEBUG: 最详细，包含调试信息
+# - INFO: 常规信息（推荐）
+# - WARN: 仅警告和错误
 logLevel: INFO
 
 #############################################################################
 ############                       Lite Configs                  ############
 #############################################################################
-# The deploy token used by the lite connecting to the master.
+# Lite节点专用配置
+
+# 部署令牌（Deploy Token）：Lite节点向Master节点注册时使用的认证令牌
+# 该令牌由Master节点生成，用于验证Lite节点的合法性，注册完成后会被标记为已使用
 liteDeployToken: LS0tLS1CRUdJTi
-# The master endpoint the lite connecting to
+
+# Master节点端点：Lite节点连接的Master节点地址
+# 格式：https://<master-ip>:<port>，默认端口为1080
 masterEndpoint: https://172.18.0.2:1080
 
 #############################################################################
 ############               Lite、Autonomy Configs                ############
 #############################################################################
-# runc or runk or runp
+# Lite和Autonomy节点通用配置
+
+# 容器运行时：指定执行任务的容器运行时类型
+# - runc: 标准OCI容器运行时（默认，适用于本地部署）
+# - runk: 对接外部Kubernetes集群，将任务调度到外部K8s
+# - runp: 进程模式，以进程方式运行任务，无需容器化
 runtime: runc
-# Runk configs
+
+# Runk运行时配置（仅在 runtime=runk 时生效）
 runk:
-  # Organization's k8s namespace scheduling pods
+  # 组织K8s集群的命名空间：任务Pod将被调度到此命名空间中
   namespace: ""
-  # Organization's k8s cluster dns config
+  
+  # DNS服务器配置：外部K8s集群的DNS服务器地址列表
   dnsServers:
-  # The kubeconfig of the organization's k8s cluster, the default serviceaccount will be used.
+  
+  # Kubeconfig文件路径：外部K8s集群的访问凭证文件
+  # 如果不指定，将使用Pod内的默认ServiceAccount进行认证
   kubeconfigFile:
 
-# The capacity of the domain that can be used to schedule app pods.
+# 域资源容量配置：定义当前节点可用于调度的资源上限
+# 这些配置影响任务调度器的决策，确保不会超配资源
 capacity:
-  cpu: # 4
-  memory: # 8Gi
-  pods: # 500
-  storage: # 100Gi
-  bandwidth: # 1000   Custom resource bandwidth, with the unit Mbps. 1000 represents 1000 Mbps.
+  cpu: # CPU核心数，例如：4
+  memory: # 内存容量，例如：8Gi
+  pods: # 最大Pod数量，例如：500
+  storage: # 存储容量，例如：100Gi
+  bandwidth: # 带宽资源（Mbps），自定义资源类型，1000表示1000 Mbps
 
-# Agent image configs
+# Agent镜像配置：控制容器镜像的拉取行为
 image:
+  # 镜像拉取策略
+  # - Always: 总是拉取最新镜像
+  # - IfNotPresent: 本地不存在时才拉取（默认）
+  # - Never: 从不拉取，仅使用本地镜像
   pullPolicy: ""
+  
+  # 默认镜像仓库地址：当镜像名称未指定仓库时使用此地址
   defaultRegistry: ""
-  # container pull image proxy
-  # Example: http://127.0.0.1:8080
+  
+  # HTTP代理：用于加速镜像拉取的代理服务器
+  # 示例：http://127.0.0.1:8080
   httpProxy: ""
+  
+  # 私有镜像仓库配置列表：用于访问需要认证的私有仓库
   registries:
-    - name: ""
-      endpoint: ""
-      username: ""
-      password: ""
+    - name: ""        # 仓库名称标识
+      endpoint: ""    # 仓库地址
+      username: ""    # 用户名
+      password: ""    # 密码
 
 #############################################################################
 ############          Autonomy、Master Configs                   ############
 #############################################################################
-# Database dsn connection string
-# Example: mysql://username:password@tcp(hostname:3306)/database-name
+# Autonomy和Master节点专用配置
+
+# 数据存储端点：数据库连接字符串，用于持久化存储CRD资源和状态信息
+# 支持的数据库类型：MySQL、PostgreSQL等
+# 示例：mysql://username:password@tcp(hostname:3306)/database-name
+# 如果为空，将使用内置的SQLite数据库
 datastoreEndpoint: ""
 
-# Approve configs for workloads
-# The approval switch is disabled by default. When enabled, self party acts as a participant, approval for the Job is required through KusciaAPI.
-# It is recommended to enable this feature in the production environment.
+# 工作负载审批配置：控制任务执行前的审批流程
+# 启用后，当本节点作为参与方时，需要通过KusciaAPI手动审批才能执行任务
+# 建议在生产环境中启用此功能，以增强安全性
 enableWorkloadApprove: false
 
-# DataMesh Config
+# DataMesh数据网格配置：管理数据源的访问和共享
 dataMesh:
+  # 数据代理列表：配置数据代理服务，用于访问不同类型的数据源
   dataProxyList:
-    - endpoint: "dataproxy-grpc:8023" # data proxy endpoint
-      dataSourceTypes:                # the type of datasource that data proxy supported
-        - "odps"                      # odps also call as Aliyun MaxCompute
-        - "hive"
-        - "kingbase"
-        - "dameng"                    # dameng database
-# Note: Currently only a single odps data source configuration is supported. If two odps configurations are defined here, the latter one will override the previous one.
+    - endpoint: "dataproxy-grpc:8023" # 数据代理服务的gRPC端点
+      dataSourceTypes:                # 此代理支持的数据源类型列表
+        - "odps"                      # 阿里云MaxCompute（原ODPS）
+        - "hive"                      # Apache Hive数据仓库
+        - "kingbase"                  # 人大金仓数据库
+        - "dameng"                    # 达梦数据库
+# 注意：目前仅支持单个ODPS数据源配置。如果定义多个ODPS配置，后面的会覆盖前面的。
 #   - endpoint: "example-dataproxy-grpc:8024"
 #     dataSourceTypes:
 #      - "odps"
@@ -98,21 +137,24 @@ dataMesh:
 ############################################################################
 ############                 Garbage Collection Configs        ############
 ############################################################################
-# Garbage Collection configuration
+# 垃圾回收配置：自动清理过期资源，释放存储空间
 garbageCollection:
-  # Kuscia Domain Data Garbage Collection configuration
+  # Kuscia域数据垃圾回收配置：清理过期的DomainData资源
   kusciaDomainDataGC:
-    # Whether to enable kuscia domain data garbage collection. Default is true.
+    # 是否启用域数据垃圾回收。默认值：false（禁用）
+    # 启用后将定期删除超过保留时间的域数据记录
     enable: false
-    # DurationHours specifies how many hours to retain domain data before garbage collection.
-    # Examples: 24 (24 hours), 168 (7 days), 720 (30 days)
-    # Default is 720 (30 days) if not specified
+    
+    # 保留时长（小时）：域数据在被删除前保留的时间
+    # 示例：24（1天）、168（7天）、720（30天）
+    # 默认值：720小时（30天）
     durationHours: 720
-  # KusciaJobGC configuration for kuscia job garbage collection
+  
+  # KusciaJob垃圾回收配置：清理已完成的任务记录
   kusciaJobGC:
-    # DurationHours specifies how many hours to retain completed kuscia jobs before garbage collection.
-    # Examples: 24 (24 hours), 168 (7 days), 720 (30 days)
-    # Default is 720 (30 days) if not specified
+    # 保留时长（小时）：已完成任务在被删除前保留的时间
+    # 示例：24（1天）、168（7天）、720（30天）
+    # 默认值：720小时（30天）
     durationHours: 720
 
 #############################################################################

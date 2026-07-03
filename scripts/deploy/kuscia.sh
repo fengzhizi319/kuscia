@@ -15,50 +15,94 @@
 # limitations under the License.
 #
 
-set -e
+# =============================================================================
+# Kuscia 部署脚本（kuscia/scripts/deploy/kuscia.sh）
+# =============================================================================
+# 本脚本用于在本地 Docker 环境中快速部署 Kuscia 集群，支持以下部署模式：
+#   - center : 中心化组网，包含 1 个 master 和 2 个 lite 节点（alice/bob）
+#   - p2p    : 点对点组网，包含 2 个 autonomy 节点（alice/bob）
+#   - cxc    : center-to-center 跨中心组网
+#   - cxp    : center-to-p2p 混合组网
+#   - start  : 单机多节点模式，通过指定配置文件启动单个 Kuscia 域
+#   - upgrade: 升级已存在的 Kuscia 容器镜像
+#   - monitor: 在 master/autonomy 域上部署监控组件
+#
+# 执行逻辑概览：
+#   1. 解析命令行参数与环境变量，确定部署模式、镜像、端口、目录等。
+#   2. 根据部署模式调用对应的 start_*_cluster 函数，创建 Docker 容器。
+#   3. 初始化 Kuscia 配置文件（kuscia.yaml），挂载数据/日志/k3s 等目录。
+#   4. 启动容器后探测 k3s、Gateway CRD、DataMesh 等关键服务是否就绪。
+#   5. 按需注册 SecretFlow 应用镜像、DataProxy 服务、监控组件。
+# =============================================================================
 
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-RED='\033[31m'
-CTR_ROOT=/home/kuscia
-CTR_CERT_ROOT=${CTR_ROOT}/var/certs
-SF_IMAGE_REGISTRY=""
-NETWORK_NAME="kuscia-exchange"
-CLUSTER_NETWORK_NAME="kuscia-exchange-cluster"
-IMPORT_SF_IMAGE=secretflow
+set -e  # 遇到错误立即退出
 
+# ---------------------------------------------------------------------------
+# 颜色输出定义：用于在终端中高亮显示 info/warn/error 日志
+# ---------------------------------------------------------------------------
+GREEN='\033[0;32m'   # 绿色，一般信息
+YELLOW='\033[1;33m'  # 黄色，警告信息
+NC='\033[0m'         # 恢复默认颜色
+RED='\033[31m'       # 红色，错误信息
+
+# ---------------------------------------------------------------------------
+# 全局常量与默认值
+# ---------------------------------------------------------------------------
+CTR_ROOT=/home/kuscia                          # Kuscia 容器内部根目录
+CTR_CERT_ROOT=${CTR_ROOT}/var/certs            # 容器内证书目录
+SF_IMAGE_REGISTRY=""                           # SecretFlow 镜像仓库名，运行时解析
+NETWORK_NAME="kuscia-exchange"                 # 默认 Docker bridge 网络名
+CLUSTER_NETWORK_NAME="kuscia-exchange-cluster" # 集群模式使用的 Docker overlay 网络名
+IMPORT_SF_IMAGE=secretflow                     # 是否自动导入 SecretFlow 镜像（secretflow/none）
+
+# ---------------------------------------------------------------------------
+# 日志输出函数
+# ---------------------------------------------------------------------------
+# 输出信息日志（绿色）
 function log_info() {
   local log_content=$1
   echo -e "${GREEN}${log_content}${NC}"
 }
 
+# 输出警告日志（黄色）
 function log_warn() {
   local log_content=$1
   echo -e "${YELLOW}${log_content}${NC}"
 }
 
+# 输出错误日志（红色）
 function log_error() {
   local log_content=$1
   echo -e "${RED}${log_content}${NC}"
 }
 
+# ---------------------------------------------------------------------------
+# 镜像默认值：当对应环境变量未设置时使用如下默认镜像
+# ---------------------------------------------------------------------------
 if [[ ${KUSCIA_IMAGE} == "" ]]; then
+  # Kuscia 主镜像：包含 K3s、Envoy、DataMesh、KusciaAPI 等核心组件
   KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
 fi
 
 if [[ "$SECRETFLOW_IMAGE" == "" ]]; then
+  # SecretFlow 计算引擎镜像：用于执行隐私计算任务
   SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-lite-anolis8:1.11.0b1
 fi
 
 if [[ "$DATAPROXY_IMAGE" == "" ]]; then
+  # DataProxy 数据代理镜像：用于访问外部数据源（ODPS/Hive 等）
   DATAPROXY_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/dataproxy:0.1.0b1
 fi
 
 if [[ "$KUSCIA_MONITOR_IMAGE" == "" ]]; then
+  # Kuscia 监控镜像：Prometheus + Grafana
   KUSCIA_MONITOR_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-monitor:latest
 fi
 
+# ---------------------------------------------------------------------------
+# 架构检查：验证当前系统架构是否受支持
+# 支持：x86_64 / amd64 / arm64（arm64 仅警告，继续执行）
+# ---------------------------------------------------------------------------
 function arch_check() {
   local arch
   arch=$(uname -a)
@@ -75,6 +119,10 @@ function arch_check() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# 前置目录检查：验证当前用户对指定目录具有创建与写权限
+# 参数 $1: 待检查的目录路径
+# ---------------------------------------------------------------------------
 function pre_check() {
   if ! mkdir -p "$1" 2>/dev/null || ! chmod 777 "$1" 2>/dev/null; then
     echo -e "${RED}User does not have access to create the directory: $1${NC}"
@@ -82,12 +130,22 @@ function pre_check() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# 初始化 k3s 数据目录
+# 逻辑：
+#   1. 生成临时容器名，避免冲突。
+#   2. 若目标 k3s 目录已存在，询问用户是否保留；选择否时清空该目录。
+#   3. 若目标目录不存在但旧路径 ${HOME}/kuscia/${domain_ctr}/k3s 存在，询问是否迁移旧数据。
+# 参数：无（使用全局变量 DOMAIN_K3S_DB_DIR / domain_ctr）
+# ---------------------------------------------------------------------------
 function init_k3s_data() {
   local random
   random=$(head /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 8)
   local kuscia_tmp_container="kuscia_tmp_${random}"
   OLD_DOMAIN_K3S_DB_DIR="${HOME}/kuscia/${domain_ctr}/k3s"
+  
   if [ -d "${DOMAIN_K3S_DB_DIR}" ]; then
+      # 新目录已存在，询问用户是否保留数据
       echo -e "${GREEN}k3s data already exists ${DOMAIN_K3S_DB_DIR}...${NC}"
       while true; do
         read -rp "$(echo -e "${GREEN}Whether to retain k3s data?(y/n): ${NC}")" reuse
@@ -98,6 +156,7 @@ function init_k3s_data() {
         fi
       done
     if [[ "${reuse}" =~ ^[nN]$ ]]; then
+       # 不保留数据，通过临时容器清空 k3s 数据库目录
        docker run -itd --name="${kuscia_tmp_container}" \
         --volume="${DOMAIN_K3S_DB_DIR}:${CTR_ROOT}/var/k3s/server/db" \
         --workdir=/home/kuscia "${KUSCIA_IMAGE}" bash
@@ -105,6 +164,7 @@ function init_k3s_data() {
        docker rm -f "${kuscia_tmp_container}"
     fi
   else
+    # 新目录不存在，检查旧目录是否需要迁移
     pre_check "${DOMAIN_K3S_DB_DIR}"
     if [ -d "${OLD_DOMAIN_K3S_DB_DIR}" ]; then
       echo -e "${GREEN}k3s data already exists ${OLD_DOMAIN_K3S_DB_DIR}...${NC}"
@@ -117,6 +177,7 @@ function init_k3s_data() {
         fi
       done
       if [[ "${reuse}" =~ ^[yY]$ ]]; then
+        # 从旧目录迁移 k3s 数据到新目录
         docker run -itd --name="${kuscia_tmp_container}" \
           --volume="${OLD_DOMAIN_K3S_DB_DIR}/server/db:${CTR_ROOT}/var/k3s/server/db" \
           --workdir=/home/kuscia "${KUSCIA_IMAGE}" bash
@@ -127,13 +188,21 @@ function init_k3s_data() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# 解析 SECRETFLOW_IMAGE 镜像信息
+# 逻辑：根据镜像路径中 '/' 的数量，分离出 registry、bucket、镜像名与标签。
+#   - 1 个 '/'：无名空间，如 secretflow/secretflow-lite-anolis8:tag
+#   - 2 个 '/'：带 registry 与 bucket，如 registry/bucket/name:tag
+# ---------------------------------------------------------------------------
 function init_sf_image_info() {
   if [ "$SECRETFLOW_IMAGE" != "" ]; then
-    SF_IMAGE_TAG=${SECRETFLOW_IMAGE##*:}
+    SF_IMAGE_TAG=${SECRETFLOW_IMAGE##*:}  # 提取标签（最后一个冒号后的内容）
     path_separator_count="$(echo "$SECRETFLOW_IMAGE" | tr -cd "/" | wc -c)"
     if [ "${path_separator_count}" == 1 ]; then
+      # 格式：name:tag（无仓库前缀）
       SF_IMAGE_NAME=${SECRETFLOW_IMAGE//:${SF_IMAGE_TAG}/}
     elif [ "${path_separator_count}" == 2 ]; then
+      # 格式：registry/bucket/name:tag
       registry=$(echo "${SECRETFLOW_IMAGE}" | cut -d "/" -f 1)
       bucket=$(echo "${SECRETFLOW_IMAGE}" | cut -d "/" -f 2)
       name_and_tag=$(echo "${SECRETFLOW_IMAGE}" | cut -d "/" -f 3)
@@ -146,6 +215,16 @@ function init_sf_image_info() {
 
 init_sf_image_info
 
+# ---------------------------------------------------------------------------
+# 向 kuscia.yaml 追加额外配置
+# 参数：
+#   $1 kuscia_config_file: 配置文件路径
+#   $2 p2p_protocol      : 互联协议，bfia 或 kuscia
+#   $3 domain            : 当前域标识
+# 逻辑：
+#   - bfia 模式：追加 BFIA 专用 agent 插件配置（cert-issuance、config-render、env-import）。
+#   - 非 bfia 模式且 ALLOW_PRIVILEGED=true：追加允许 privileged 容器配置。
+# ---------------------------------------------------------------------------
 function wrap_kuscia_config_file() {
   local kuscia_config_file=$1
   local p2p_protocol=$2
@@ -179,36 +258,47 @@ agent:
   "
 
   if [[ $p2p_protocol == "bfia" ]]; then
+    # BFIA 协议需要特殊的插件配置
     echo -e "$BFIA_CONFIG" >>"$kuscia_config_file"
   else
+    # Kuscia 协议只需配置特权模式
     if [[ $ALLOW_PRIVILEGED == "true" ]]; then
       echo -e "$PRIVILEGED_CONFIG" >>"$kuscia_config_file"
     fi
   fi
 }
 
+# ---------------------------------------------------------------------------
+# 判断是否需要启动（或重建）Docker 容器
+# 参数：$1 ctr - 容器名
+# 返回值：shell 返回码 0 表示需要启动/重建
+# 逻辑：
+#   - 容器不存在：直接返回 0。
+#   - 容器存在：询问用户是否重建；选是则删除旧容器并返回 0，选否则退出脚本。
+# ---------------------------------------------------------------------------
 function need_start_docker_container() {
   local force_start=false
   ctr=$1
 
   if [[ ! "$(docker ps -a -q -f name=^/"${ctr}"$)" ]]; then
-    # need start your container
+    # 容器不存在，需要启动
     return 0
   fi
 
   if $force_start; then
     log_info "Remove container '${ctr}' ..."
     docker rm -f "${ctr}" >/dev/null 2>&1
-    # need start your container
+    # 强制重启，需要启动
     return 0
   fi
 
+  # 容器已存在，询问用户是否重建
   read -rp "$(echo -e "${GREEN}"The container \'"${ctr}"\' already exists. Do you need to recreate it? [y/n]: "${NC}")" yn
   case $yn in
   [Yy]*)
     echo -e "${GREEN}Remove container ${ctr} ...${NC}"
     docker rm -f "${ctr}"
-    # need start your container
+    # 用户选择重建，需要启动
     return 0
     ;;
   *)
@@ -218,6 +308,16 @@ function need_start_docker_container() {
   esac
 }
 
+# ---------------------------------------------------------------------------
+# HTTP 健康检查探针
+# 参数：
+#   $1 ctr        : 目标容器名
+#   $2 endpoint   : 探测 URL
+#   $3 max_retry  : 最大重试次数
+#   $4 enable_mtls: 是否启用 mTLS 双向认证
+# 返回值：0-成功，1-失败
+# 逻辑：循环 curl 探测，状态码为 200/404/401 均视为成功（服务已启动）。
+# ---------------------------------------------------------------------------
 function do_http_probe() {
   local ctr=$1
   local endpoint=$2
@@ -228,10 +328,13 @@ function do_http_probe() {
   while [[ "$retry" -lt "$max_retry" ]]; do
     local status_code
     if [[ "$enable_mtls" == "true" ]]; then
+      # 使用 mTLS 双向认证访问（需要客户端证书）
       status_code=$(docker exec -it "$ctr" curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}" --cacert ${CTR_CERT_ROOT}/ca.crt --cert ${CTR_CERT_ROOT}/ca.crt --key ${CTR_CERT_ROOT}/ca.key | tr -d '\r\n')
     else
+      # 普通 HTTPS 访问（跳过证书验证）
       status_code=$(docker exec -it "$ctr" curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}" | tr -d '\r\n')
     fi
+    # 200(OK)、404(Not Found)、401(Unauthorized) 都表示服务已启动
     if [[ $status_code -eq 200 || $status_code -eq 404 || $status_code -eq 401 ]]; then
       return 0
     fi
@@ -242,6 +345,10 @@ function do_http_probe() {
   return 1
 }
 
+# ---------------------------------------------------------------------------
+# 探测容器内 k3s API Server 是否就绪（端口 6443）
+# 参数：$1 domain_ctr - 容器名
+# ---------------------------------------------------------------------------
 function probe_k3s() {
   local domain_ctr=$1
 
@@ -251,19 +358,29 @@ function probe_k3s() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# 探测 Gateway CRD 是否已创建
+# 参数：
+#   $1 master    : master 容器名
+#   $2 domain    : 域名（命名空间）
+#   $3 gw_name   : gateway 名称（通常为主机名）
+#   $4 max_retry : 最大重试次数
+# 逻辑：先探测 k3s，再循环 kubectl get gateways 检查指定 Gateway 是否存在。
+# ---------------------------------------------------------------------------
 function probe_gateway_crd() {
   local master=$1
   local domain=$2
   local gw_name=$3
   local max_retry=$4
-  probe_k3s "${master}"
+  probe_k3s "${master}"  # 先确保 k3s 已启动
 
   local retry=0
   while [ "${retry}" -lt "${max_retry}" ]; do
     local line_num
+    # 在指定命名空间中查找 Gateway 资源
     line_num=$(docker exec -it "${master}" kubectl get gateways -n "${domain}" | grep -c -i "${gw_name}" | xargs)
     if [[ "${line_num}" == "1" ]]; then
-      return
+      return  # 找到 Gateway，检查通过
     fi
     sleep 1
     retry=$((retry + 1))
@@ -272,6 +389,9 @@ function probe_gateway_crd() {
   exit 1
 }
 
+# ---------------------------------------------------------------------------
+# 创建 Docker volume（若不存在）
+# ---------------------------------------------------------------------------
 function createVolume() {
   local VOLUME_NAME=$1
   if ! docker volume ls --format '{{.Name}}' | grep "^${VOLUME_NAME}$"; then
@@ -279,6 +399,11 @@ function createVolume() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# 生成符合 DNS 规范的主机名
+# 参数：$1 prefix - 前缀
+# 逻辑：prefix-本机主机名，截取 63 字符以内，并将大写/下划线/点转换为小写/短横线。
+# ---------------------------------------------------------------------------
 function generate_hostname() {
     local prefix=$1
     local local_hostname
@@ -287,6 +412,14 @@ function generate_hostname() {
     echo "${local_hostname}"
 }
 
+# ---------------------------------------------------------------------------
+# 在容器之间复制文件
+# 参数：
+#   $1 src_file    : 源容器文件路径
+#   $2 dest_file   : 目标容器文件路径
+#   $3 dest_volume : （预留参数，当前未使用）
+# 逻辑：通过宿主机 /tmp 作为中转完成 docker cp。
+# ---------------------------------------------------------------------------
 function copy_between_containers() {
   local src_file=$1
   local dest_file=$2
@@ -299,6 +432,11 @@ function copy_between_containers() {
   echo "Copy file successfully src_file:'$src_file' to dest_file:'$dest_file'"
 }
 
+# ---------------------------------------------------------------------------
+# 探测 DataMesh 服务是否就绪
+# 参数：$1 domain_ctr - 容器名
+# 逻辑：使用 mTLS 探测 https://127.0.0.1:8070/healthZ，最多重试 30 次。
+# ---------------------------------------------------------------------------
 function probe_datamesh() {
   local domain_ctr=$1
   if ! do_http_probe "$domain_ctr" "https://127.0.0.1:8070/healthZ" 30 true; then
@@ -309,6 +447,11 @@ function probe_datamesh() {
   log_info "Probe datamesh successfully"
 }
 
+# ---------------------------------------------------------------------------
+# 从 kuscia.yaml 中读取 runtime 字段
+# 参数：$1 conf_file - 配置文件路径
+# 返回值：runtime 值（runc/runk/runp）
+# ---------------------------------------------------------------------------
 function get_runtime() {
   local conf_file=$1
   local runtime
@@ -316,19 +459,38 @@ function get_runtime() {
   echo "$runtime"
 }
 
+# ---------------------------------------------------------------------------
+# 生成容器挂载参数
+# 参数：$1 deploy_mode - 部署模式（master/lite/autonomy）
+# 返回值：挂载参数字符串
+# 逻辑：
+#   - start 模式下非 master 节点：挂载 data、logs、images、k3s 卷。
+#   - 其他模式下非 master 节点：仅挂载 images 卷。
+#   - master 节点：无状态，不挂载数据/日志/镜像卷。
+# ---------------------------------------------------------------------------
 function generate_mount_flag() {
   local deploy_mode=$1
   if [ "$deploy_mode" != "master" ] && [ "$mode" = "start" ]; then
+    # 启动模式下，非 Master 节点需要挂载数据、日志和镜像目录
     local log_volume="-v ${DOMAIN_LOG_DIR}:${CTR_ROOT}/var/stdout"
     local image_volume="-v ${DOMAIN_IMAGE_WORK_DIR}:${CTR_ROOT}/var/images"
     local data_volume="-v ${DOMAIN_DATA_DIR}:${CTR_ROOT}/var/storage/data"
   elif [ "$deploy_mode" != "master" ]; then
+    # 非启动模式下，只挂载镜像目录
     local image_volume="-v ${DOMAIN_IMAGE_WORK_DIR}:${CTR_ROOT}/var/images"
   fi
   local mount_flag="${data_volume} ${log_volume} ${image_volume} ${k3s_volume}"
   echo "$mount_flag"
 }
 
+# ---------------------------------------------------------------------------
+# 创建集群内部域路由（center 模式使用）
+# 参数：
+#   $1 src_domain  : 源域
+#   $2 dest_domain : 目标域
+# 逻辑：在 master 容器内调用 create_cluster_domain_route.sh，
+#      使 src_domain 能通过 http://{USER}-kuscia-lite-{dest_domain}:1080 访问目标域。
+# ---------------------------------------------------------------------------
 function create_cluster_domain_route() {
   local ctr_prefix=${USER}-kuscia
   local master_ctr=${ctr_prefix}-master
@@ -340,6 +502,19 @@ function create_cluster_domain_route() {
   log_info "Cluster domain route from '${src_domain}' to '${dest_domain}' created successfully dest_endpoint: '${ctr_prefix}'-lite-'${dest_domain}':1080"
 }
 
+# ---------------------------------------------------------------------------
+# 建立 P2P 跨域互联
+# 参数：
+#   $1 host_ctr          : 作为 host 的容器
+#   $2 member_ctr        : 作为 member 的容器
+#   $3 member_domain     : member 域名
+#   $4 host_domain       : host 域名
+#   $5 interconn_protocol: 互联协议（kuscia/bfia）
+# 逻辑：
+#   1. 将 member 的 domain.crt 复制到 host 证书目录并命名为 {member_domain}.domain.crt。
+#   2. 在 host 上调用 add_domain.sh 添加 member 域。
+#   3. 在 member 上调用 join_to_host.sh 加入 host。
+# ---------------------------------------------------------------------------
 function build_interconn() {
   local host_ctr=$1
   local member_ctr=$2
@@ -355,6 +530,19 @@ function build_interconn() {
   log_info "Build internet connect from '${member_domain}' to '${host_domain}' successfully protocol: '${interconn_protocol}' dest host: '${host_ctr}':1080"
 }
 
+# ---------------------------------------------------------------------------
+# 初始化 Kuscia 配置文件
+# 参数：
+#   $1 domain_type      : 部署类型（master/lite/autonomy）
+#   $2 domain_id        : 域 ID
+#   $3 domain_ctr       : 容器名
+#   $4 kuscia_conf_file : 配置文件输出路径
+#   $5 master_endpoint  : master 端点地址（lite 节点需要）
+# 逻辑：
+#   - lite 节点：先通过 add_domain_lite.sh 获取 token，再执行 kuscia init。
+#   - 其他节点：直接执行 kuscia init 生成配置。
+#   - 随后按需追加 dataproxy 配置与互联协议配置。
+# ---------------------------------------------------------------------------
 function init_kuscia_conf_file() {
   local domain_type=$1
   local domain_id=$2
@@ -374,6 +562,14 @@ function init_kuscia_conf_file() {
   wrap_kuscia_config_file "${kuscia_conf_file}" "${interconn_protocol}" "${domain_id}"
 }
 
+# ---------------------------------------------------------------------------
+# 启用 rootless 模式的前置校验
+# 参数：
+#   $1 deploy_mode : 部署模式
+#   $2 runtime     : 容器运行时
+# 逻辑：rootless 仅在 lite/autonomy 的 runp 模式或 master 模式下生效；
+#      若当前为 root 用户或 runtime 为 runc，则强制关闭 rootless。
+# ---------------------------------------------------------------------------
 function enable_rootless() {
   local deploy_mode=$1
   local runtime=$2
@@ -384,6 +580,18 @@ function enable_rootless() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# 初始化部署工作目录与相关变量
+# 参数：
+#   $1 domain_ctr  : 容器名
+#   $2 runtime     : 容器运行时
+#   $3 deploy_mode : 部署模式
+# 逻辑：
+#   1. 设置 ROOT 与 DOMAIN_WORK_DIR。
+#   2. rootless 模式下工作目录追加 -rootless 后缀。
+#   3. 创建并校验目录权限；非 master 节点创建 images 目录。
+#   4. start 模式下创建/校验 data、logs、k3s 目录，并打印关键路径与端口。
+# ---------------------------------------------------------------------------
 function init() {
   local domain_ctr=$1
   local runtime=$2
@@ -422,6 +630,29 @@ function init() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# 启动单个 Kuscia Docker 容器
+# 参数：
+#   $1  domain_ctr
+#   $2  domain_id
+#   $3  kuscia_conf_file
+#   $4  mount_flag
+#   $5  memory_limit
+#   $6  domain_host_port
+#   $7  kusciaapi_http_port
+#   $8  kusciaapi_grpc_port
+#   $9  domain_host_internal_port
+#   $10 metrics_port
+# 逻辑：
+#   1. 默认暴露 5 个端口：internal(80)、gateway(1080)、kusciaapi-http(8082)、
+#      kusciaapi-grpc(8083)、metrics(9091)。
+#   2. 非 start 模式且不指定 --expose-ports 时不暴露端口。
+#   3. runc 运行时非 master 节点：创建独立 containerd volume 并启用 --privileged。
+#   4. runp 运行在 Linux 上时追加 SYS_PTRACE 能力。
+#   5. 集群模式使用 CLUSTER_NETWORK_NAME，否则使用默认 bridge 网络。
+#   6. rootless 模式下自定义 DNS 与 user 参数。
+#   7. 构造并执行 docker run 命令；若镜像内置 runp 镜像则注册到本地 store。
+# ---------------------------------------------------------------------------
 function start_container() {
   local domain_ctr=$1
   local domain_id=$2
@@ -469,6 +700,7 @@ function start_container() {
     user_flag="--user $(id -u):kuscia"
   }
 
+  # 通过数组拼接 docker run 命令，避免空格导致的解析问题
   cmd=("docker" "run" "-dit")
 
   [[ -n "${privileged_flag}" ]] && { read -ra args <<< "${privileged_flag}"; cmd+=("${args[@]}"); }
@@ -486,6 +718,7 @@ function start_container() {
   
   "${cmd[@]}"
 
+  # runp 运行时：若 Kuscia 镜像内置了 runp 镜像，则导入到本地镜像仓库
   if [[ -n "$(docker run --rm "$KUSCIA_IMAGE" bash -c 'ls -A /home/kuscia/var/images')" ]] && [[ ${runtime} == "runp" ]]; then
      builtin_images=$(docker run --rm "$KUSCIA_IMAGE" bash -c 'kuscia image ls --runtime runp | sed "1d" | awk "{print \$1\":\"\$2}"')
      for image in $builtin_images; do
@@ -494,6 +727,30 @@ function start_container() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# 启动 Kuscia 容器的完整流程
+# 参数：
+#   $1  domain_type
+#   $2  domain_id
+#   $3  runtime
+#   $4  master_endpoint
+#   $5  domain_ctr
+#   $6  init_kuscia_conf_file （是否重新生成配置文件：true/false）
+#   $7  mount_flag
+#   $8  domain_host_port
+#   $9  kusciaapi_http_port
+#   $10 kusciaapi_grpc_port
+#   $11 domain_host_internal_port
+#   $12 metrics_port
+# 逻辑：
+#   1. 生成 hostname，检查/拉取 KUSCIA_IMAGE。
+#   2. 根据 domain_type 设置默认内存限制（lite 4G / autonomy 6G / master 2G）。
+#   3. 创建 Docker 网络。
+#   4. 若 init_kuscia_conf_file=true，初始化目录并生成 kuscia.yaml。
+#   5. 判断是否需要重建容器，需要时启动容器并探测 k3s/Gateway/DataMesh。
+#   6. 导入/注册 SecretFlow 应用镜像。
+#   7. 若启用 dataproxy，启动 DataProxy 服务。
+# ---------------------------------------------------------------------------
 function start_kuscia_container() {
   local domain_type=$1
   local domain_id=$2
@@ -566,6 +823,7 @@ function start_kuscia_container() {
     [[ "$domain_type" != "master" ]] && probe_datamesh "${domain_ctr}"
   fi
 
+  # 导入 SecretFlow 镜像到非 master 域的本地镜像仓库
   if [[ ${IMPORT_SF_IMAGE} = "none"  ]]; then
     echo -e "${GREEN}skip importing sf image${NC}"
   elif [[ ${IMPORT_SF_IMAGE} = "secretflow"  ]]; then
@@ -575,24 +833,34 @@ function start_kuscia_container() {
       rm -rf "${DOMAIN_WORK_DIR}/register_app_image.sh"
     fi
   fi
+  # 在 master/autonomy 域上注册 SecretFlow AppImage 资源
   if [[ "$domain_type" != "lite" ]]; then
     docker exec -it "${domain_ctr}" scripts/deploy/register_app_image.sh -i "${SECRETFLOW_IMAGE}" -m
     log_info "Create secretflow app image done"
   fi
 
+  # 若启用 dataproxy，部署 DataProxy 服务
   if [[ "$dataproxy" == "true" ]]; then
     start_data_proxy "$domain_type" "$domain_id" "$domain_ctr" "$runtime"
   fi
   log_info "$domain_type domain '${domain_id}' deployed successfully"
 }
 
+# ---------------------------------------------------------------------------
+# 读取 kuscia.yaml 中指定 key 的值（忽略注释行）
+# 参数：$1 config_file, $2 key
+# ---------------------------------------------------------------------------
 function get_config_value() {
   local config_file=$1
   local key=$2
   grep -E "^[^#]*${key}:" "$config_file" | awk '{ print $2 }' | sed 's/"//g' | tr -d '\r\n'
 }
 
-# pre check runtime when cluster network mode
+# ---------------------------------------------------------------------------
+# 集群网络模式下运行时预检查
+# 参数：$1 runtime
+# 逻辑：集群网络模式仅支持 runp/runk，不支持 runc。
+# ---------------------------------------------------------------------------
 function pre_check_center_runtime() {
 
   local runtime=$1
@@ -604,6 +872,14 @@ function pre_check_center_runtime() {
 
 }
 
+# ---------------------------------------------------------------------------
+# 单机多节点模式启动入口
+# 逻辑：
+#   1. 从 KUSCIA_CONFIG_FILE 读取 domainID/mode/masterEndpoint/datastoreEndpoint/protocol/runtime。
+#   2. 设置默认端口（internal 13081 / kusciaapi-http 13082 / kusciaapi-grpc 13083 / metrics 13084）。
+#   3. 集群模式时校验 runtime 不为 runc。
+#   4. 生成容器名并调用 init / start_kuscia_container。
+# ---------------------------------------------------------------------------
 function start_kuscia() {
   local kuscia_conf_file=${KUSCIA_CONFIG_FILE}
   local domain_id
@@ -644,6 +920,10 @@ function start_kuscia() {
   start_kuscia_container "${deploy_mode}" "${domain_id}" "${runtime}" "${master_endpoint}" "${domain_ctr}" "false" "${mount_flag}" "${DOMAIN_HOST_PORT}" "${kusciaapi_http_port}" "${kusciaapi_grpc_port}" "${domain_host_internal_port}" "${metrics_port}"
 }
 
+# ---------------------------------------------------------------------------
+# 向 kuscia.yaml 追加 DataProxy 配置段
+# 参数：$1 kuscia_config_file
+# ---------------------------------------------------------------------------
 function dataproxy_config() {
    local kuscia_config_file=$1
    local data_proxy_config='dataMesh:
@@ -659,6 +939,21 @@ function dataproxy_config() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# 启动 DataProxy 服务
+# 参数：
+#   $1 deploy_mode
+#   $2 domain_id
+#   $3 domain_ctr
+#   $4 runtime
+# 逻辑：
+#   1. 非 master 域：导入 DataProxy 镜像到本地仓库。
+#   2. 非 lite 域：注册 DataProxy AppImage。
+#   3. 非 master 域：调用 KusciaAPI serving 接口部署 DataProxy Serving。
+#      - 若协议不是 notls，使用 mTLS + token 认证。
+#      - 先查询是否已存在同名 serving，存在则删除。
+#      - 循环调用 create 接口，最多重试 30 次。
+# ---------------------------------------------------------------------------
 function start_data_proxy() {
    local deploy_mode=$1
    local domain_id=$2
@@ -670,20 +965,20 @@ function start_data_proxy() {
    local kusciaapi_endpoint="http://localhost:8082/api/v1/serving"
    
    log_info "DATAPROXY_IMAGE=${DATAPROXY_IMAGE}"
-   # import dataproxy image
+   # 导入 DataProxy 镜像到本地仓库
    if [[ "$deploy_mode" != "master" ]]; then
       docker run --rm "${KUSCIA_IMAGE}" cat "${CTR_ROOT}/scripts/deploy/register_app_image.sh" > "${DOMAIN_WORK_DIR}/register_app_image.sh" && chmod u+x "${DOMAIN_WORK_DIR}/register_app_image.sh"
       bash "${DOMAIN_WORK_DIR}/register_app_image.sh" -c "${domain_ctr}" -i "${DATAPROXY_IMAGE}" --import
       rm -rf "${DOMAIN_WORK_DIR}/register_app_image.sh"
    fi
 
-   # register dataproxy appimage
+   # 注册 DataProxy AppImage
    if [[ "$deploy_mode" != "lite" ]]; then
       docker exec -it "${domain_ctr}" scripts/deploy/register_app_image.sh -i "${DATAPROXY_IMAGE}" -m
       log_info "Create dataproxy appimage done"
    fi
 
-   # deployment dataproxy
+   # 部署 DataProxy Serving
    if [[ "$deploy_mode" != "master" ]]; then
       if [[ "${protocol}" != "notls" ]]; then
           docker cp "${domain_ctr}:/home/kuscia/var/certs/token" .   
@@ -701,7 +996,7 @@ function start_data_proxy() {
       fi
       while [[ "$counter" -lt "$max_test_counter" ]]; do
         local deploy_response
-        deploy_response=$(docker exec -it "${domain_ctr}" curl -k -X POST "${kusciaapi_endpoint}/create" "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\",\"initiator\":\"${domain_id}\",\"parties\":[{\"domain_id\":\"${domain_id}\",\"app_image\":\"dataproxy-image\",\"service_name_prefix\":\"dataproxy\"}]}")
+        deploy_response=$(docker exec -it "${domain_ctr}" curl -k -X POST "${kusciaapi_endpoint}/create" "${header[@]}" --header 'Content-Type: application/json' -d "{\"serving_id\":\"dataproxy-${domain_id}\",\"initiator\":\"${domain_id}\",\"parties\":[{\"domain_id\":\"${domain_id}\",\"app_image\":\"dataproxy-image\",\"service_name_prefix\":\"dataproxy\"}]")
         if echo "$deploy_response" | grep -q '"code":0'; then
           break
           rm -rf token
@@ -717,6 +1012,17 @@ function start_data_proxy() {
    fi
 }
 
+# ---------------------------------------------------------------------------
+# 部署 Kuscia Monitor 监控组件
+# 参数：$1 domain_id
+# 逻辑：
+#   1. 仅支持 master/autonomy 域，lite 域不支持。
+#   2. 从 kuscia.yaml 读取 mode/runtime/domainID。
+#   3. 检查是否已部署 monitor，避免重复部署。
+#   4. 根据 runtime（runk/runc）选择对应的 kustomization 模板并替换占位符，
+#      然后通过 kubectl apply -k 部署。
+#   5. 轮询 Pod 与服务状态，确认 Running 后输出 Prometheus 查询命令。
+# ---------------------------------------------------------------------------
 function start_kuscia_monitor() {
    local domain_id=$1
    local kuscia_conf_file
@@ -730,7 +1036,7 @@ function start_kuscia_monitor() {
    else
       runtime=$(get_runtime "$kuscia_conf_file")
    fi
-   # deploy kuscia monitor
+   # 部署 Kuscia Monitor
    if [[ "$deploy_mode" != "lite" ]]; then
       local container_ip
       container_ip=$(hostname -i)
@@ -772,7 +1078,7 @@ function start_kuscia_monitor() {
         kubectl apply -k /tmp/monitor/runc/
       fi
       
-      # check monitor deployment status
+      # 检查 monitor 部署状态
       log_info "Checking monitor deployment status..."
       while [[ "$counter" -lt "$max_test_counter" ]]; do
         deploy_response=$(kubectl get po -n "$domain_id" | grep '^monitor-' | awk '{print $3}') 
@@ -795,6 +1101,15 @@ function start_kuscia_monitor() {
    fi
 }
 
+# ---------------------------------------------------------------------------
+# 启动 center 模式集群
+# 结构：1 master + 2 lite（alice / bob）
+# 逻辑：
+#   1. 启动 master 容器（域名为 kuscia-system）。
+#   2. 启动 alice、bob lite 容器，分别注册到 master。
+#   3. 创建 alice->bob 与 bob->alice 的集群域路由。
+#   4. 在两个 lite 容器中初始化示例数据。
+# ---------------------------------------------------------------------------
 function start_center_cluster() {
   local alice_domain=alice
   local bob_domain=bob
@@ -814,6 +1129,15 @@ function start_center_cluster() {
   log_info "Kuscia ${mode} cluster started successfully"
 }
 
+# ---------------------------------------------------------------------------
+# 启动 p2p 模式集群
+# 结构：2 autonomy（alice / bob）
+# 参数：$1 p2p_protocol - 互联协议（kuscia/bfia）
+# 逻辑：
+#   1. 分别启动 alice、bob autonomy 容器。
+#   2. 互相建立 P2P 互联（alice->bob 与 bob->alice）。
+#   3. 初始化示例数据。
+# ---------------------------------------------------------------------------
 function start_p2p_cluster() {
   local alice_domain=alice
   local bob_domain=bob
@@ -832,6 +1156,17 @@ function start_p2p_cluster() {
   log_info "Kuscia ${mode} cluster started successfully"
 }
 
+# ---------------------------------------------------------------------------
+# 启动 cxc（center-to-center）模式集群
+# 结构：2 master（alice 侧 / bob 侧）+ 2 lite
+# 参数：$1 transit - 是否启用网关转发能力（true/false）
+# 逻辑：
+#   1. 启动 alice_master、bob_master。
+#   2. 启动 alice、bob lite 并分别注册到各自 master。
+#   3. 两个 master 之间建立 P2P 互联。
+#   4. 根据 transit 标志，建立 lite 与对端域之间的直连或中转路由。
+#   5. 初始化示例数据。
+# ---------------------------------------------------------------------------
 function start_cxc_cluster() {
   local alice_domain=alice
   local bob_domain=bob
@@ -870,7 +1205,7 @@ function start_cxc_cluster() {
     docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" http://"${bob_ctr}":1080 -i false -x "${alice_master_domain}" -p "${p2p_protocol}"
 
     docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" http://"${bob_ctr}":1080 -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_master_domain}" "${bob_domain}" http://"${bob_ctr}":1080 -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
+    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${bob_domain}" http://"${bob_ctr}":1080 -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
 
     docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_master_domain}" "${alice_domain}" http://"${alice_ctr}":1080 -i false -p "${p2p_protocol}"
 
@@ -885,6 +1220,12 @@ function start_cxc_cluster() {
   log_info "Kuscia ${mode} cluster started successfully"
 }
 
+# ---------------------------------------------------------------------------
+# 启动 cxp（center-to-p2p）模式集群
+# 结构：1 master（alice 侧）+ 1 lite（alice）+ 1 autonomy（bob）
+# 参数：$1 transit - 是否启用网关转发能力（true/false）
+# 逻辑与 cxc 类似，但 bob 侧为 autonomy 节点，直接与 alice master 建立互联。
+# ---------------------------------------------------------------------------
 function start_cxp_cluster() {
   local alice_domain=alice
   local bob_domain=bob
@@ -925,6 +1266,15 @@ function start_cxp_cluster() {
   log_info "Kuscia ${mode} cluster started successfully"
 }
 
+# ---------------------------------------------------------------------------
+# 升级已存在的 Kuscia 容器
+# 参数：$1 domain_ctr - 待升级的容器名
+# 逻辑：
+#   1. 通过 docker inspect 保留原容器的卷挂载、端口映射、网络、内存限制、用户等配置。
+#   2. 删除旧容器。
+#   3. 使用新 KUSCIA_IMAGE 重新启动容器，并重新挂载原配置与数据卷。
+#   4. 探测 Gateway CRD 与 DataMesh 是否恢复。
+# ---------------------------------------------------------------------------
 function upgrade_kuscia() {
   local domain_ctr=$1
   local kuscia_conf_file
@@ -939,7 +1289,7 @@ function upgrade_kuscia() {
   local memory
 
   kuscia_conf_file=$(docker inspect -f '{{range .Mounts}}{{if eq .Destination "/home/kuscia/etc/conf/kuscia.yaml"}}{{.Source}}{{end}}{{end}}' "$domain_ctr" | sed 's|/host_mnt||')
-  kuscia_volumes=$(docker inspect -f '{{ range .Mounts }}-v {{ .Source }}:{{ .Destination }}{{ "\n" }}{{ end }}' "$domain_ctr" | sed 's|/host_mnt||')
+  kuscia_volumes=$(docker inspect -f '{{ range .Mounts}}-v {{ .Source }}:{{ .Destination }}{{ "\n" }}{{ end }}' "$domain_ctr" | sed 's|/host_mnt||')
   kuscia_ports=$(docker port "$domain_ctr" | awk '{split($1, a, "/"); split($3, b, ":"); if (b[2] != "") printf "-p %s:%s ", b[2], a[1]}')
   network_name=$(docker inspect -f '{{range $key, $value := .NetworkSettings.Networks}}{{$key}} {{end}}' "$domain_ctr")
   domain_hostname=$(generate_hostname "${domain_ctr}") || { echo -e "${RED}Failed to generate hostname${NC}"; exit 1; }
@@ -963,6 +1313,12 @@ function upgrade_kuscia() {
   log_info "$domain_type domain '${domain_ctr}' upgrade successfully"
 }
 
+# ---------------------------------------------------------------------------
+# 创建/校验 Kuscia 使用的 Docker 网络
+# 逻辑：
+#   - start 模式且启用 CLUSTERED：不创建网络，仅校验 CLUSTER_NETWORK_NAME 为 overlay + Attachable。
+#   - 其他情况：若默认网络不存在则创建 bridge 网络 NETWORK_NAME。
+# ---------------------------------------------------------------------------
 function build_kuscia_network() {
   if [[ ${mode} == "start" ]] && [[ "${CLUSTERED}" == true ]]; then
     # Clustered mode does not create network.
@@ -972,7 +1328,12 @@ function build_kuscia_network() {
   fi
 }
 
-# pre check docker network
+# ---------------------------------------------------------------------------
+# 集群网络预检查
+# 逻辑：
+#   1. 若 CLUSTER_NETWORK_NAME 不存在，则临时创建一个 overlay attachable 网络。
+#   2. 检查现有网络是否为 overlay 驱动且 Attachable=true，否则报错退出。
+# ---------------------------------------------------------------------------
 function pre_check_cluster_network() {
 
   local container_id
@@ -1001,6 +1362,9 @@ function pre_check_cluster_network() {
   fi
 }
 
+# ---------------------------------------------------------------------------
+# 获取文件绝对路径
+# ---------------------------------------------------------------------------
 function get_absolute_path() {
   echo "$(
     cd "$(dirname -- "$1")" >/dev/null
@@ -1008,6 +1372,9 @@ function get_absolute_path() {
   )/$(basename -- "$1")"
 }
 
+# ---------------------------------------------------------------------------
+# 使用说明
+# ---------------------------------------------------------------------------
 usage() {
   echo "$(basename "$0") DEPLOY_MODE [OPTIONS]
 DEPLOY_MODE:
@@ -1040,6 +1407,11 @@ Common Options:
     --rootless        Kuscia run with non-root user, rootless is only effective on lite and autonomy with runp runtime, or master mode"
 }
 
+# ---------------------------------------------------------------------------
+# 主流程：命令解析与模式分发
+# ---------------------------------------------------------------------------
+
+# 第一步：确定部署模式
 mode=
 case "$1" in
 center | p2p | cxc | cxp | start | upgrade | monitor)
@@ -1048,6 +1420,7 @@ center | p2p | cxc | cxp | start | upgrade | monitor)
   ;;
 esac
 
+# 第二步：预处理长选项（getopts 不直接支持 --）
 NEW_ARGS=()
 
 for arg in "$@"; do
@@ -1083,6 +1456,7 @@ for arg in "$@"; do
     esac
 done
 
+# 第三步：使用 getopts 解析短选项
 interconn_protocol=
 transit=false
 set -- "${NEW_ARGS[@]}"
@@ -1147,12 +1521,14 @@ while getopts 'P:a:c:d:l:m:p:q:s:tk:g:x:h' option; do
 done
 shift $((OPTIND - 1))
 
+# 第四步：协议默认值与模式校验
 [ "$interconn_protocol" == "bfia" ] || interconn_protocol="kuscia"
 if [[ "$mode" == "center" && "$interconn_protocol" != "kuscia" ]]; then
   printf "In current quickstart script, center mode just support 'kuscia'\n" >&2
   exit 1
 fi
 
+# 第五步：根据模式调用对应部署函数
 case "$mode" in
 center)
   start_center_cluster
