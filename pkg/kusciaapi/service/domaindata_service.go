@@ -57,21 +57,35 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/kusciaapi"
 )
 
+// IDomainDataService 定义了 DomainData(数据资产)元数据管理的对外服务接口。
+// DomainData 是 kuscia 中对"一份数据"的元数据抽象(指向具体数据源中的文件/表等),
+// 其本身以 k8s 自定义资源(CRD)的形式存储,namespace 对应 domain_id。
 type IDomainDataService interface {
+	// CreateDomainData 创建一条 DomainData;若指定的 domaindata_id 已存在,则退化为更新语义。
 	CreateDomainData(ctx context.Context, request *kusciaapi.CreateDomainDataRequest) *kusciaapi.CreateDomainDataResponse
+	// UpdateDomainData 更新一条已存在的 DomainData(支持部分字段更新)。
 	UpdateDomainData(ctx context.Context, request *kusciaapi.UpdateDomainDataRequest) *kusciaapi.UpdateDomainDataResponse
+	// DeleteDomainData 只删除 DomainData 元数据,不处理底层原始数据。
 	DeleteDomainData(ctx context.Context, request *kusciaapi.DeleteDomainDataRequest) *kusciaapi.DeleteDomainDataResponse
+	// DeleteDomainDataAndRaw 删除 DomainData 元数据,同时清理其指向的原始数据(文件/对象/数据库表)。
 	DeleteDomainDataAndRaw(ctx context.Context, request *kusciaapi.DeleteDomainDataRequest) *kusciaapi.DeleteDomainDataResponse
+	// QueryDomainData 按 domain_id + domaindata_id 查询单条详情。
 	QueryDomainData(ctx context.Context, request *kusciaapi.QueryDomainDataRequest) *kusciaapi.QueryDomainDataResponse
+	// BatchQueryDomainData 按多个 domain_id + domaindata_id 批量查询,容忍部分不存在。
 	BatchQueryDomainData(ctx context.Context, request *kusciaapi.BatchQueryDomainDataRequest) *kusciaapi.BatchQueryDomainDataResponse
+	// ListDomainData 按 domain_id(可选按类型/vendor 过滤)列出该 domain 下所有 DomainData。
 	ListDomainData(ctx context.Context, request *kusciaapi.ListDomainDataRequest) *kusciaapi.ListDomainDataResponse
 }
 
+// domainDataService 是 IDomainDataService 的默认实现。
+// conf 提供 KusciaClient(访问 apiserver)、RunMode/Initiator(lite 模式判断)、DomainKey(解密密钥)等依赖;
+// configService 用于从 config manager 查询数据源连接信息(可为空,表示不支持该能力)。
 type domainDataService struct {
 	conf          *config.KusciaAPIConfig
 	configService cmservice.IConfigService
 }
 
+// NewDomainDataService 构造 domainDataService 实例。
 func NewDomainDataService(config *config.KusciaAPIConfig, configService cmservice.IConfigService) IDomainDataService {
 	return &domainDataService{
 		conf:          config,
@@ -79,40 +93,54 @@ func NewDomainDataService(config *config.KusciaAPIConfig, configService cmservic
 	}
 }
 
+// CreateDomainData 创建一条 DomainData(数据资产)记录。
+//
+// 执行逻辑:
+//  1. 基础字段校验:domain_id、type、relative_uri 不能为空,domain_id 需符合 k8s 命名规范。
+//  2. lite 模式下校验:若当前是 kuscia lite 部署,只能操作自己 domain 下的数据。
+//  3. 若请求携带了 domaindata_id,先按 k8s 规范校验其命名,再去 apiserver 查询是否已存在:
+//     - 若已存在,则退化为"更新"语义,调用 UpdateDomainData 并转换响应返回(即 Create 接口的幂等/upsert 行为)。
+//  4. 鉴权:authHandler 校验调用方(domain 角色)是否只操作自己的 DomainData。
+//  5. 归一化请求参数:填充 name、domaindata_id、datasource_id、vendor 默认值,并处理 relative_uri 前导斜杠。
+//  6. 若指定了 datasource_id,校验对应的 DomainDataSource 是否存在。
+//  7. 组装 k8s 自定义资源 DomainData(打上类型、vendor、互联协议等 label,以及 initiator 注解)。
+//  8. 调用 KusciaClient 在 apiserver 中创建该 DomainData 资源。
+//  9. 创建成功返回 domaindata_id;创建失败则转换为 kusciaapi 错误码返回。
 func (s domainDataService) CreateDomainData(ctx context.Context, request *kusciaapi.CreateDomainDataRequest) *kusciaapi.CreateDomainDataResponse {
-	// validate domainID
+	// 1. 校验 domain_id 不能为空
 	if request.DomainId == "" {
 		return &kusciaapi.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "request domain id can not be empty"),
 		}
 	}
+	// 校验 domain_id 是否符合 k8s 资源命名规范(会作为 namespace 使用)
 	if err := resources.ValidateK8sName(request.DomainId, "domain_id"); err != nil {
 		return &kusciaapi.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
-	// validate data type
+	// 2. 校验数据类型 type 不能为空
 	if request.Type == "" {
 		return &kusciaapi.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "request type can not be empty"),
 		}
 	}
-	// validate relative_uri
+	// 3. 校验相对路径 relative_uri 不能为空
 	if request.RelativeUri == "" {
 		return &kusciaapi.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "request relative_uri can not be empty"),
 		}
 	}
-	// validate lite request
+	// 4. lite 模式下,只允许操作 initiator 自己的 domain 数据
 	if err := s.validateRequestWhenLite(request); err != nil {
 		return &kusciaapi.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
 
-	// check whether domainData is existed
+	// 5. 若显式指定了 domaindata_id,先检查该资源是否已存在,存在则走"更新"逻辑,实现 upsert 语义
 	if request.DomaindataId != "" {
-		// do k8s validate
+		// 先做 k8s 命名合法性校验(会作为资源 name 使用)
 		if err := resources.ValidateK8sName(request.DomaindataId, "domaindata_id"); err != nil {
 			return &kusciaapi.CreateDomainDataResponse{
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
@@ -120,20 +148,21 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 		}
 		domainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 		if err == nil && domainData != nil {
-			// update domainData
+			// 资源已存在:转换为 UpdateDomainData 请求并复用更新逻辑,再把响应转换回 Create 响应格式
 			resp := s.UpdateDomainData(ctx, convert2UpdateReq(request))
 			return convert2CreateResp(resp, request.DomaindataId)
 		}
 	}
-	// auth pre handler
+	// 6. 鉴权:domain 角色只能操作自己的 DomainData
 	if err := s.authHandler(ctx, request); err != nil {
 		return &kusciaapi.CreateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
-	// normalization request
+	// 7. 归一化请求:补全 name/domaindata_id/datasource_id/vendor 默认值,规整 relative_uri
 	s.normalizationCreateRequest(request)
 
+	// 8. 若指定了数据源,需要确认该数据源在当前 domain 下确实存在
 	if len(request.DatasourceId) > 0 {
 		kusciaErrorCode, msg := CheckDomainDataSourceExists(s.conf.KusciaClient, request.DomainId, request.DatasourceId)
 
@@ -144,20 +173,22 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 		}
 	}
 
-	// verdor priority using incoming
+	// vendor 以请求传入的值为准(经过归一化后已有默认值兜底)
 	customVendor := request.Vendor
 
-	// build kuscia domain
+	// 9. 组装 k8s 资源上的 label,用于后续按类型/vendor/互联协议筛选查询
 	Labels := map[string]string{
 		common.LabelDomainDataType:        request.Type,
 		common.LabelDomainDataVendor:      customVendor,
 		common.LabelInterConnProtocolType: "kuscia",
 	}
 
+	// 标记该 DomainData 的发起方(创建者所属 domain)
 	annotations := map[string]string{
 		common.InitiatorAnnotationKey: request.DomainId,
 	}
 
+	// 10. 构造 DomainData 自定义资源对象
 	kusciaDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        request.DomaindataId,
@@ -177,7 +208,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			FileFormat:  common.Convert2KubeFileFormat(request.FileFormat),
 		},
 	}
-	// create kuscia domain
+	// 11. 调用 apiserver 在指定 domain(namespace) 下创建该 DomainData 资源
 	_, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Create(ctx, kusciaDomainData, metav1.CreateOptions{})
 	if err != nil {
 		nlog.Errorf("CreateDomainData failed, error: %s", err.Error())
@@ -185,6 +216,7 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 			Status: utils.BuildErrorResponseStatus(errorcode.CreateDomainDataErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrCreateDomainDataFailed), err.Error()),
 		}
 	}
+	// 12. 创建成功,返回最终生效的 domaindata_id
 	return &kusciaapi.CreateDomainDataResponse{
 		Status: utils.BuildSuccessResponseStatus(),
 		Data: &kusciaapi.CreateDomainDataResponseData{
@@ -193,26 +225,40 @@ func (s domainDataService) CreateDomainData(ctx context.Context, request *kuscia
 	}
 }
 
+// UpdateDomainData 更新一条已存在的 DomainData 记录。
+//
+// 执行逻辑:
+//  1. 基础校验:domaindata_id、domain_id 不能为空。
+//  2. lite 模式校验:只能操作自己 domain 下的数据。
+//  3. 鉴权:domain 角色只能操作自己的 DomainData。
+//  4. 从 apiserver 获取原始 DomainData 资源(作为 merge patch 的基准)。
+//  5. 归一化更新请求:请求中未传的字段,用原始资源里的值兜底填充(实现"部分更新"语义)。
+//  6. 若变更了 datasource_id,校验新的数据源是否存在。
+//  7. 构造"期望状态"的 DomainData 对象(修改后的 label 及 spec)。
+//  8. 用 MergeDomainData 计算出 JSON merge patch(原始对象 vs 修改后对象的差异)。
+//  9. 调用 apiserver Patch 接口,将差异应用到该资源上。
+//  10. 返回成功或失败响应。
 func (s domainDataService) UpdateDomainData(ctx context.Context, request *kusciaapi.UpdateDomainDataRequest) *kusciaapi.UpdateDomainDataResponse {
-	// do validate
+	// 1. 基础字段校验
 	if request.DomaindataId == "" || request.DomainId == "" {
 		return &kusciaapi.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domain id and domaindata id can not be empty"),
 		}
 	}
 
+	// 2. lite 模式下只能操作自己 domain 的数据
 	if err := s.validateRequestWhenLite(request); err != nil {
 		return &kusciaapi.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
-	// auth pre handler
+	// 3. 鉴权
 	if err := s.authHandler(ctx, request); err != nil {
 		return &kusciaapi.UpdateDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
-	// get original domainData from k8s
+	// 4. 获取原始资源,用于后续 merge patch 计算
 	originalDomainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
 		nlog.Errorf("UpdateDomainData failed, error: %s", err.Error())
@@ -221,7 +267,9 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 		}
 	}
 
+	// 5. 请求中未携带的字段,使用原始资源的值兜底,避免"部分更新"把其他字段清空
 	s.normalizationUpdateRequest(request, originalDomainData.Spec)
+	// 6. 若变更了数据源,需要校验新数据源是否存在
 	if len(request.DatasourceId) > 0 {
 		kusciaErrorCode, msg := CheckDomainDataSourceExists(s.conf.KusciaClient, request.DomainId, request.DatasourceId)
 
@@ -232,17 +280,18 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 		}
 	}
 
-	// build modified domainData
+	// 7. 复制原有 label,再覆盖类型和 vendor,构造"期望状态"的 label
 	labels := make(map[string]string)
 	for key, value := range originalDomainData.Labels {
 		labels[key] = value
 	}
 
-	// verdor priority using incoming
+	// vendor 以请求传入的值为准(经过归一化后已有默认值兜底)
 	customVendor := request.Vendor
 
 	labels[common.LabelDomainDataType] = request.Type
 	labels[common.LabelDomainDataVendor] = customVendor
+	// 构造修改后的 DomainData 对象,ResourceVersion 保持与原始资源一致,便于乐观锁校验
 	modifiedDomainData := &v1alpha1.DomainData{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            request.DomaindataId,
@@ -262,7 +311,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 			FileFormat:  common.Convert2KubeFileFormat(request.FileFormat),
 		},
 	}
-	// merge modifiedDomainData to originalDomainData
+	// 8. 计算 original -> modified 的 JSON merge patch
 	patchBytes, originalBytes, modifiedBytes, err := service.MergeDomainData(originalDomainData, modifiedDomainData)
 	if err != nil {
 		nlog.Errorf("Merge DomainData failed, request: %+v,error: %s.",
@@ -273,7 +322,7 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 	}
 	nlog.Debugf("Update DomainData request: %+v, patchBytes: %s, originalDomainData: %s, modifiedDomainData: %s.",
 		request, patchBytes, originalBytes, modifiedBytes)
-	// patch the merged domainData
+	// 9. 将 merge patch 应用到 apiserver 中的资源上
 	_, err = s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(originalDomainData.Namespace).Patch(ctx, originalDomainData.Name, types.MergePatchType, patchBytes, metav1.PatchOptions{})
 	if err != nil {
 		nlog.Debugf("Patch DomainData failed, request: %+v, patchBytes: %s, originalDomainData: %s, modifiedDomainData: %s, error: %s.",
@@ -282,12 +331,22 @@ func (s domainDataService) UpdateDomainData(ctx context.Context, request *kuscia
 			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrPatchDomainDataFailed), err.Error()),
 		}
 	}
-	// construct the response
+	// 10. 更新成功
 	return &kusciaapi.UpdateDomainDataResponse{
 		Status: utils.BuildSuccessResponseStatus(),
 	}
 }
 
+// deleteLocalFsFile 删除本地文件系统中的原始数据文件。
+//
+// 执行逻辑:
+//  1. 安全校验:base path 必须位于允许的本地数据源根目录(DefaultDomainDataSourceLocalFSPath)下,
+//     防止误配置导致越权删除任意目录。
+//  2. 安全校验:对 relativeUri 做 Clean 处理,禁止出现 ".." 路径穿越,防止跳出 base path 删除其他文件。
+//  3. 拼接得到目标文件的绝对路径,检查文件是否存在:
+//     - 存在则删除;
+//     - 不存在则忽略(视为已删除,不报错);
+//     - 其他 stat 错误则返回错误。
 func deleteLocalFsFile(path, relativeUri string) error {
 	// Validate the base path to ensure it is within the allowed directory
 	if !strings.Contains(path, common.DefaultDomainDataSourceLocalFSPath) {
@@ -313,6 +372,14 @@ func deleteLocalFsFile(path, relativeUri string) error {
 	return nil
 }
 
+// deleteOSSFile 删除对象存储(S3 兼容协议,如 OSS/MinIO)中的原始数据文件。
+//
+// 执行逻辑:
+//  1. 使用 AK/SK 构造 AWS S3 session(S3ForcePathStyle 由 virtualHost 取反决定,兼容路径风格/虚拟主机风格两种寻址方式)。
+//  2. 先用 HeadObject 探测对象是否存在:
+//     - 若返回 404,说明对象不存在,视为已删除,直接返回成功;
+//     - 若是其他错误,返回错误。
+//  3. 调用 DeleteObject 删除该对象。
 func deleteOSSFile(accessKey, secretKey, endpoint, bucketName, prefix, relativeURI string, virtualHost bool) error {
 
 	nlog.Debugf("Open oss remote endpoint(%s), bucket(%s), relativeURI(%s)", endpoint, bucketName, relativeURI)
@@ -356,6 +423,11 @@ func deleteOSSFile(accessKey, secretKey, endpoint, bucketName, prefix, relativeU
 	return nil
 }
 
+// deleteMysqlTable 删除 MySQL 数据源中对应的原始数据表(DomainData 以表形式存储的场景)。
+//
+// 执行逻辑:
+//  1. 拼接 DSN 并打开数据库连接(使用 database/sql + mysql 驱动)。
+//  2. 执行 `DROP TABLE IF EXISTS` 删除对应的表,relativeURI 即表名。
 func deleteMysqlTable(user, passwd, endpoint, database, relativeURI string) error {
 	nlog.Debugf("Open MySQL Session database(%s), user(%s)", database, user)
 
@@ -380,6 +452,13 @@ func deleteMysqlTable(user, passwd, endpoint, database, relativeURI string) erro
 	return nil
 }
 
+// deletePostgresqlTable 删除 PostgreSQL 数据源中对应的原始数据表。
+//
+// 执行逻辑:
+//  1. 解析 endpoint,兼容 "host:port?params" 形式,拆出连接参数(params)、host、port
+//     (若 endpoint 中缺省端口,则退回默认 Postgresql 端口)。
+//  2. 拼接 DSN 并打开数据库连接(使用 database/sql + postgres 驱动)。
+//  3. 执行 `DROP TABLE IF EXISTS` 删除对应的表,relativeURI 即表名。
 func deletePostgresqlTable(user, passwd, endpoint, database, relativeURI string) error {
 	nlog.Debugf("Open Postgresql Session database(%s), user(%s)", database, user)
 	params := ""
@@ -427,6 +506,13 @@ func deletePostgresqlTable(user, passwd, endpoint, database, relativeURI string)
 	return nil
 }
 
+// getDsInfoByKey 通过 config manager 提供的 key,查询并解码数据源连接信息(如 AK/SK、账号密码等)。
+//
+// 执行逻辑:
+//  1. 若未注入 configService,直接返回错误(说明当前环境不支持该能力)。
+//  2. 调用 configService.QueryConfig 按 key 查询配置内容。
+//  3. 查询失败(非成功状态码)时返回错误。
+//  4. 查询成功后,按 sourceType 解码出具体的 DataSourceInfo 结构体。
 func (s domainDataService) getDsInfoByKey(ctx context.Context, sourceType string, infoKey string) (*kusciaapi.DataSourceInfo, error) {
 	if s.configService == nil {
 		return nil, fmt.Errorf("cm config service is empty, skip get datasource info by key")
@@ -444,6 +530,12 @@ func (s domainDataService) getDsInfoByKey(ctx context.Context, sourceType string
 	return info, err
 }
 
+// getDomainDataSourceById 根据 namespace(domain) 和 datasourceId 从 apiserver 获取 DomainDataSource 资源。
+//
+// 执行逻辑:
+//  1. 调用 KusciaClient 查询指定资源。
+//  2. 若资源不存在,返回带有明确语义的"数据源不存在"错误。
+//  3. 其他错误统一包装后返回。
 func (s domainDataService) getDomainDataSourceById(namespace string, datasourceId string) (*v1alpha1.DomainDataSource, error) {
 	domaindatasource, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDataSources(namespace).Get(context.Background(), datasourceId, metav1.GetOptions{})
 	if err != nil {
@@ -455,6 +547,11 @@ func (s domainDataService) getDomainDataSourceById(namespace string, datasourceI
 	return domaindatasource, nil
 }
 
+// decryptInfo 使用 domain 私钥(OAEP)解密 DomainDataSource 中加密存储的连接信息,并反序列化为 DataSourceInfo。
+//
+// 执行逻辑:
+//  1. 用 s.conf.DomainKey 对 cipherInfo 做 RSA-OAEP 解密,得到明文 JSON 字节。
+//  2. 将明文 JSON 反序列化为 kusciaapi.DataSourceInfo 结构体。
 func (s domainDataService) decryptInfo(cipherInfo string) (*kusciaapi.DataSourceInfo, error) {
 	plaintext, err := tls.DecryptOAEP(s.conf.DomainKey, cipherInfo)
 	if err != nil {
@@ -467,28 +564,43 @@ func (s domainDataService) decryptInfo(cipherInfo string) (*kusciaapi.DataSource
 	return info, nil
 }
 
+// DeleteDomainDataAndRaw 删除 DomainData 元数据记录,同时删除其对应的原始数据(文件/对象/数据库表)。
+//
+// 执行逻辑:
+//  1. 基础校验:domaindata_id、domain_id 不能为空;lite 模式只能操作自己的数据;鉴权。
+//  2. 记录一条 warn 级别的审计日志,标记这是一次破坏性操作。
+//  3. 从 apiserver 获取该 DomainData,取出其 datasource_id 和 relative_uri(原始数据的定位信息)。
+//  4. 根据 datasource_id 查询对应的 DomainDataSource 资源(不存在则报错)。
+//  5. 解密数据源连接信息:
+//     - 若数据源配置了 InfoKey,说明连接信息存放在 config manager,通过 getDsInfoByKey 查询解码;
+//     - 否则,连接信息以加密形式内嵌在数据源资源的 Data 字段中,通过 decryptInfo 用 domain 私钥解密。
+//  6. 根据数据源类型(localfs/oss/mysql/postgresql)分别调用对应的删除函数清理原始数据;
+//     不支持的类型直接返回错误,不做任何删除。
+//  7. 原始数据删除成功后,再删除 apiserver 中的 DomainData 元数据记录。
+//  8. 任一步骤失败都会提前返回错误响应,只有全部成功才返回成功响应。
 func (s domainDataService) DeleteDomainDataAndRaw(ctx context.Context, request *kusciaapi.DeleteDomainDataRequest) *kusciaapi.DeleteDomainDataResponse {
 	var err error
-	// do validate
+	// 1. 基础字段校验
 	if request.DomaindataId == "" || request.DomainId == "" {
 		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domain id and domaindata id can not be empty"),
 		}
 	}
+	// lite 模式下只能操作自己 domain 的数据
 	if err = s.validateRequestWhenLite(request); err != nil {
 		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
-	// auth pre handler
+	// 鉴权
 	if err = s.authHandler(ctx, request); err != nil {
 		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
-	// record the delete operation
+	// 2. 记录审计日志(带原始数据删除,属于破坏性/不可逆操作)
 	nlog.Warnf("Delete domainID: %s domainDataID: %s", request.DomainId, request.DomaindataId)
-	// Fetch the DomainData object based on domaindataId
+	// 3. 获取 DomainData 元数据,拿到数据源 id 与相对路径
 	domainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Get(ctx, request.DomaindataId, metav1.GetOptions{})
 	if err != nil {
 		nlog.Errorf("Failed to get DomainData with ID %s: %v", request.DomaindataId, err)
@@ -501,6 +613,7 @@ func (s domainDataService) DeleteDomainDataAndRaw(ctx context.Context, request *
 	datasourceId := domainData.Spec.DataSource
 	relativeUri := domainData.Spec.RelativeURI
 
+	// 4. 查询数据源资源
 	domaindatasource, err := s.getDomainDataSourceById(domainData.Namespace, datasourceId)
 
 	if err != nil {
@@ -509,8 +622,9 @@ func (s domainDataService) DeleteDomainDataAndRaw(ctx context.Context, request *
 		}
 	}
 	var domaindatasourceInfo, info *kusciaapi.DataSourceInfo
-	// decrypt the info
+	// 5. 解密/解码数据源连接信息(两种存储方式二选一)
 	if len(domaindatasource.Spec.InfoKey) != 0 {
+		// 方式一:连接信息托管在 config manager,按 key 查询
 		info, err = s.getDsInfoByKey(ctx, domaindatasource.Spec.Type, domaindatasource.Spec.InfoKey)
 		if err != nil {
 			nlog.Errorf("Failed to get DomainDataSource info by key %s: %v", domaindatasource.Spec.InfoKey, err)
@@ -520,6 +634,7 @@ func (s domainDataService) DeleteDomainDataAndRaw(ctx context.Context, request *
 		}
 		domaindatasourceInfo = info
 	} else {
+		// 方式二:连接信息以加密形式内嵌在数据源资源的 Data 字段中
 		encryptedContent, exist := domaindatasource.Spec.Data[encryptedInfo]
 		if !exist {
 			nlog.Errorf("DomainDataSource %s does not have encrypted info", datasourceId)
@@ -527,6 +642,7 @@ func (s domainDataService) DeleteDomainDataAndRaw(ctx context.Context, request *
 				Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, "DomainDataSource does not have encrypted info"),
 			}
 		}
+		// 用 domain 私钥解密
 		domaindatasourceInfo, err = s.decryptInfo(encryptedContent)
 		if err != nil {
 			nlog.Errorf("Failed to decrypt DomainDataSource info: %v", err)
@@ -535,6 +651,7 @@ func (s domainDataService) DeleteDomainDataAndRaw(ctx context.Context, request *
 			}
 		}
 	}
+	// 6. 按数据源类型分发到对应的原始数据删除逻辑
 	switch domaindatasource.Spec.Type {
 	case "localfs":
 		if err = deleteLocalFsFile(domaindatasourceInfo.Localfs.Path, relativeUri); err != nil {
@@ -566,12 +683,13 @@ func (s domainDataService) DeleteDomainDataAndRaw(ctx context.Context, request *
 			}
 		}
 	default:
+		// 不支持的数据源类型:不做任何删除,直接报错
 		nlog.Warnf("Unsupported domainDataSource type: %s", domaindatasource.Spec.Type)
 		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed, "unsupported domainDataSource type"),
 		}
 	}
-	// delete kuscia domainData
+	// 7. 原始数据清理成功后,再删除 DomainData 元数据记录
 	err = s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Delete(ctx, request.DomaindataId, metav1.DeleteOptions{})
 	if err != nil {
 		nlog.Errorf("Delete domainData: %s failed, detail: %s", request.DomaindataId, err.Error())
@@ -579,32 +697,41 @@ func (s domainDataService) DeleteDomainDataAndRaw(ctx context.Context, request *
 			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrDeleteDomainDataFailed), err.Error()),
 		}
 	}
+	// 8. 全部成功
 	return &kusciaapi.DeleteDomainDataResponse{
 		Status: utils.BuildSuccessResponseStatus(),
 	}
 }
 
+// DeleteDomainData 仅删除 DomainData 元数据记录,不处理底层原始数据(与 DeleteDomainDataAndRaw 相对)。
+//
+// 执行逻辑:
+//  1. 基础校验:domaindata_id、domain_id 不能为空。
+//  2. lite 模式校验、鉴权。
+//  3. 记录审计日志。
+//  4. 直接调用 apiserver 删除该 DomainData 资源。
 func (s domainDataService) DeleteDomainData(ctx context.Context, request *kusciaapi.DeleteDomainDataRequest) *kusciaapi.DeleteDomainDataResponse {
-	// do validate
+	// 1. 基础字段校验
 	if request.DomaindataId == "" || request.DomainId == "" {
 		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domain id and domaindata id can not be empty"),
 		}
 	}
+	// 2. lite 模式校验
 	if err := s.validateRequestWhenLite(request); err != nil {
 		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
-	// auth pre handler
+	// 鉴权
 	if err := s.authHandler(ctx, request); err != nil {
 		return &kusciaapi.DeleteDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
-	// record the delete operation
+	// 3. 审计日志
 	nlog.Warnf("Delete domainID: %s domainDataID: %s", request.DomainId, request.DomaindataId)
-	// delete kuscia domainData
+	// 4. 只删除 apiserver 中的元数据资源,原始数据不受影响
 	err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.DomainId).Delete(ctx, request.DomaindataId, metav1.DeleteOptions{})
 	if err != nil {
 		nlog.Errorf("Delete domainData: %s failed, detail: %s", request.DomaindataId, err.Error())
@@ -617,25 +744,33 @@ func (s domainDataService) DeleteDomainData(ctx context.Context, request *kuscia
 	}
 }
 
+// QueryDomainData 按 domain_id + domaindata_id 查询单条 DomainData 详情。
+//
+// 执行逻辑:
+//  1. 基础校验:domain_id、domaindata_id 不能为空。
+//  2. lite 模式校验、鉴权。
+//  3. 从 apiserver 获取该资源。
+//  4. 将 k8s DomainData 对象转换为 kusciaapi.DomainData 对外响应结构体返回。
 func (s domainDataService) QueryDomainData(ctx context.Context, request *kusciaapi.QueryDomainDataRequest) *kusciaapi.QueryDomainDataResponse {
-	// do validate
+	// 1. 基础字段校验
 	if request.Data == nil || request.Data.DomaindataId == "" || request.Data.DomainId == "" {
 		return &kusciaapi.QueryDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domain id and domaindata id can not be empty"),
 		}
 	}
+	// 2. lite 模式校验
 	if err := s.validateRequestWhenLite(request.Data); err != nil {
 		return &kusciaapi.QueryDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
-	// auth pre handler
+	// 鉴权
 	if err := s.authHandler(ctx, request.Data); err != nil {
 		return &kusciaapi.QueryDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
-	// get kuscia domain
+	// 3. 查询 apiserver 中的资源
 	kusciaDomainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.Data.DomainId).Get(ctx, request.Data.DomaindataId, metav1.GetOptions{})
 	if err != nil {
 		nlog.Errorf("QueryDomainData failed, error: %s", err.Error())
@@ -643,7 +778,7 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *kusciaa
 			Status: utils.BuildErrorResponseStatus(errorcode.GetDomainDataErrorCode(err, pberrorcode.ErrorCode_KusciaAPIErrGetDomainDataFailed), err.Error()),
 		}
 	}
-	// build domain response
+	// 4. 转换为对外响应结构体
 	return &kusciaapi.QueryDomainDataResponse{
 		Status: utils.BuildSuccessResponseStatus(),
 		Data: &kusciaapi.DomainData{
@@ -664,8 +799,17 @@ func (s domainDataService) QueryDomainData(ctx context.Context, request *kusciaa
 	}
 }
 
+// BatchQueryDomainData 批量查询多条 DomainData 详情(按 domain_id + domaindata_id 列表)。
+//
+// 执行逻辑:
+//  1. 遍历请求列表,逐条做基础字段校验(domain_id/domaindata_id 不能为空)、lite 模式校验、鉴权;
+//     任一条不合法则整体请求失败返回。
+//  2. 逐条从 apiserver 查询对应的 DomainData:
+//     - 若某条不存在(NotFound),跳过该条,不影响其他条目的结果(容忍部分缺失);
+//     - 其他错误则整体失败返回。
+//  3. 将查询到的资源转换为响应结构体列表返回。
 func (s domainDataService) BatchQueryDomainData(ctx context.Context, request *kusciaapi.BatchQueryDomainDataRequest) *kusciaapi.BatchQueryDomainDataResponse {
-	// do validate
+	// 1. 逐条校验请求
 	for _, v := range request.Data {
 		if v.GetDomainId() == "" || v.GetDomaindataId() == "" {
 			return &kusciaapi.BatchQueryDomainDataResponse{
@@ -685,12 +829,13 @@ func (s domainDataService) BatchQueryDomainData(ctx context.Context, request *ku
 			}
 		}
 	}
-	// get kuscia domain
+	// 2. 逐条查询,组装结果列表
 	respDatas := make([]*kusciaapi.DomainData, 0, len(request.Data))
 	for _, v := range request.Data {
 		kusciaDomainData, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(v.DomainId).Get(ctx, v.DomaindataId, metav1.GetOptions{})
 		if err != nil {
 			if k8serrors.IsNotFound(err) {
+				// 该条不存在,跳过,不阻断整体查询
 				continue
 			}
 			nlog.Errorf("QueryDomainData failed, error: %s", err.Error())
@@ -715,7 +860,7 @@ func (s domainDataService) BatchQueryDomainData(ctx context.Context, request *ku
 		}
 		respDatas = append(respDatas, &domainData)
 	}
-	// build domain response
+	// 3. 返回聚合结果
 	return &kusciaapi.BatchQueryDomainDataResponse{
 		Status: utils.BuildSuccessResponseStatus(),
 		Data: &kusciaapi.DomainDataList{
@@ -724,25 +869,34 @@ func (s domainDataService) BatchQueryDomainData(ctx context.Context, request *ku
 	}
 }
 
+// ListDomainData 按 domain_id 列出该 domain 下的 DomainData,支持按类型/vendor 过滤。
+//
+// 执行逻辑:
+//  1. 基础校验:domain_id 不能为空;lite 模式校验、鉴权。
+//  2. 根据请求的 domaindata_type、domaindata_vendor 构造 k8s label selector(可组合 AND)。
+//  3. 调用 apiserver List 接口按 selector 查询该 namespace 下的所有 DomainData
+//     (TODO: 尚未支持分页 limit/continue,一次性拉取全部)。
+//  4. 将查询结果逐条转换为响应结构体列表返回。
 func (s domainDataService) ListDomainData(ctx context.Context, request *kusciaapi.ListDomainDataRequest) *kusciaapi.ListDomainDataResponse {
-	// do validate
+	// 1. 基础字段校验
 	if request.Data == nil || request.Data.DomainId == "" {
 		return &kusciaapi.ListDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, "domain id can not be empty"),
 		}
 	}
+	// lite 模式校验
 	if err := s.validateRequestWhenLite(request.Data); err != nil {
 		return &kusciaapi.ListDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrRequestValidate, err.Error()),
 		}
 	}
-	// auth pre handler
+	// 鉴权
 	if err := s.authHandler(ctx, request.Data); err != nil {
 		return &kusciaapi.ListDomainDataResponse{
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrAuthFailed, err.Error()),
 		}
 	}
-	// construct label selector
+	// 2. 按类型/vendor 构造 label selector,支持组合过滤
 	var (
 		selector    fields.Selector
 		selectorStr string
@@ -761,7 +915,7 @@ func (s domainDataService) ListDomainData(ctx context.Context, request *kusciaap
 		}
 		selectorStr = selector.String()
 	}
-	// get kuscia domain
+	// 3. 调用 apiserver 列出符合条件的资源
 	// todo support limit and continue
 	dataList, err := s.conf.KusciaClient.KusciaV1alpha1().DomainDatas(request.Data.DomainId).List(ctx, metav1.ListOptions{
 		TypeMeta:       metav1.TypeMeta{},
@@ -776,6 +930,7 @@ func (s domainDataService) ListDomainData(ctx context.Context, request *kusciaap
 			Status: utils.BuildErrorResponseStatus(pberrorcode.ErrorCode_KusciaAPIErrListDomainDataFailed, err.Error()),
 		}
 	}
+	// 4. 转换为响应结构体列表
 	respDatas := make([]*kusciaapi.DomainData, len(dataList.Items))
 	for i, v := range dataList.Items {
 		domaindata := kusciaapi.DomainData{
@@ -795,7 +950,6 @@ func (s domainDataService) ListDomainData(ctx context.Context, request *kusciaap
 		}
 		respDatas[i] = &domaindata
 	}
-	// build domain response
 	return &kusciaapi.ListDomainDataResponse{
 		Status: utils.BuildSuccessResponseStatus(),
 		Data: &kusciaapi.DomainDataList{
@@ -804,6 +958,8 @@ func (s domainDataService) ListDomainData(ctx context.Context, request *kusciaap
 	}
 }
 
+// convert2UpdateReq 将 CreateDomainDataRequest 转换为 UpdateDomainDataRequest,
+// 用于 CreateDomainData 中检测到资源已存在时,复用 UpdateDomainData 的逻辑(实现 upsert)。
 func convert2UpdateReq(createReq *kusciaapi.CreateDomainDataRequest) (updateReq *kusciaapi.UpdateDomainDataRequest) {
 	updateReq = &kusciaapi.UpdateDomainDataRequest{
 		Header:       createReq.Header,
@@ -821,6 +977,8 @@ func convert2UpdateReq(createReq *kusciaapi.CreateDomainDataRequest) (updateReq 
 	return
 }
 
+// convert2CreateResp 将 UpdateDomainDataResponse 转换回 CreateDomainDataResponse,
+// 复用其 Status,并补齐 Create 接口特有的 domaindata_id 字段。
 func convert2CreateResp(updateResp *kusciaapi.UpdateDomainDataResponse, domainDataID string) (createResp *kusciaapi.CreateDomainDataResponse) {
 	createResp = &kusciaapi.CreateDomainDataResponse{
 		Status: updateResp.Status,
@@ -831,6 +989,16 @@ func convert2CreateResp(updateResp *kusciaapi.UpdateDomainDataResponse, domainDa
 	return
 }
 
+// normalizationCreateRequest 对 CreateDomainData 请求做归一化/补全处理。
+//
+// 执行逻辑:
+//  1. name 为空时,取 relative_uri 最后一段路径作为默认 name。
+//  2. domaindata_id 为空时,基于 name 生成一个确定性的 id。
+//  3. datasource_id 为空时,使用默认数据源 id。
+//  4. vendor 为空时,使用默认 vendor。
+//  5. 去除 relative_uri 的前导路径分隔符,避免与数据源 path/prefix 拼接时产生错误路径
+//     (例如 datasource path="/home/admin"、prefix="/test/"、relativeURI="/data/a.csv" 拼接时,
+//     若不去除前导斜杠,filepath.Join 会导致最终路径丢失 prefix 部分)。
 func (s domainDataService) normalizationCreateRequest(request *kusciaapi.CreateDomainDataRequest) {
 	// normalization domaindata name
 	if request.Name == "" {
@@ -859,6 +1027,8 @@ func (s domainDataService) normalizationCreateRequest(request *kusciaapi.CreateD
 	request.RelativeUri = strings.TrimPrefix(request.RelativeUri, string(filepath.Separator))
 }
 
+// normalizationUpdateRequest 对 UpdateDomainData 请求做归一化处理,实现"部分更新"语义:
+// 请求中未携带(零值)的字段,用原始资源(data)中的现有值兜底填充,避免覆盖成空值。
 func (s domainDataService) normalizationUpdateRequest(request *kusciaapi.UpdateDomainDataRequest, data v1alpha1.DomainDataSpec) {
 	if request.Name == "" {
 		request.Name = data.Name
@@ -889,6 +1059,9 @@ func (s domainDataService) normalizationUpdateRequest(request *kusciaapi.UpdateD
 	}
 }
 
+// authHandler 鉴权处理:从 ctx 中解析出调用方角色和所属 domain。
+// 若调用方角色是 domain(而非 master 等更高权限角色),则只允许操作自己 domain 下的资源,
+// 请求中的 domain_id 必须与调用方 domain 一致,否则拒绝。
 func (s domainDataService) authHandler(ctx context.Context, request RequestWithDomainID) error {
 	role, domainID := GetRoleAndDomainFromCtx(ctx)
 	if role == consts.AuthRoleDomain && request.GetDomainId() != domainID {
@@ -897,6 +1070,8 @@ func (s domainDataService) authHandler(ctx context.Context, request RequestWithD
 	return nil
 }
 
+// validateRequestWhenLite 在 kuscia lite 部署模式下,限制只能操作 initiator 自身所属 domain 的数据,
+// 防止 lite 节点越权操作其他 domain 的数据(lite 模式通常只服务单一 domain)。
 func (s domainDataService) validateRequestWhenLite(request RequestWithDomainID) error {
 	if s.conf.RunMode == common.RunModeLite && request.GetDomainId() != s.conf.Initiator {
 		return fmt.Errorf("kuscia lite api could only operate it's own domaindata, the domainid of request must be %s, not %s", s.conf.Initiator, request.GetDomainId())

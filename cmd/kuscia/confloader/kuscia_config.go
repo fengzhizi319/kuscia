@@ -45,7 +45,7 @@ import (
 // 用于解析和存储Lite节点的完整配置信息
 // ============================================================================
 type LiteKusciaConfig struct {
-	CommonConfig      `yaml:",inline"`                       // 嵌入通用配置（mode、domainID、domainKeyData等）
+	CommonConfig      `yaml:",inline"`            // 嵌入通用配置（mode、domainID、domainKeyData等）
 	LiteDeployToken   string                      `yaml:"liteDeployToken"`   // Lite节点部署令牌：用于向Master节点注册时的身份认证凭证，由Master颁发，一次性使用
 	MasterEndpoint    string                      `yaml:"masterEndpoint"`    // Master节点端点地址：Lite节点连接的Master服务URL，格式为https://<ip>:<port>
 	Runtime           string                      `yaml:"runtime"`           // 容器运行时类型：runc（本地容器）、runk（外部K8s）、runp（进程模式）
@@ -54,7 +54,7 @@ type LiteKusciaConfig struct {
 	ReservedResources config.ReservedResourcesCfg `yaml:"reservedResources"` // 预留资源配置：为系统组件预留的CPU、内存、带宽资源，不参与任务调度
 	Image             ImageConfig                 `yaml:"image"`             // 镜像管理配置：控制容器镜像的拉取策略、仓库地址、代理设置等
 	AdvancedConfig    `yaml:",inline"`            // 嵌入高级配置（KusciaAPI、ConfManager、DataMesh等）
-	GarbageCollection GarbageCollectionConfig `yaml:"garbageCollection,omitempty"` // 垃圾回收配置：控制过期资源的自动清理策略
+	GarbageCollection GarbageCollectionConfig     `yaml:"garbageCollection,omitempty"` // 垃圾回收配置：控制过期资源的自动清理策略
 }
 
 // ============================================================================
@@ -62,10 +62,10 @@ type LiteKusciaConfig struct {
 // 用于解析和存储Master节点的完整配置信息
 // ============================================================================
 type MasterKusciaConfig struct {
-	CommonConfig      `yaml:",inline"`            // 嵌入通用配置
-	DatastoreEndpoint string `yaml:"datastoreEndpoint"` // 数据存储端点：数据库连接字符串，用于持久化CRD资源和状态信息
-	ClusterToken      string `yaml:"clusterToken,omitempty"` // 集群令牌：用于Master节点间的安全通信认证（可选）
-	AdvancedConfig    `yaml:",inline"`            // 嵌入高级配置
+	CommonConfig      `yaml:",inline"`        // 嵌入通用配置
+	DatastoreEndpoint string                  `yaml:"datastoreEndpoint"`      // 数据存储端点：数据库连接字符串，用于持久化CRD资源和状态信息
+	ClusterToken      string                  `yaml:"clusterToken,omitempty"` // 集群令牌：用于Master节点间的安全通信认证（可选）
+	AdvancedConfig    `yaml:",inline"`        // 嵌入高级配置
 	GarbageCollection GarbageCollectionConfig `yaml:"garbageCollection,omitempty"` // 垃圾回收配置
 }
 
@@ -83,7 +83,7 @@ type AutonomyKusciaConfig struct {
 	Image             ImageConfig                 `yaml:"image"`             // 镜像管理配置
 	DatastoreEndpoint string                      `yaml:"datastoreEndpoint"` // 数据存储端点
 	AdvancedConfig    `yaml:",inline"`            // 嵌入高级配置
-	GarbageCollection GarbageCollectionConfig `yaml:"garbageCollection,omitempty"` // 垃圾回收配置
+	GarbageCollection GarbageCollectionConfig     `yaml:"garbageCollection,omitempty"` // 垃圾回收配置
 }
 
 // ============================================================================
@@ -145,11 +145,11 @@ type ImageRegistry struct {
 // 所有节点类型共享的基础配置项
 // ============================================================================
 type CommonConfig struct {
-	Mode          string          `yaml:"mode"`                    // 部署模式：master/lite/autonomy，决定节点角色
-	DomainID      string          `yaml:"domainID"`                // 域ID：当前节点的唯一标识符，用于区分不同参与方
-	DomainKeyData string          `yaml:"domainKeyData"`           // 域私钥（Base64编码）：用于节点间安全通信和身份认证的RSA私钥
-	LogLevel      string          `yaml:"logLevel"`                // 日志级别：DEBUG（调试）、INFO（信息）、WARN（警告）、ERROR（错误）
-	Protocol      common.Protocol `yaml:"protocol,omitempty"`      // 通信协议：NOTLS（无加密）、TLS（单向加密）、MTLS（双向加密）
+	Mode          string          `yaml:"mode"`               // 部署模式：master/lite/autonomy，决定节点角色
+	DomainID      string          `yaml:"domainID"`           // 域ID：当前节点的唯一标识符，用于区分不同参与方
+	DomainKeyData string          `yaml:"domainKeyData"`      // 域私钥（Base64编码）：用于节点间安全通信和身份认证的RSA私钥
+	LogLevel      string          `yaml:"logLevel"`           // 日志级别：DEBUG（调试）、INFO（信息）、WARN（警告）、ERROR（错误）
+	Protocol      common.Protocol `yaml:"protocol,omitempty"` // 通信协议：NOTLS（无加密）、TLS（单向加密）、MTLS（双向加密）
 }
 
 // ============================================================================
@@ -236,39 +236,40 @@ func LoadAutonomyConfig(configFile string) (*AutonomyKusciaConfig, error) {
 // 功能：将LiteKusciaConfig中的配置项合并到统一的KusciaConfig结构中
 // 参数：kusciaConfig - 目标KusciaConfig指针，将被修改
 // 流程：
-//   1. 复制基础配置（LogLevel、DomainID、密钥等）
-//   2. 配置KusciaAPI和SANs
-//   3. 设置协议类型和ConfManager
-//   4. 配置Agent运行时（Runtime、Runk、Capacity等）
-//   5. 处理日志轮转配置（优先级：CRI > Advanced > Global）
-//   6. 配置预留资源（CPU、Memory、Bandwidth）
-//   7. 合并插件配置
-//   8. 设置Master端点和CSR数据
-//   9. 配置调试模式和镜像管理
+//  1. 复制基础配置（LogLevel、DomainID、密钥等）
+//  2. 配置KusciaAPI和SANs
+//  3. 设置协议类型和ConfManager
+//  4. 配置Agent运行时（Runtime、Runk、Capacity等）
+//  5. 处理日志轮转配置（优先级：CRI > Advanced > Global）
+//  6. 配置预留资源（CPU、Memory、Bandwidth）
+//  7. 合并插件配置
+//  8. 设置Master端点和CSR数据
+//  9. 配置调试模式和镜像管理
 //  10. 配置垃圾回收策略
+//
 // ============================================================================
 func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) {
 	// 复制基础配置
 	kusciaConfig.LogLevel = lite.LogLevel
 	kusciaConfig.DomainID = lite.DomainID
-	kusciaConfig.CAKeyData = lite.DomainKeyData  // CA私钥（用于签发证书）
-	kusciaConfig.DomainKeyData = lite.DomainKeyData  // 域私钥（用于身份认证）
-	
+	kusciaConfig.CAKeyData = lite.DomainKeyData     // CA私钥（用于签发证书）
+	kusciaConfig.DomainKeyData = lite.DomainKeyData // 域私钥（用于身份认证）
+
 	// 配置KusciaAPI
 	if lite.KusciaAPI != nil {
 		kusciaConfig.KusciaAPI = lite.KusciaAPI
 	}
 	if lite.KusciaAPISans != nil {
-		kusciaConfig.KusciaAPI.SANs = lite.KusciaAPISans  // 设置证书SANs
+		kusciaConfig.KusciaAPI.SANs = lite.KusciaAPISans // 设置证书SANs
 	}
-	kusciaConfig.Protocol = lite.Protocol  // 通信协议
-	kusciaConfig.ConfManager = lite.ConfManager  // 配置管理器
-	kusciaConfig.DataMesh = lite.DataMesh  // DataMesh服务
+	kusciaConfig.Protocol = lite.Protocol       // 通信协议
+	kusciaConfig.ConfManager = lite.ConfManager // 配置管理器
+	kusciaConfig.DataMesh = lite.DataMesh       // DataMesh服务
 	// 配置Agent特权模式和运行时
-	kusciaConfig.Agent.AllowPrivileged = lite.Agent.AllowPrivileged  // 是否允许特权容器
-	kusciaConfig.Agent.Provider.Runtime = lite.Runtime  // 容器运行时类型
-	kusciaConfig.Agent.Provider.K8s = lite.Runk.overwriteK8sProviderCfg(lite.Agent.Provider.K8s)  // 合并Runk配置
-	
+	kusciaConfig.Agent.AllowPrivileged = lite.Agent.AllowPrivileged                              // 是否允许特权容器
+	kusciaConfig.Agent.Provider.Runtime = lite.Runtime                                           // 容器运行时类型
+	kusciaConfig.Agent.Provider.K8s = lite.Runk.overwriteK8sProviderCfg(lite.Agent.Provider.K8s) // 合并Runk配置
+
 	// 覆盖Runk日志轮转配置（优先级处理）
 	// LogMaxFiles必须>1，否则使用备用值
 	if kusciaConfig.Agent.Provider.K8s.LogMaxFiles <= 1 {
@@ -280,7 +281,7 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 			kusciaConfig.Agent.Provider.K8s.LogMaxFiles = kusciaConfig.Logrotate.MaxFiles
 		}
 	}
-	
+
 	// LogMaxSize必须是有效的数量格式（如"100Mi"）
 	if _, parseErr := parseMaxSize(kusciaConfig.Agent.Provider.K8s.LogMaxSize); parseErr != nil {
 		if lite.AdvancedConfig.Logrotate.MaxFileSizeMB > 0 {
@@ -292,8 +293,8 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 		}
 	}
 	// 配置资源容量
-	kusciaConfig.Agent.Capacity = lite.Capacity  // 可调度资源上限
-	
+	kusciaConfig.Agent.Capacity = lite.Capacity // 可调度资源上限
+
 	// 如果使用runk运行时且配置了日志目录，设置标准输出路径
 	if kusciaConfig.Agent.Provider.Runtime == config.K8sRuntime && kusciaConfig.Agent.Provider.K8s.LogDirectory != "" {
 		kusciaConfig.Agent.StdoutPath = kusciaConfig.Agent.Provider.K8s.LogDirectory
@@ -301,39 +302,39 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 
 	// 配置预留资源（仅当配置了非空值时才覆盖）
 	if lite.ReservedResources.CPU != "" {
-		kusciaConfig.Agent.ReservedResources.CPU = lite.ReservedResources.CPU  // 预留CPU
+		kusciaConfig.Agent.ReservedResources.CPU = lite.ReservedResources.CPU // 预留CPU
 	}
 	if lite.ReservedResources.Memory != "" {
-		kusciaConfig.Agent.ReservedResources.Memory = lite.ReservedResources.Memory  // 预留内存
+		kusciaConfig.Agent.ReservedResources.Memory = lite.ReservedResources.Memory // 预留内存
 	}
 	if lite.ReservedResources.Bandwidth != "" {
-		kusciaConfig.Agent.ReservedResources.Bandwidth = lite.ReservedResources.Bandwidth  // 预留带宽
+		kusciaConfig.Agent.ReservedResources.Bandwidth = lite.ReservedResources.Bandwidth // 预留带宽
 	}
 
 	// 合并插件配置（按名称匹配替换）
 	for _, p := range lite.Agent.Plugins {
 		for j, pp := range kusciaConfig.Agent.Plugins {
 			if p.Name == pp.Name {
-				kusciaConfig.Agent.Plugins[j] = p  // 找到同名插件则替换
+				kusciaConfig.Agent.Plugins[j] = p // 找到同名插件则替换
 				break
 			}
 		}
 	}
 
 	// 配置Master连接信息
-	kusciaConfig.Master.Endpoint = lite.MasterEndpoint  // Master端点地址
-	
+	kusciaConfig.Master.Endpoint = lite.MasterEndpoint // Master端点地址
+
 	// 生成CSR数据（用于向Master注册时提交证书签名请求）
 	kusciaConfig.DomainRoute.DomainCsrData = GenerateCsrData(lite.DomainID, lite.DomainKeyData, lite.LiteDeployToken)
-	
+
 	// 配置调试模式
 	kusciaConfig.Debug = lite.Debug
 	kusciaConfig.DebugPort = lite.DebugPort
-	
+
 	// 配置镜像管理
 	kusciaConfig.Image = lite.Image
-	kusciaConfig.Image.HTTPProxy = lite.Image.HTTPProxy  // HTTP代理
-	
+	kusciaConfig.Image.HTTPProxy = lite.Image.HTTPProxy // HTTP代理
+
 	// 配置垃圾回收
 	kusciaConfig.GarbageCollection = lite.GarbageCollection
 
@@ -350,20 +351,21 @@ func (lite *LiteKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) 
 // 功能：将MasterKusciaConfig中的配置项合并到统一的KusciaConfig结构中
 // 参数：kusciaConfig - 目标KusciaConfig指针，将被修改
 // 流程：
-//   1. 复制基础配置（DomainID、LogLevel、密钥等）
-//   2. 配置KusciaAPI和SANs
-//   3. 设置协议类型和外部TLS
-//   4. 配置数据存储端点和集群令牌
-//   5. 配置调试模式和工作负载审批
-//   6. 配置日志轮转和垃圾回收
+//  1. 复制基础配置（DomainID、LogLevel、密钥等）
+//  2. 配置KusciaAPI和SANs
+//  3. 设置协议类型和外部TLS
+//  4. 配置数据存储端点和集群令牌
+//  5. 配置调试模式和工作负载审批
+//  6. 配置日志轮转和垃圾回收
+//
 // ============================================================================
 func (master *MasterKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConfig) {
 	// 复制基础配置
 	kusciaConfig.DomainID = master.DomainID
 	kusciaConfig.LogLevel = master.LogLevel
-	kusciaConfig.CAKeyData = master.DomainKeyData  // CA私钥
-	kusciaConfig.DomainKeyData = master.DomainKeyData  // 域私钥
-	
+	kusciaConfig.CAKeyData = master.DomainKeyData     // CA私钥
+	kusciaConfig.DomainKeyData = master.DomainKeyData // 域私钥
+
 	// 配置KusciaAPI
 	if master.KusciaAPI != nil {
 		kusciaConfig.KusciaAPI = master.KusciaAPI
@@ -371,22 +373,22 @@ func (master *MasterKusciaConfig) OverwriteKusciaConfig(kusciaConfig *KusciaConf
 	if master.KusciaAPISans != nil {
 		kusciaConfig.KusciaAPI.SANs = master.KusciaAPISans
 	}
-	kusciaConfig.Protocol = master.Protocol  // 通信协议
-	
+	kusciaConfig.Protocol = master.Protocol // 通信协议
+
 	// 配置外部TLS（用于跨域通信）
 	if master.DomainRoute.ExternalTLS != nil {
 		kusciaConfig.DomainRoute.ExternalTLS = master.DomainRoute.ExternalTLS
 	}
-	
+
 	// 配置Master特有项
-	kusciaConfig.Master.DatastoreEndpoint = master.DatastoreEndpoint  // 数据库连接字符串
-	kusciaConfig.Master.ClusterToken = master.ClusterToken  // 集群令牌
-	
+	kusciaConfig.Master.DatastoreEndpoint = master.DatastoreEndpoint // 数据库连接字符串
+	kusciaConfig.Master.ClusterToken = master.ClusterToken           // 集群令牌
+
 	// 配置调试和审批
 	kusciaConfig.Debug = master.Debug
 	kusciaConfig.DebugPort = master.DebugPort
-	kusciaConfig.EnableWorkloadApprove = master.AdvancedConfig.EnableWorkloadApprove  // 工作负载审批开关
-	kusciaConfig.GarbageCollection = master.GarbageCollection  // 垃圾回收配置
+	kusciaConfig.EnableWorkloadApprove = master.AdvancedConfig.EnableWorkloadApprove // 工作负载审批开关
+	kusciaConfig.GarbageCollection = master.GarbageCollection                        // 垃圾回收配置
 
 	// 覆盖日志轮转配置
 	overwriteKusciaConfigLogrotate(&kusciaConfig.Logrotate, &master.AdvancedConfig.Logrotate)
@@ -405,12 +407,12 @@ func (autonomy *AutonomyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	kusciaConfig.DomainID = autonomy.DomainID
 	kusciaConfig.CAKeyData = autonomy.DomainKeyData
 	kusciaConfig.DomainKeyData = autonomy.DomainKeyData
-	
+
 	// 配置Agent运行时
 	kusciaConfig.Agent.AllowPrivileged = autonomy.Agent.AllowPrivileged
 	kusciaConfig.Agent.Provider.Runtime = autonomy.Runtime
 	kusciaConfig.Agent.Provider.K8s = autonomy.Runk.overwriteK8sProviderCfg(autonomy.Agent.Provider.K8s)
-	
+
 	// 覆盖Runk日志轮转配置（优先级处理）
 	// maxFile必须>1，maxFileSizeMB必须可解析
 	if kusciaConfig.Agent.Provider.K8s.LogMaxFiles <= 1 {
@@ -421,7 +423,7 @@ func (autonomy *AutonomyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 			kusciaConfig.Agent.Provider.K8s.LogMaxFiles = kusciaConfig.Logrotate.MaxFiles
 		}
 	}
-	
+
 	// 如果logMaxSize无效，考虑使用继承值
 	if _, parseErr := parseMaxSize(kusciaConfig.Agent.Provider.K8s.LogMaxSize); parseErr != nil {
 		if autonomy.AdvancedConfig.Logrotate.MaxFileSizeMB > 0 {
@@ -430,13 +432,13 @@ func (autonomy *AutonomyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 			kusciaConfig.Agent.Provider.K8s.LogMaxSize = fmt.Sprintf("%dMi", kusciaConfig.Logrotate.MaxFileSizeMB)
 		}
 	}
-	
+
 	// 配置资源容量
 	kusciaConfig.Agent.Capacity = autonomy.Capacity
 	if kusciaConfig.Agent.Provider.Runtime == config.K8sRuntime && kusciaConfig.Agent.Provider.K8s.LogDirectory != "" {
 		kusciaConfig.Agent.StdoutPath = kusciaConfig.Agent.Provider.K8s.LogDirectory
 	}
-	
+
 	// 配置预留资源
 	if autonomy.ReservedResources.CPU != "" {
 		kusciaConfig.Agent.ReservedResources.CPU = autonomy.ReservedResources.CPU
@@ -468,20 +470,20 @@ func (autonomy *AutonomyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 	kusciaConfig.Protocol = autonomy.Protocol
 	kusciaConfig.ConfManager = autonomy.ConfManager
 	kusciaConfig.DataMesh = autonomy.DataMesh
-	
+
 	// 配置外部TLS
 	if autonomy.DomainRoute.ExternalTLS != nil {
 		kusciaConfig.DomainRoute.ExternalTLS = autonomy.DomainRoute.ExternalTLS
 	}
-	
+
 	// 配置Master数据存储
 	kusciaConfig.Master.DatastoreEndpoint = autonomy.DatastoreEndpoint
-	
+
 	// 配置调试和审批
 	kusciaConfig.Debug = autonomy.Debug
 	kusciaConfig.DebugPort = autonomy.DebugPort
 	kusciaConfig.EnableWorkloadApprove = autonomy.AdvancedConfig.EnableWorkloadApprove
-	
+
 	// 配置镜像管理
 	kusciaConfig.Image = autonomy.Image
 	kusciaConfig.Image.HTTPProxy = autonomy.Image.HTTPProxy
@@ -497,9 +499,11 @@ func (autonomy *AutonomyKusciaConfig) OverwriteKusciaConfig(kusciaConfig *Kuscia
 // 覆盖Agent日志轮转配置
 // 功能：尝试用kuscia yaml中的logrotate配置覆盖应用（如SecretFlow）的默认日志轮转配置
 // 参数：
-//   kusciaAgentConfig - Agent CRI配置（将被修改）
-//   overwriteAgentLogrotate - CRI级别的日志轮转配置（最高优先级）
-//   overwriteLogrotate - 全局日志轮转配置（次高优先级）
+//
+//	kusciaAgentConfig - Agent CRI配置（将被修改）
+//	overwriteAgentLogrotate - CRI级别的日志轮转配置（最高优先级）
+//	overwriteLogrotate - 全局日志轮转配置（次高优先级）
+//
 // 优先级：CRI配置 > Advanced配置 > Global配置 > 默认值
 // ============================================================================
 func overwriteKusciaConfigAgentLogrotate(kusciaAgentConfig, overwriteAgentLogrotate *config.CRIProviderCfg, overwriteLogrotate *LogrotateConfig) {
@@ -513,7 +517,7 @@ func overwriteKusciaConfigAgentLogrotate(kusciaAgentConfig, overwriteAgentLogrot
 		// 次高优先级：全局配置
 		kusciaAgentConfig.ContainerLogMaxFiles = overwriteLogrotate.MaxFiles
 	}
-	
+
 	// 处理ContainerLogMaxSize
 	if overwriteAgentLogrotate != nil {
 		if _, parseErr := parseMaxSize(overwriteAgentLogrotate.ContainerLogMaxSize); parseErr == nil {
@@ -541,19 +545,21 @@ func overwriteKusciaConfigAgentLogrotate(kusciaAgentConfig, overwriteAgentLogrot
 // 覆盖Kuscia日志轮转配置
 // 功能：尝试用kuscia yaml中的logrotate配置覆盖默认配置
 // 参数：
-//   kusciaConfig - Kuscia全局日志配置（将被修改）
-//   overwriteLogrotate - YAML中的日志轮转配置
+//
+//	kusciaConfig - Kuscia全局日志配置（将被修改）
+//	overwriteLogrotate - YAML中的日志轮转配置
+//
 // ============================================================================
 func overwriteKusciaConfigLogrotate(kusciaConfig, overwriteLogrotate *LogrotateConfig) {
 	if overwriteLogrotate != nil {
 		if overwriteLogrotate.MaxFileSizeMB > 0 {
-			kusciaConfig.MaxFileSizeMB = overwriteLogrotate.MaxFileSizeMB  // 单文件最大大小
+			kusciaConfig.MaxFileSizeMB = overwriteLogrotate.MaxFileSizeMB // 单文件最大大小
 		}
 		if overwriteLogrotate.MaxFiles > 0 {
-			kusciaConfig.MaxFiles = overwriteLogrotate.MaxFiles  // 最大文件数
+			kusciaConfig.MaxFiles = overwriteLogrotate.MaxFiles // 最大文件数
 		}
 		if overwriteLogrotate.MaxAgeDays > 0 {
-			kusciaConfig.MaxAgeDays = overwriteLogrotate.MaxAgeDays  // 最大保留天数
+			kusciaConfig.MaxAgeDays = overwriteLogrotate.MaxAgeDays // 最大保留天数
 		}
 	}
 }
@@ -561,8 +567,10 @@ func overwriteKusciaConfigLogrotate(kusciaConfig, overwriteLogrotate *LogrotateC
 // ============================================================================
 // 加载配置文件
 // 参数：
-//   configFile - YAML配置文件路径
-//   conf - 目标配置结构指针（任意类型）
+//
+//	configFile - YAML配置文件路径
+//	conf - 目标配置结构指针（任意类型）
+//
 // 返回：错误信息
 // 功能：读取YAML文件并反序列化到配置结构中
 // ============================================================================
@@ -580,22 +588,25 @@ func loadConfig(configFile string, conf interface{}) error {
 // ============================================================================
 // 生成CSR（证书签名请求）数据
 // 参数：
-//   domainID - 域ID（作为Common Name）
-//   domainKeyData - Base64编码的域私钥
-//   deployToken - 部署令牌（嵌入到CSR扩展字段中）
+//
+//	domainID - 域ID（作为Common Name）
+//	domainKeyData - Base64编码的域私钥
+//	deployToken - 部署令牌（嵌入到CSR扩展字段中）
+//
 // 返回：PEM格式的CSR字符串
 // 功能：
-//   1. 解码Base64私钥
-//   2. 解析RSA私钥
-//   3. 创建CSR模板，包含域ID和部署令牌
-//   4. 生成CSR并编码为PEM格式
+//  1. 解码Base64私钥
+//  2. 解析RSA私钥
+//  3. 创建CSR模板，包含域ID和部署令牌
+//  4. 生成CSR并编码为PEM格式
+//
 // 用途：Lite节点向Master注册时提交此CSR以获取证书
 // ============================================================================
 func GenerateCsrData(domainID, domainKeyData, deployToken string) string {
 	if domainKeyData == "" {
 		nlog.Fatalf("Domain key data is empty. Please provide a valid domainKeyData.")
 	}
-	
+
 	// 解码Base64编码的私钥
 	domainKeyDataDecoded, err := base64.StdEncoding.DecodeString(domainKeyData)
 	if err != nil {
@@ -622,13 +633,13 @@ func GenerateCsrData(domainID, domainKeyData, deployToken string) string {
 	// 创建CSR模板
 	template := x509.CertificateRequest{
 		Subject: pkix.Name{
-			CommonName: domainID,  // 使用域ID作为通用名称
+			CommonName: domainID, // 使用域ID作为通用名称
 		},
-		SignatureAlgorithm: x509.SHA256WithRSA,  // 签名算法
+		SignatureAlgorithm: x509.SHA256WithRSA, // 签名算法
 		ExtraExtensions: []pkix.Extension{
 			{
-				Id:    asn1Id,           // 自定义扩展ID
-				Value: []byte(deployToken),  // 部署令牌作为扩展值
+				Id:    asn1Id,              // 自定义扩展ID
+				Value: []byte(deployToken), // 部署令牌作为扩展值
 			},
 		},
 	}
