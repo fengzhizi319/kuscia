@@ -22,12 +22,14 @@
 **功能**: Kuscia Docker 部署的主入口脚本，支持多种网络拓扑模式的自动化部署。
 
 **支持的部署模式**:
+
 - **p2p**: 点对点组网（2个 Autonomy 节点：alice + bob）
 - **center/centralized**: 中心化组网（1个 Master + 2个 Lite 节点）
 - **cxc**: 中心化 x 中心化（2个 Master + 2个 Lite 节点）
 - **cxp**: 中心化 x 点对点（1个 Master + 1个 Lite + 1个 Autonomy）
 
 **主要功能**:
+
 ```bash
 # 1. 架构检查（x86_64 / ARM64）
 arch_check()
@@ -60,6 +62,7 @@ create_domaindatagrant_bob2alice()
 ```
 
 **使用方法**:
+
 ```bash
 # 下载脚本
 docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh
@@ -73,6 +76,7 @@ chmod u+x kuscia.sh
 ```
 
 **环境变量**:
+
 ```bash
 KUSCIA_IMAGE          # Kuscia 镜像地址
 SECRETFLOW_IMAGE      # SecretFlow 引擎镜像
@@ -90,12 +94,14 @@ ALLOW_PRIVILEGED      # 是否允许特权容器
 **功能**: 在 `.local-kuscia` 环境中启动独立的 Kuscia 集群，主要用于本地开发和测试。
 
 **特点**:
+
 - 基于 Docker Compose / Swarm
 - 支持 MySQL 作为外部数据存储
 - 可配置副本数量（多实例部署）
 - 支持反向隧道测试
 
 **使用方法**:
+
 ```bash
 cd .local-kuscia
 ./scripts/deploy/start_standalone.sh center  # 或 p2p
@@ -110,6 +116,7 @@ cd .local-kuscia
 **功能**: 部署单个 Kuscia 节点（Autonomy / Master / Lite 三种模式）。
 
 **支持的模式**:
+
 ```bash
 # 部署 Autonomy 节点
 ./deploy.sh autonomy -n alice -p 11080
@@ -124,6 +131,7 @@ cd .local-kuscia
 ```
 
 **参数说明**:
+
 - `-c`: 配置文件路径
 - `-d`: 数据存储目录
 - `-l`: 日志存储目录
@@ -144,6 +152,7 @@ cd .local-kuscia
 **功能**: 停止运行中的 Kuscia 容器（保留数据和卷）。
 
 **使用方法**:
+
 ```bash
 ./stop.sh p2p    # 停止 P2P 模式容器
 ./stop.sh center # 停止中心化模式容器
@@ -151,6 +160,7 @@ cd .local-kuscia
 ```
 
 **工作流程**:
+
 1. 查找匹配的容器（按名称前缀）
 2. 提示用户确认
 3. 执行 `docker stop`
@@ -164,6 +174,7 @@ cd .local-kuscia
 **功能**: 完全卸载 Kuscia 集群，包括容器、卷和网络。
 
 **使用方法**:
+
 ```bash
 ./uninstall.sh p2p    # 卸载 P2P 模式
 ./uninstall.sh center # 卸载中心化模式
@@ -171,6 +182,7 @@ cd .local-kuscia
 ```
 
 **清理内容**:
+
 - ✅ 停止并删除容器
 - ✅ 删除 Docker 卷
 - ✅ 删除 Docker 网络（如果没有其他容器使用）
@@ -186,6 +198,7 @@ cd .local-kuscia
 **功能**: 一键式 Docker 快速启动脚本，自动拉取镜像、提取部署脚本并启动集群。
 
 **使用方法**:
+
 ```bash
 # 默认 P2P 模式
 ./run_docker_quickstart.sh
@@ -198,6 +211,7 @@ KUSCIA_IMAGE=secretflow/kuscia:1.2.0b0 ./run_docker_quickstart.sh p2p
 ```
 
 **自动化流程**:
+
 1. 检查 Docker 是否安装
 2. 拉取 Kuscia 镜像
 3. 从镜像中提取 `kuscia.sh` 脚本
@@ -215,6 +229,7 @@ KUSCIA_IMAGE=secretflow/kuscia:1.2.0b0 ./run_docker_quickstart.sh p2p
 **功能**: 创建 Domain CRD 资源，用于注册新的参与方。
 
 **使用方法**:
+
 ```bash
 # P2P 模式
 ./add_domain.sh bob p2p kuscia
@@ -224,12 +239,14 @@ KUSCIA_IMAGE=secretflow/kuscia:1.2.0b0 ./run_docker_quickstart.sh p2p
 ```
 
 **参数**:
+
 - `$1`: Domain ID（如 alice, bob）
 - `$2`: 角色（p2p 表示对等伙伴）
 - `$3`: 互联协议（kuscia / bfia，默认 kuscia）
 - `$4`: Master Domain ID
 
 **生成的资源**:
+
 ```yaml
 apiVersion: kuscia.secretflow/v1alpha1
 kind: Domain
@@ -254,12 +271,14 @@ spec:
 **功能**: 为 Lite 节点创建 Domain 资源，并等待 CSR Token 生成。
 
 **使用方法**:
+
 ```bash
 TOKEN=$(./add_domain_lite.sh alice kuscia-system)
 echo "Deploy Token: $TOKEN"
 ```
 
 **工作流程**:
+
 1. 创建空的 Domain 资源（无证书）
 2. 轮询等待 Controller 生成 Deploy Token
 3. 返回 Token 供 Lite 节点使用
@@ -275,6 +294,7 @@ echo "Deploy Token: $TOKEN"
 **功能**: 创建 ClusterDomainRoute CRD，配置域间通信路由。
 
 **使用方法**:
+
 ```bash
 # 直接路由
 ./create_cluster_domain_route.sh alice bob http://bob-lite:1080
@@ -284,12 +304,14 @@ echo "Deploy Token: $TOKEN"
 ```
 
 **参数**:
+
 - `$1`: 源域 ID
 - `$2`: 目标域 ID
 - `$3`: 目标端点（http(s)://ip:port/path）
 - `$4`: 中转域 ID（可选）
 
 **自动解析**:
+
 - 协议（HTTP/HTTPS）
 - 主机名和端口
 - URL 路径
@@ -303,6 +325,7 @@ echo "Deploy Token: $TOKEN"
 **功能**: 配置当前域连接到宿主域，建立跨域通信通道。
 
 **使用方法**:
+
 ```bash
 # MTLS 认证
 ./join_to_host.sh alice bob https://bob-host:1080 -p kuscia
@@ -319,6 +342,7 @@ echo "Deploy Token: $TOKEN"
 ```
 
 **参数**:
+
 - `$1`: 自身域 ID
 - `$2`: 宿主域 ID
 - `$3`: 宿主端点
@@ -330,6 +354,7 @@ echo "Deploy Token: $TOKEN"
 - `-i`: 是否需要 InteropConfig
 
 **生成的资源**:
+
 - ClusterDomainRoute CRD
 - 可能包含中转配置
 
@@ -342,6 +367,7 @@ echo "Deploy Token: $TOKEN"
 **功能**: 将 Docker 镜像导入 Kuscia 并注册为 AppImage CRD。
 
 **使用方法**:
+
 ```bash
 # 方式 1: 导入镜像并注册
 ./register_app_image.sh \
@@ -362,6 +388,7 @@ echo "Deploy Token: $TOKEN"
 ```
 
 **参数**:
+
 - `-c`: Kuscia 容器名称
 - `-i`: 应用镜像地址
 - `-f`: AppImage 模板文件（可选）
@@ -369,6 +396,7 @@ echo "Deploy Token: $TOKEN"
 - `--import`: 是否导入镜像到容器
 
 **工作流程**:
+
 1. 检查镜像是否已存在于容器中
 2. 如果不存在，从宿主机导入或拉取
 3. 使用 `kuscia image load` 导入到 containerd
@@ -383,12 +411,14 @@ echo "Deploy Token: $TOKEN"
 **功能**: 根据镜像名称自动检测类型并创建对应的 AppImage。
 
 **使用方法**:
+
 ```bash
 export SF_IMAGE_ID=<image-id-from-crictl>
 ./create_secretflow_app_image.sh secretflow/psi:latest
 ```
 
 **自动检测**:
+
 - 从镜像名称提取类型（psi / secretflow）
 - 选择对应的模板文件
 - 替换镜像名称、标签和 ID
@@ -402,11 +432,13 @@ export SF_IMAGE_ID=<image-id-from-crictl>
 **功能**: 与上一个脚本类似，但参数更明确。
 
 **使用方法**:
+
 ```bash
 ./create_sf_app_image.sh secretflow/psi latest psi <image-id>
 ```
 
 **参数**:
+
 - `$1`: 镜像名称
 - `$2`: 镜像标签
 - `$3`: 应用类型（psi / secretflow / dataproxy / kuscia）
@@ -421,11 +453,13 @@ export SF_IMAGE_ID=<image-id-from-crictl>
 **功能**: 为 SecretPad（可视化界面）创建 Kubernetes Service。
 
 **使用方法**:
+
 ```bash
 ./create_secretpad_svc.sh secretpad-container alice
 ```
 
 **参数**:
+
 - `$1`: SecretPad 容器名称
 - `$2`: Domain ID
 
@@ -438,11 +472,13 @@ export SF_IMAGE_ID=<image-id-from-crictl>
 **功能**: 优化 Linux 内核网络参数以提升 Kuscia 性能。
 
 **使用方法**:
+
 ```bash
 sudo ./set_kernel_params.sh
 ```
 
 **调整的参数**:
+
 ```bash
 # TCP SYN  backlog 队列大小
 tcp_max_syn_backlog = 2048
@@ -476,15 +512,18 @@ file-max = 102400
 **功能**: 为 Alice 域创建示例 DomainData 资源（银行营销数据集）。
 
 **使用方法**:
+
 ```bash
 ./create_domaindata_alice_table.sh alice
 ```
 
 **数据来源**: 
+
 - 模板文件: `scripts/templates/domaindata_alice_table.yaml`
 - 实际数据: `/home/kuscia/var/storage/data/alice.csv`
 
 **字段示例**:
+
 - id1, age, education, default, balance
 - housing, loan, day, duration, campaign
 - 等 20+ 个特征列
@@ -498,11 +537,13 @@ file-max = 102400
 **功能**: 为 Bob 域创建示例 DomainData 资源。
 
 **使用方法**:
+
 ```bash
 ./create_domaindata_bob_table.sh bob
 ```
 
 **字段示例**:
+
 - id2, contact_cellular, contact_telephone
 - month_apr, month_aug, ..., month_sep
 - poutcome_failure, poutcome_success
@@ -517,6 +558,7 @@ file-max = 102400
 **功能**: 创建示例 DomainData 并配置跨域数据授权。
 
 **使用方法**:
+
 ```bash
 # 在 Alice 节点执行
 ./init_example_data.sh alice
@@ -526,11 +568,13 @@ file-max = 102400
 ```
 
 **执行的操作**:
+
 1. 通过 KusciaAPI 创建 DomainData
 2. 通过 DataMesh API 创建 DomainDataGrant
 3. 配置跨域数据访问权限
 
 **API 调用示例**:
+
 ```bash
 # 创建 DomainData
 curl -X POST 'https://127.0.0.1:8082/api/v1/domaindata/create' \
@@ -556,15 +600,18 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create \
 **功能**: 根据域私钥生成自签名证书。
 
 **使用方法**:
+
 ```bash
 ./generate_cert.sh alice <base64-encoded-private-key>
 ```
 
 **参数**:
+
 - `$1`: Domain ID
 - `$2`: Base64 编码的私钥
 
 **生成的文件**:
+
 - `{domain}.key`: 私钥文件
 - `{domain}.csr`: 证书签名请求
 - `{domain}.crt`: 自签名证书（有效期 100 年）
@@ -580,11 +627,13 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create \
 **功能**: 生成 2048 位 RSA 私钥并 Base64 编码。
 
 **使用方法**:
+
 ```bash
 ./generate_rsa_key.sh
 ```
 
 **输出**:
+
 ```
 Generate domain private key configuration:
 
@@ -602,16 +651,19 @@ LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVB...
 **功能**: 为 KusciaAPI 客户端生成 TLS 证书（PKCS#8 格式，Java 兼容）。
 
 **使用方法**:
+
 ```bash
 ./init_kusciaapi_client_certs.sh
 ```
 
 **生成的文件** (在 `var/certs/` 目录):
+
 - `kusciaapi-client.key`: PKCS#8 私钥
 - `kusciaapi-client.csr`: CSR
 - `kusciaapi-client.crt`: 由 CA 签名的证书
 
 **特点**:
+
 - 使用 `openssl genpkey` 生成 PKCS#8 格式密钥
 - 由根 CA (`ca.crt/ca.key`) 签名
 - 有效期 1000 天
@@ -626,20 +678,24 @@ LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVB...
 **功能**: 为指定 Namespace 生成长期有效的 Kubernetes ServiceAccount Token。
 
 **使用方法**:
+
 ```bash
 TOKEN=$(./create_token.sh alice)
 echo $TOKEN
 ```
 
 **参数**:
+
 - `$1`: Domain ID (Namespace)
 
 **Token 特性**:
+
 - 有效期: 87600 小时（10 年）
 - 用途: KusciaAPI 身份认证
 - 存储位置: `/home/kuscia/var/certs/token`
 
 **测试用法**:
+
 ```bash
 curl https://127.0.0.1:6443/api/v1/namespaces/alice/pods \
   -H "Authorization: Bearer ${TOKEN}"
@@ -654,15 +710,18 @@ curl https://127.0.0.1:6443/api/v1/namespaces/alice/pods \
 **功能**: 使用域私钥签名生成 KusciaAPI 认证 Token。
 
 **使用方法**:
+
 ```bash
 ./gen_kusciaapi_token.sh alice <base64-domain-key>
 ```
 
 **参数**:
+
 - `$1`: Domain ID
 - `$2`: Base64 编码的域私钥
 
 **生成过程**:
+
 1. 解码私钥
 2. 使用 SHA256 签名 Domain ID
 3. Base64 编码签名结果
@@ -681,6 +740,7 @@ curl https://127.0.0.1:6443/api/v1/namespaces/alice/pods \
 **功能**: 启动 Prometheus + Grafana 监控套件。
 
 **使用方法**:
+
 ```bash
 # P2P 模式
 ./start_monitor.sh p2p
@@ -690,10 +750,12 @@ curl https://127.0.0.1:6443/api/v1/namespaces/alice/pods \
 ```
 
 **启动的服务**:
+
 - **Prometheus**: 指标收集（端口 9090）
 - **Grafana**: 可视化仪表板（端口 3000）
 
 **监控目标**:
+
 ```yaml
 # 中心化模式
 - master:9091
@@ -706,6 +768,7 @@ curl https://127.0.0.1:6443/api/v1/namespaces/alice/pods \
 ```
 
 **Grafana 默认账户**:
+
 - 用户名: `admin`
 - 密码: `admin`
 
@@ -718,6 +781,7 @@ curl https://127.0.0.1:6443/api/v1/namespaces/alice/pods \
 **功能**: 在监控容器内初始化 Prometheus 和 Grafana。
 
 **工作流程**:
+
 1. 后台启动 Prometheus
 2. 后台启动 Grafana
 3. 等待 Grafana 就绪
@@ -727,6 +791,7 @@ curl https://127.0.0.1:6443/api/v1/namespaces/alice/pods \
 7. 保持容器运行
 
 **配置文件**:
+
 - Prometheus: `/home/config/prometheus.yml`
 - Grafana: `/etc/grafana/grafana.ini`
 
@@ -741,18 +806,21 @@ curl https://127.0.0.1:6443/api/v1/namespaces/alice/pods \
 **功能**: 创建用于测试反向隧道功能的复杂集群环境。
 
 **特点**:
+
 - 使用 Docker Swarm
 - 多副本部署（Alice: 3 副本，Bob: 1 副本）
 - 外部 MySQL 存储
 - 自动配置反向隧道
 
 **使用方法**:
+
 ```bash
 export KUSCIA_IMAGE=secretflow/kuscia:latest
 ./create_reverse_tunnel_test_cluster.sh
 ```
 
 **部署架构**:
+
 ```
 MySQL (13307) ←→ Alice Replica Set (3 instances)
                     ↓ 反向隧道
@@ -760,6 +828,7 @@ MySQL (13308) ←→ Bob (1 instance)
 ```
 
 **主要步骤**:
+
 1. 创建 Overlay 网络
 2. 生成 kuscia.yaml（使用 MySQL 后端）
 3. 部署 Docker Stack
@@ -768,6 +837,7 @@ MySQL (13308) ←→ Bob (1 instance)
 6. 创建示例数据和授权
 
 **清理**:
+
 ```bash
 docker stack rm kuscia-autonomy
 ```
@@ -777,7 +847,7 @@ docker stack rm kuscia-autonomy
 ## 📊 脚本分类总览
 
 | 类别 | 脚本数量 | 主要脚本 |
-|------|---------|---------|
+| ------ | --------- | --------- |
 | **部署启动** | 6 | kuscia.sh, deploy.sh, stop.sh, uninstall.sh |
 | **资源配置** | 9 | add_domain.sh, join_to_host.sh, register_app_image.sh |
 | **数据初始化** | 3 | create_domaindata_*.sh, init_example_data.sh |
@@ -825,6 +895,7 @@ docker stack rm kuscia-autonomy
 ## 💡 最佳实践
 
 ### 1. 快速开始
+
 ```bash
 # 推荐新手使用
 ./run_docker_quickstart.sh p2p
@@ -835,6 +906,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice kubectl get pods -n alice
 ```
 
 ### 2. 生产部署
+
 ```bash
 # 1. 优化内核参数
 sudo ./set_kernel_params.sh
@@ -850,6 +922,7 @@ sudo ./set_kernel_params.sh
 ```
 
 ### 3. 开发调试
+
 ```bash
 # 1. 使用本地模式
 cd .local-kuscia
@@ -863,6 +936,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice bash
 ```
 
 ### 4. 清理环境
+
 ```bash
 # 停止但不删除数据
 ./stop.sh all

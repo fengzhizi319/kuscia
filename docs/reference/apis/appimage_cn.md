@@ -26,13 +26,13 @@
 
 #### 请求（CreateAppImageRequest）
 
-| 字段              | 类型                                           | 选填 | 描述                                                                                                                         |
-|-----------------|----------------------------------------------|----|----------------------------------------------------------------------------------------------------------------------------|
-| header          | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                    |
-| name          | string                                       | 必填 | 应用镜像名称，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
-| image       | [AppImageInfo](#AppImageInfo)                                       | 必填 | 基础镜像信息 ID                                                                                                                   |
-| config_templates | map<string, string>                                        | 可选 | 应用启动依赖的配置模版信息，参考 [AppImage 概念](../concepts/appimage_cn.md)                                                                         |
-| deploy_templates           | [DeployTemplate](#DeployTemplate)[]                              | 必填 | 应用部署模版配置信息                                                                                                                       |
+| 字段 | 类型 | 选填 | 描述 |
+| ----------------- | ---------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------- |
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| name | string | 必填 | 应用镜像名称，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
+| image | [AppImageInfo](#AppImageInfo) | 必填 | 基础镜像信息 ID |
+| config_templates | map<string, string> | 可选 | 应用启动依赖的配置模版信息，参考 [AppImage 概念](../concepts/appimage_cn.md) |
+| deploy_templates | [DeployTemplate](#DeployTemplate)[] | 必填 | 应用部署模版配置信息 |
 
 #### 响应（CreateAppImageResponse）
 

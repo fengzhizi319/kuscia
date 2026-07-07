@@ -53,13 +53,13 @@ make build-monitor
 
 Kuscia 暴露的监控指标项
 
-| 模块 |指标 | 类型 | 含义 |
+| 模块 | 指标 | 类型 | 含义 |
 | -- | ---------------------- | --------------------- | ------------------------------------------------------------ |
-| CPU | node_cpu_seconds_total | Counter | CPU 总使用时间(可计算cpu使用率)|
-| MEM | node_memory_MemTotal_bytes | Gauge | 总内存字节数|
-| MEM | node_memory_MemAvailable_bytes | Gauge | 可用内存字节数(可计算内存使用率)  |
+| CPU | node_cpu_seconds_total | Counter | CPU 总使用时间(可计算cpu使用率) |
+| MEM | node_memory_MemTotal_bytes | Gauge | 总内存字节数 |
+| MEM | node_memory_MemAvailable_bytes | Gauge | 可用内存字节数(可计算内存使用率) |
 | MEM | process_virtual_memory_max_bytes | Gauge | 最大虚拟内存字节数 |
-| MEM | process_virtual_memory_bytes| Gauge | 当前虚拟内存字节数 |
+| MEM | process_virtual_memory_bytes | Gauge | 当前虚拟内存字节数 |
 | DISK | node_disk_io_now | Counter | 磁盘 io 次数 |
 | DISK | node_disk_io_time_seconds_total | Counter | 磁盘 io 时间 |
 | DISK | node_disk_read_bytes_total | Counter | 磁盘读取总字节数 |
@@ -70,20 +70,20 @@ Kuscia 暴露的监控指标项
 | DISK | node_filesystem_size_bytes | Gauge | 总磁盘字节数 |
 | DISK | node_filesystem_files | Gauge | 系统总文件数（iNode） |
 | DISK | node_filesystem_files_free | Gauge | 系统空闲文件数（iNode） |
-| DISK |process_max_fds | Gauge | 最大开启文件描述符 |
-| DISK |process_open_fds | Gauge | 开启文件描述符  |
+| DISK | process_max_fds | Gauge | 最大开启文件描述符 |
+| DISK | process_open_fds | Gauge | 开启文件描述符 |
 | LOAD | node_load1/5/15 | Gauge | 结点1/5/15分钟内平均load |
-| NET | node_network_receive_bytes_total | Counter | 网卡设备接收的总字节数|
+| NET | node_network_receive_bytes_total | Counter | 网卡设备接收的总字节数 |
 | NET | node_network_receive_packets_total | Counter | 网卡设备接收的总包数 |
-| NET | node_network_transmit_bytes_total | Counter | 网卡设备发送的总字节数|
+| NET | node_network_transmit_bytes_total | Counter | 网卡设备发送的总字节数 |
 | NET | node_network_transmit_packets_total | Counter | 网卡设备发送的总包数 |
 | NET | node_netstat_Tcp_CurrEstab | Gauge | 当前 TCP 建立的总连接数 |
 | NET | node_sockstat_TCP_tw | Gauge | 当前 TCP 处在 time_wait 的总连接数 |
 | NET | node_netstat_Tcp_ActiveOpens | Gauge | 当前 TCP 处在active_open 的总连接数 |
 | NET | node_netstat_Tcp_PassiveOpens | Gauge | 当前 TCP 处在passive_open 的总连接数 |
-| NET | node_sockstat_TCP_alloc| Gauge | 当前 TCP 处在 allocate 状态的总连接数 |
-| NET | node_sockstat_TCP_inuse| Gauge | 当前 TCP 处在inuse 状态的总连接数 |
-| NET | ss_rtt | Gauge |tcp连接的流平均往返时延（Round Trip Tie） |
+| NET | node_sockstat_TCP_alloc | Gauge | 当前 TCP 处在 allocate 状态的总连接数 |
+| NET | node_sockstat_TCP_inuse | Gauge | 当前 TCP 处在inuse 状态的总连接数 |
+| NET | ss_rtt | Gauge | tcp连接的流平均往返时延（Round Trip Tie） |
 | NET | ss_retrans | Counter | tcp重传次数 |
 | NET | ss_retran_rate | Gauge | tcp重传率 （重传次数/总连接） |
 | NET | ss_total_connections | Counter | 与各个Domain的 TCP 连接数 |

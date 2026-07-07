@@ -45,7 +45,7 @@
 **控制平面（Control Plane）** - 集群的大脑：
 
 | 组件 | 作用 | 类比 |
-|------|------|------|
+| ------ | ------ | ------ |
 | **API Server** | 提供 RESTful API，所有操作都通过它 | 前台接待员 |
 | **etcd** | 分布式键值存储，保存集群状态 | 数据库 |
 | **Scheduler** | 决定 Pod 运行在哪个节点上 | 调度员 |
@@ -54,7 +54,7 @@
 **工作节点（Worker Node）** - 执行任务的工人：
 
 | 组件 | 作用 |
-|------|------|
+| ------ | ------ |
 | **Kubelet** | 管理节点上的 Pod 和容器 |
 | **Kube-proxy** | 处理网络通信和负载均衡 |
 | **Container Runtime** | 实际运行容器的软件（如 Docker、containerd） |
@@ -110,7 +110,7 @@ Kubernetes 中的所有对象都被称为**资源（Resource）**，它们都是
 Kubernetes 提供了丰富的内置资源：
 
 | 资源类型 | 用途 | 示例 |
-|---------|------|------|
+| --------- | ------ | ------ |
 | **Pod** | 最小的计算单元，包含一个或多个容器 | 运行你的应用 |
 | **Deployment** | 管理无状态应用的部署和更新 | Web 服务、API |
 | **StatefulSet** | 管理有状态应用 | 数据库、消息队列 |
@@ -172,7 +172,7 @@ CI/CD 流水线            需要额外工具               Pipeline CRD（构�
 ### CRD vs 内置资源对比
 
 | 特性 | 内置资源 | CRD |
-|------|---------|-----|
+| ------ | --------- | ----- |
 | 定义位置 | Kubernetes 源码中硬编码 | YAML 文件或代码中声明 |
 | API 路径 | `/api/v1/*` | `/apis/<group>/<version>/*` |
 | 注册方式 | 编译时内置 | 运行时动态注册 |
@@ -352,6 +352,7 @@ type DomainDataSpec struct {
 ```
 
 然后运行：
+
 ```bash
 # 生成 CRD YAML
 make manifests
@@ -374,6 +375,7 @@ kubectl api-resources | grep domaindata
 ```
 
 输出：
+
 ```
 NAME          SHORTNAMES   APIVERSION                  NAMESPACED   KIND
 domaindatas   kdd          kuscia.secretflow/v1alpha1   true         DomainData
@@ -492,7 +494,7 @@ if obj.DeletionTimestamp != nil {
 Kuscia 项目定义了多个 CRD 来管理隐私计算资源：
 
 | CRD | 用途 | 示例场景 |
-|-----|------|----------|
+| ----- | ------ | ---------- |
 | **DomainData** | 数据资产注册 | 注册表格、模型、规则文件 |
 | **DomainDataSource** | 数据源配置 | 配置本地文件系统、OSS、ODPS |
 | **DomainDataGrant** | 数据授权 | 授权其他域访问数据 |
@@ -611,7 +613,7 @@ Kubernetes 提供了完整的代码生成工具集，位于 `k8s.io/code-generat
 ### 核心工具介绍
 
 | 工具 | 作用 | 生成内容 | 输出目录 |
-|------|------|---------|---------|
+| ------ | ------ | --------- | --------- |
 | **deepcopy-gen** | 生成 DeepCopy 方法 | `zz_generated.deepcopy.go` | 与 types 同目录 |
 | **client-gen** | 生成 REST 客户端 | `domaindata.go`, `domaindatas_client.go` | `clientset/versioned/typed/...` |
 | **lister-gen** | 生成 Listers | `domaindata.go` (带缓存的查询) | `listers/kuscia/v1alpha1/` |
@@ -813,7 +815,7 @@ type DomainDataSpec struct {
 **重要注释标记说明**：
 
 | 标记 | 作用 | 影响 |
-|------|------|------|
+| ------ | ------ | ------ |
 | `+genclient` | 告诉 codegen 为此类型生成客户端代码 | 生成 `domaindata.go` |
 | `+k8s:deepcopy-gen:interfaces=...` | 实现 runtime.Object 接口 | 生成 `DeepCopyObject()` 方法 |
 | `+kubebuilder:resource:path=...` | 定义 CRD 的 API 路径 | 影响 kubectl 访问路径 |
@@ -1128,7 +1130,7 @@ Clientset (顶级客户端)
 **REST 映射**：
 
 | 方法 | HTTP 动词 | 路径 |
-|------|----------|------|
+| ------ | ---------- | ------ |
 | Create | POST | `/apis/kuscia.secretflow/v1alpha1/namespaces/{ns}/domaindatas` |
 | Update | PUT | `/apis/kuscia.secretflow/v1alpha1/namespaces/{ns}/domaindatas/{name}` |
 | Get | GET | `/apis/kuscia.secretflow/v1alpha1/namespaces/{ns}/domaindatas/{name}` |
@@ -1159,7 +1161,7 @@ func (l *domainDataLister) Get(name string) (*v1alpha1.DomainData, error) {
 **性能对比**：
 
 | 操作 | 直接访问 etcd | 使用 Lister |
-|------|--------------|-------------|
+| ------ | -------------- | ------------- |
 | Get | 10-50ms | <1μs |
 | List | 50-200ms | <10μs |
 | 并发能力 | 受 etcd 限制 | 仅受内存限制 |
@@ -1787,7 +1789,7 @@ kubectl get domaindatas -n test-ns
 ### A. 术语表
 
 | 术语 | 解释 |
-|------|------|
+| ------ | ------ |
 | **CRD** | Custom Resource Definition，Kubernetes 自定义资源 |
 | **Codegen** | Code Generator，代码生成器 |
 | **Clientset** | Kubernetes API 客户端集合 |

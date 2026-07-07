@@ -69,7 +69,7 @@ bash kuscia/scripts/build-kuscia-secretflow-images.sh -p secretflow \
 ### 2.2 脚本参数说明
 
 | 参数 | 说明 | 默认值 |
-|---|---|---|
+| --- | --- | --- |
 | `-h, --help` | 显示帮助信息 | - |
 | `-p, --project` | 构建项目：`kuscia`、`secretflow`、`all` | `all` |
 | `-v, --version` | 镜像版本号 / Tag | Kuscia 使用 `git describe`；SecretFlow 使用 `dev-<date>` |
@@ -83,6 +83,7 @@ bash kuscia/scripts/build-kuscia-secretflow-images.sh -p secretflow \
 > 脚本位置：`kuscia/scripts/build-kuscia-secretflow-images.sh`
 >
 > 注意：
+>
 > - Kuscia 镜像默认使用 `docker buildx` 构建，脚本会自动创建名为 `sfwork-kuscia` 的 builder。
 > - SecretFlow 开发镜像默认依赖 `secretflow/release-ci:latest` 容器构建 wheel；如果该镜像不可用，可通过 `--sf-wheel` 传入预先构建好的 wheel 包。
 
@@ -115,7 +116,7 @@ make image IMG=myregistry.example.com/secretflow/kuscia:$(git describe --tags --
 ### 3.2 关键文件说明
 
 | 文件 | 作用 |
-|---|---|
+| --- | --- |
 | `kuscia/Makefile` | 顶层 Makefile，汇总各子模块 |
 | `kuscia/scripts/make/image.mk` | 镜像 Tag、Buildx、Build Arg 定义 |
 | `kuscia/scripts/make/golang.mk` | `build` 目标：编译二进制并整理产物目录 |
@@ -161,7 +162,7 @@ DOCKER_BUILDKIT=1 docker buildx build \
 ### 3.4 二次开发常见修改点
 
 | 修改内容 | 需要重新构建的部分 |
-|---|---|
+| --- | --- |
 | Go 源码修改 | 只需重新 `make image` 或 `hack/build.sh` + `docker buildx build` |
 | CRD / 配置模板 | 修改 `crds/v1alpha1/`、`etc/conf/` 后重新构建镜像 |
 | 新增二进制依赖 | 修改 `build/dockerfile/base/kuscia-deps.Dockerfile` 并重新构建 deps 镜像 |
@@ -196,7 +197,7 @@ bash build.sh -v 1.15.0-dev -r myregistry.example.com/secretflow -u -l
 ### 4.2 关键文件说明
 
 | 文件 | 作用 |
-|---|---|
+| --- | --- |
 | `secretflow/pyproject.toml` | Python 包元数据、构建后端 `pdm-backend` |
 | `secretflow/secretflow/version.py` | 版本号占位，构建时由 `pdm_build.py` 替换 |
 | `secretflow/docker/dev/Dockerfile` | 开发镜像 Dockerfile，安装本地 wheel |
@@ -241,7 +242,7 @@ rm -rf docker/dev/.nsjail docker/dev/.condarc docker/dev/*.yml docker/dev/*.whl
 ### 4.4 二次开发常见修改点
 
 | 修改内容 | 需要重新构建的部分 |
-|---|---|
+| --- | --- |
 | Python 源码修改 | 重新生成 wheel 后构建 `sf-dev-ubuntu` 镜像 |
 | 组件 / pipeline 模板 | 更新 `docker/config_templates.yml`、`docker/deploy_templates.yml` 后重新构建 |
 | nsjail 沙箱配置 | 修改 `docker/release/.nsjail/` 后重新构建 |
@@ -414,7 +415,7 @@ Kuscia 的默认端口分为两类：**容器内部固定端口** 和 **宿主�
 这些端口写在 Kuscia 代码与配置里，不管你是用官方镜像还是自编译镜像，只要容器内运行 `bin/kuscia start`，默认都会监听：
 
 | 服务 | 内部端口 | 说明 |
-|---|---|---|
+| --- | --- | --- |
 | Gateway（跨域网关） | 1080 | 对外/跨域通信入口 |
 | Gateway（域内应用网关） | 80 | 域内 Pod 应用流量入口 |
 | KusciaAPI HTTP | 8082 | 外部 HTTP API |
@@ -438,7 +439,7 @@ Kuscia 的默认端口分为两类：**容器内部固定端口** 和 **宿主�
 `kuscia/scripts/deploy/start_standalone.sh` 用于快速拉起本地体验集群，默认会把容器内部端口映射到宿主机。以 `center` 模式为例：
 
 | 节点 | 宿主机端口 | 容器内部端口 |
-|---|---|---|
+| --- | --- | --- |
 | master | 18080 | 1080 |
 | | 18082 | 8082 |
 | | 18083 | 8083 |
@@ -454,7 +455,7 @@ Kuscia 的默认端口分为两类：**容器内部固定端口** 和 **宿主�
 `p2p` 模式默认映射：
 
 | 节点 | 宿主机端口 | 容器内部端口 |
-|---|---|---|
+| --- | --- | --- |
 | alice-autonomy | 11081 | 80 |
 | | 11082 | 8082 |
 | | 11083 | 8083 |
@@ -467,7 +468,7 @@ Kuscia 的默认端口分为两类：**容器内部固定端口** 和 **宿主�
 生产部署脚本 `kuscia/scripts/deploy/deploy.sh` 允许自定义映射，默认值如下：
 
 | 用途 | 默认宿主机端口 | 容器内部端口 | 参数/环境变量 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 跨域网关 | 需显式指定 | 1080 | `-p` / `DOMAIN_HOST_PORT` |
 | 域内应用网关 | 13081 | 80 | `-q` / `DOMAIN_HOST_INTERNAL_PORT` |
 | KusciaAPI HTTP | 13082 | 8082 | `-k` / `KUSCIAAPI_HTTP_PORT` |
@@ -485,7 +486,7 @@ bash scripts/deploy/deploy.sh autonomy -d alice \
 `run-all-no-docker.sh` 直接把 Kuscia、SecretPad 后端、SecretPad 前端运行在宿主机上，不存在“宿主机→容器”映射，端口就是服务实际监听端口：
 
 | 服务 | 地址 | 说明 |
-|---|---|---|
+| --- | --- | --- |
 | Kuscia API gRPC | 127.0.0.1:8083 | 与容器内默认端口一致 |
 | Kuscia Envoy 内部 | 127.0.0.1:80 | SecretPad 通过该地址访问网关 |
 | SecretPad 后端 HTTP | 127.0.0.1:8080 | dev 模式 `http-port` |
@@ -572,7 +573,7 @@ Kuscia 当前是 **“一个域一个容器、一个 Kuscia 进程”** 的架�
 ### 9.3 本地运行 vs Docker 运行的端口映射关系
 
 | 运行方式 | KusciaAPI gRPC | Envoy 内部 | SecretPad HTTP | SecretPad HTTPS | 前端 |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | 无 Docker 本地运行 | `127.0.0.1:8083` | `127.0.0.1:80` | `127.0.0.1:8080` | `127.0.0.1:8443` | `127.0.0.1:8000` |
 | `deploy.sh` 默认 Docker | `127.0.0.1:13083` | `127.0.0.1:13081` | — | — | — |
 | `start_standalone.sh` center | master: `18083`、alice-lite: `28083`、bob-lite: `38083` | alice/bob-lite: `28081`/`38081` | — | — | — |
@@ -586,7 +587,7 @@ Kuscia 当前是 **“一个域一个容器、一个 Kuscia 进程”** 的架�
 ### 9.4 二次开发时该重启/重构建什么
 
 | 修改内容 | 需要重新构建/注册的镜像 | 需要重启的服务 |
-|---|---|---|
+| --- | --- | --- |
 | Kuscia Go 源码 | `secretflow/kuscia` | Kuscia 容器/进程 |
 | SecretFlow Python 源码 | `secretflow/sf-dev-ubuntu` | 重新注册 AppImage |
 | AppImage / 模板 | — | 重新 `create_sf_app_image.sh` 或 `kubectl apply` |
@@ -743,6 +744,7 @@ spec:
 > 一个 AppImage 对应**一种应用镜像模板**（如 `secretflow/sf-dev-ubuntu:1.15.0-dev`），通常注册一次即可被多个 KusciaJob 复用。KusciaJob 通过 `appImageRef` 字段引用 AppImage 的 `metadata.name`，而任务专属配置（输入数据、算法参数、参与方等）放在 `KusciaJob.spec.tasks[].taskInputConfig` 中，最终由 `config-render` 注入到任务容器。
 >
 > 只有以下情况才需要新建/更新 AppImage：
+>
 > - SecretFlow 镜像版本升级；
 > - 需要不同的启动命令、端口、资源或挂载模板；
 > - 新增其他类型的算法引擎镜像。
@@ -768,7 +770,7 @@ spec:
 对比关系：
 
 | 内容 | 存在哪里 | 是否随任务变化 |
-|---|---|---|
+| --- | --- | --- |
 | 镜像名/Tag | `AppImage.spec.image` | 否 |
 | 配置文件格式/占位符 | `AppImage.spec.configTemplates` | 否 |
 | 容器启动方式/端口/资源 | `AppImage.spec.deployTemplates` | 否 |
@@ -783,7 +785,7 @@ spec:
 主要控制器：
 
 | 控制器 | 路径 | 职责 |
-|---|---|---|
+| --- | --- | --- |
 | KusciaJob controller | `pkg/controllers/kusciajob/controller.go` | 调和 KusciaJob，驱动状态机 |
 | RunningHandler / scheduler | `pkg/controllers/kusciajob/handler/running.go`、`scheduler.go` | 计算可运行子任务并创建 KusciaTask |
 | KusciaTask controller | `pkg/controllers/kusciatask/controller.go` | 调和 KusciaTask |
@@ -888,7 +890,7 @@ runtime: runc   # runc / runk / runp
 ```
 
 | 运行时 | 说明 | 镜像来源 |
-|---|---|---|
+| --- | --- | --- |
 | `runc` | 通过 containerd/CRI 启动容器（默认） | 由 containerd 从镜像仓库拉取 `AppImage.Spec.Image` |
 | `runk` | 在机构自有 Kubernetes 集群中创建 Pod | 由该集群的容器运行时拉取 |
 | `runp` | 直接在当前 Kuscia 容器内以进程方式运行 | 读取本地 OCI store `/home/kuscia/var/images`，需要预先用 `kuscia image load` 或 `builtin` 导入 |
@@ -994,16 +996,19 @@ case config.ContainerRuntime:
 然后 Kuscia 就像 kubelet 一样，通过 CRI gRPC 接口让 containerd 干活：
 
 - 创建 Pod 沙箱：`pkg/agent/kuberuntime/kuberuntime_sandbox.go`
+
   ```go
   podSandBoxID, err := m.runtimeService.RunPodSandbox(ctx, podSandboxConfig, runtimeHandler)
   ```
 
 - 拉取镜像：`pkg/agent/kuberuntime/kuberuntime_image.go`
+
   ```go
   imageRef, err := m.imageService.PullImage(ctx, imgSpec, nil, podSandboxConfig)
   ```
 
 - 创建并启动容器：`pkg/agent/kuberuntime/kuberuntime_container.go`
+
   ```go
   containerID, err := m.runtimeService.CreateContainer(ctx, podSandboxID, containerConfig, podSandboxConfig)
   err = m.runtimeService.StartContainer(ctx, containerID)
@@ -1034,7 +1039,7 @@ containerd 配置中使用了 CNI 插件：
 #### 小结
 
 | 运行时 | Kuscia 容器内是否启动 containerd | 任务是否是独立 Linux 容器 | 是否需要 privileged |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `runc` | 是 | 是（宿主机内核上的兄弟容器） | 是 |
 | `runp` | 否 | 否（Kuscia 容器内的进程） | 否 |
 | `runk` | 否（复用外部 K8s） | 是（外部 K8s Pod） | 否 |
@@ -1084,7 +1089,7 @@ fi
 ## 11. 附录：官方参考路径
 
 | 项目 | 关键文件 |
-|---|---|
+| --- | --- |
 | Kuscia | `kuscia/Makefile` |
 | | `kuscia/scripts/make/image.mk` |
 | | `kuscia/scripts/make/golang.mk` |

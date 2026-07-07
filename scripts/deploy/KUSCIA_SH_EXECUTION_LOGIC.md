@@ -7,26 +7,31 @@
 ## 支持的部署模式
 
 ### 1. **center（中心化模式）**
+
 - **架构**：1个Master节点 + 多个Lite节点
 - **特点**：Master负责调度和管理，Lite执行计算任务
 - **适用场景**：生产环境，需要集中管理
 
 ### 2. **p2p（点对点模式）**
+
 - **架构**：多个Autonomy节点互相连接
 - **特点**：每个节点都有完整功能，对等通信
 - **适用场景**：小规模协作，无需中心节点
 
 ### 3. **cxc（Center x Center模式）**
+
 - **架构**：多个Master节点互联，每个Master下有Lite节点
 - **特点**：多层级管理，支持跨域路由转发
 - **适用场景**：大规模多组织协作
 
 ### 4. **cxp（Center x P2P模式）**
+
 - **架构**：Master节点与Autonomy节点混合
 - **特点**：结合中心化和点对点的优势
 - **适用场景**：混合组网场景
 
 ### 5. **start（单机/多机模式）**
+
 - **架构**：根据配置文件启动单个节点
 - **特点**：灵活配置，可独立运行或加入现有集群
 - **适用场景**：自定义部署、测试环境
@@ -194,7 +199,7 @@ start_cxp_cluster()
 ## 关键组件端口
 
 | 组件 | 端口 | 协议 | 说明 |
-|------|------|------|------|
+| ------ | ------ | ------ | ------ |
 | K3s API Server | 6443 | HTTPS | Kubernetes API |
 | Gateway | 1080 | HTTPS | 域间通信网关 |
 | DataMesh HTTP | 8070 | HTTPS | 元数据管理REST API |
@@ -207,6 +212,7 @@ start_cxp_cluster()
 ## 健康检查机制
 
 ### 1. K3s检查
+
 ```bash
 probe_k3s()
   - 端点：https://127.0.0.1:6443
@@ -215,6 +221,7 @@ probe_k3s()
 ```
 
 ### 2. Gateway检查
+
 ```bash
 probe_gateway_crd()
   - 命令：kubectl get gateways -n <domain>
@@ -223,6 +230,7 @@ probe_gateway_crd()
 ```
 
 ### 3. DataMesh检查
+
 ```bash
 probe_datamesh()
   - 端点：https://127.0.0.1:8070/healthZ
@@ -267,7 +275,7 @@ dataMesh:
 可通过环境变量覆盖默认配置：
 
 | 变量名 | 默认值 | 说明 |
-|--------|--------|------|
+| -------- | -------- | ------ |
 | KUSCIA_IMAGE | secretflow/kuscia:latest | Kuscia镜像 |
 | SECRETFLOW_IMAGE | secretflow-lite-anolis8:1.11.0b1 | SecretFlow镜像 |
 | DATAPROXY_IMAGE | dataproxy:0.1.0b1 | DataProxy镜像 |
@@ -281,17 +289,20 @@ dataMesh:
 ## 常见问题
 
 ### Q1: 容器启动失败？
+
 - 检查端口是否被占用
 - 查看容器日志：`docker logs <container>`
 - 检查K3s日志：`/home/kuscia/var/logs/k3s.log`
 - 检查Envoy日志：`/home/kuscia/var/logs/envoy`
 
 ### Q2: 健康检查超时？
+
 - 增加重试次数或等待时间
 - 检查网络连接
 - 验证证书是否正确
 
 ### Q3: 如何清理重新部署？
+
 ```bash
 # 停止并删除所有Kuscia容器
 docker rm -f $(docker ps -aq --filter name=kuscia)

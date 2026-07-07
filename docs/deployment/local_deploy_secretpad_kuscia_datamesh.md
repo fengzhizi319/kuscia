@@ -48,7 +48,7 @@
 ## 2. 前置条件
 
 | 项目 | 版本/要求 | 说明 |
-|------|----------|------|
+| ------ | ---------- | ------ |
 | Docker | ≥ 20.10.24 | 运行 Kuscia/SecretPad 容器 |
 | Git | 任意 | 克隆前端代码 |
 | OpenJDK | 17 | SecretPad 后端（方案二需要） |
@@ -84,7 +84,7 @@ bash scripts/install.sh master -P notls
 默认会创建以下容器（假设当前用户为 `charles`）：
 
 | 容器名 | 说明 |
-|--------|------|
+| -------- | ------ |
 | `charles-kuscia-master` | Kuscia master 控制平面 |
 | `charles-kuscia-lite-alice` | Lite 节点 alice |
 | `charles-kuscia-lite-bob` | Lite 节点 bob |
@@ -94,7 +94,7 @@ bash scripts/install.sh master -P notls
 默认端口映射：
 
 | 服务 | 宿主机端口 | 容器端口 |
-|------|-----------|---------|
+| ------ | ----------- | --------- |
 | SecretPad Web | 8080 | 8080 |
 | Kuscia master gateway | 18080 | 1080 |
 | Kuscia master KusciaAPI HTTP | 18082 | 8082 |
@@ -510,16 +510,16 @@ curl http://localhost:8080/actuator/health
 ### 7.1 关键端口速查（install.sh master 默认）
 
 | 服务 | 宿主机端口 | 容器内端口 | 说明 |
-|------|-----------|-----------|------|
+| ------ | ----------- | ----------- | ------ |
 | SecretPad Web | 8080 | 8080 | 浏览器访问 |
 | Kuscia master gateway | 18080 | 1080 | 节点间认证鉴权 |
 | Kuscia master KusciaAPI HTTP | 18082 | 8082 | HTTP API |
 | Kuscia master KusciaAPI gRPC | 18083 | 8083 | SecretPad 后端连接 |
 | Kuscia master Envoy | 13081 | 80 | SecretPad gateway 配置 |
-| Kuscia lite alice gateway | 28080 | 1080 |  |
-| Kuscia lite alice KusciaAPI gRPC | 28083 | 8083 |  |
-| Kuscia lite bob gateway | 38080 | 1080 |  |
-| Kuscia lite bob KusciaAPI gRPC | 38083 | 8083 |  |
+| Kuscia lite alice gateway | 28080 | 1080 | |
+| Kuscia lite alice KusciaAPI gRPC | 28083 | 8083 | |
+| Kuscia lite bob gateway | 38080 | 1080 | |
+| Kuscia lite bob KusciaAPI gRPC | 38083 | 8083 | |
 | DataMesh HTTP | 不暴露宿主机 | 8070 | 仅在容器内访问 |
 | DataMesh gRPC | 不暴露宿主机 | 8071 | 引擎内部读取数据 |
 
@@ -531,7 +531,7 @@ export KUSCIA_CTR_PREFIX="${USER}-kuscia"
 ```
 
 | 节点 | 容器名 |
-|------|--------|
+| ------ | -------- |
 | master | `${USER}-kuscia-master` |
 | lite alice | `${USER}-kuscia-lite-alice` |
 | lite bob | `${USER}-kuscia-lite-bob` |

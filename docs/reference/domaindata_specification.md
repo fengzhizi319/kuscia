@@ -1,6 +1,7 @@
 # DomainData 详细说明文档
 
 ## 目录
+
 - [概述](#概述)
 - [数据结构定义](#数据结构定义)
 - [YAML 格式示例](#yaml-格式示例)
@@ -16,6 +17,7 @@
 DomainData 是 Kuscia 中的数据资产管理的核心概念，用于统一管理和描述域内的各类数据资源。它可以表示特征表、模型、规则、报告等数据类型。
 
 ### 主要特点
+
 - **唯一标识**：每个 DomainData 在同一个域内具有唯一的 ID
 - **类型化**：支持 table（表格）、model（模型）、rule（规则）、report（报告）等类型
 - **元数据管理**：包含列信息、分区、属性等丰富的元数据
@@ -64,12 +66,14 @@ DomainData 和 DomainDataGrant 列表存储在 Kuscia 的底层存储系统中�
 ### 2. 存储位置
 
 #### 物理存储
+
 - **存储引擎**：etcd v3（K3s 嵌入式版本）
 - **存储路径**：`/var/lib/rancher/k3s/server/db/` （默认路径）
 - **数据格式**：Protocol Buffer 序列化的 Kubernetes 对象
 - **命名空间隔离**：每个域（Domain）对应一个 Kubernetes Namespace
 
 #### Kubernetes 资源路径
+
 ```
 /apis/kuscia.secretflow/v1alpha1/namespaces/{namespace}/domaindatas/{name}
 /apis/kuscia.secretflow/v1alpha1/namespaces/{namespace}/domaindatagrants/{name}
@@ -80,12 +84,14 @@ DomainData 和 DomainDataGrant 列表存储在 Kuscia 的底层存储系统中�
 #### DomainData 保存流程
 
 **步骤 1: API 请求接收**
+
 ```go
 // pkg/datamesh/metaserver/v1handler/httphandler/domaindata/create.go
 POST /api/v1/kusciaapi/domaindata/create
 ```
 
 **步骤 2: 转换为 Kubernetes CRD 对象**
+
 ```go
 import (
     "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
@@ -113,6 +119,7 @@ domainData := &v1alpha1.DomainData{
 ```
 
 **步骤 3: 通过 Kubernetes Client 写入 etcd**
+
 ```go
 // pkg/crd/clientset/versioned/typed/kuscia/v1alpha1/domaindata.go
 func (c *domainDatas) Create(ctx context.Context, domainData *v1alpha1.DomainData, opts v1.CreateOptions) (*v1alpha1.DomainData, error) {
@@ -129,12 +136,14 @@ func (c *domainDatas) Create(ctx context.Context, domainData *v1alpha1.DomainDat
 ```
 
 **步骤 4: kube-apiserver 处理**
+
 - 验证请求权限（RBAC）
 - 执行 CRD Schema 验证
 - 触发准入控制器（Admission Controllers）
 - 将对象序列化并写入 etcd
 
 **步骤 5: etcd 持久化**
+
 - 使用 Raft 共识算法确保数据一致性
 - 数据写入 WAL（Write-Ahead Log）
 - 快照机制定期保存状态
@@ -341,6 +350,7 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 ```
 
 **Informer 工作流程：**
+
 ```
 1. List & Watch → kube-apiserver
 2. Delta FIFO Queue → 接收事件
@@ -353,12 +363,14 @@ func NewController(ctx context.Context, config controllers.ControllerConfig) con
 ### 5. 数据查询机制
 
 #### 通过 Lister 查询（从本地缓存）
+
 ```go
 // 快速查询，不访问 etcd
 dd, err := c.domaindataLister.DomainDatas(namespace).Get(name)
 ```
 
 #### 通过 Client 查询（直接访问 etcd）
+
 ```go
 // 强一致性查询，直接读取 etcd
 dd, err := c.kusciaClient.KusciaV1alpha1().DomainDatas(namespace).Get(
@@ -366,6 +378,7 @@ dd, err := c.kusciaClient.KusciaV1alpha1().DomainDatas(namespace).Get(
 ```
 
 #### 列表查询
+
 ```go
 // 支持 Label Selector 和 Field Selector
 ddList, err := c.kusciaClient.KusciaV1alpha1().DomainDatas(namespace).List(
@@ -446,7 +459,7 @@ spec:
 ### 7. 数据存储特性
 
 | 特性 | 说明 |
-|------|------|
+| ------ | ------ |
 | **持久化** | etcd WAL + 快照机制，确保数据不丢失 |
 | **高可用** | Raft 共识算法，支持多副本 |
 | **一致性** | 强一致性保证，线性化读写 |
@@ -458,6 +471,7 @@ spec:
 ### 8. 查看存储数据
 
 #### 通过 kubectl 查看
+
 ```bash
 # 查看所有 DomainData
 kubectl get domaindatas -n alice
@@ -473,6 +487,7 @@ etcdctl get /registry/kuscia.secretflow/domaindatas/alice/train-data-001
 ```
 
 #### 通过 API 查询
+
 ```bash
 # 查询 DomainData 列表
 curl http://localhost:8080/api/v1/kusciaapi/domaindata/list \
@@ -509,7 +524,7 @@ K3s 是一个轻量级的 Kubernetes 发行版，专为边缘计算、IoT 设备
 K3s 支持多种存储后端：
 
 | 存储后端 | 适用场景 | 特点 |
-|---------|---------|------|
+| --------- | --------- | ------ |
 | **Embedded etcd** | 单机或小型集群（默认） | 内置 etcd，简化部署 |
 | SQLite | 开发测试 | 最轻量，无外部依赖 |
 | External etcd | 大型生产集群 | 独立 etcd 集群，高可用 |
@@ -555,12 +570,14 @@ Kuscia 默认使用 **Embedded etcd** 作为存储后端。
 #### etcd v3 核心特性
 
 **1. Raft 共识算法**
+
 - **Leader-based**：所有写操作通过 Leader 节点
 - **多数派确认**：需要 (N/2 + 1) 个节点确认
 - **日志复制**：确保所有节点数据一致
 - **故障恢复**：自动选举新 Leader
 
 **2. MVCC（多版本并发控制）**
+
 ```go
 // etcd 中每个 key 维护多个版本
 type KeyValue struct {
@@ -574,11 +591,13 @@ type KeyValue struct {
 ```
 
 **3. Revision 机制**
+
 - 每次事务递增全局 revision
 - 支持历史版本查询
 - 实现乐观锁（通过 ResourceVersion）
 
 **4. Watch 机制**
+
 - 实时监听 key 变化
 - 支持前缀匹配
 - 事件压缩和合并
@@ -586,6 +605,7 @@ type KeyValue struct {
 #### Kuscia 中 etcd 的配置
 
 **启动参数**（来自 `cmd/kuscia/modules/k3s.go`）：
+
 ```bash
 k3s server \
   -d=/var/lib/rancher/k3s/server \      # 数据目录
@@ -598,6 +618,7 @@ k3s server \
 ```
 
 **数据存储结构**：
+
 ```
 /var/lib/rancher/k3s/server/
 ├── db/
@@ -617,11 +638,13 @@ k3s server \
 #### etcd 数据持久化机制
 
 **1. Write-Ahead Log (WAL)**
+
 - 所有写操作先写入 WAL
 - 确保崩溃后可恢复
 - WAL 文件定期归档
 
 **2. Snapshot 快照**
+
 ```go
 // etcd 定期创建快照
 Snapshot Configuration:
@@ -631,6 +654,7 @@ Snapshot Configuration:
 ```
 
 **3. Compaction 压缩**
+
 - 定期清理旧版本数据
 - 保留最近的 revision
 - 可通过 Kubernetes API 配置
@@ -646,6 +670,7 @@ etcdctl endpoint status --write-out="json"
 #### 数据安全与备份
 
 **1. 加密配置**（可选）
+
 ```yaml
 # /etc/rancher/k3s/encryption-config.yaml
 apiVersion: apiserver.config.k8s.io/v1
@@ -663,6 +688,7 @@ resources:
 ```
 
 **2. 备份策略**
+
 ```bash
 # 备份 etcd 数据库
 kubectl k3s etcd-snapshot save \
@@ -675,6 +701,7 @@ kubectl k3s etcd-snapshot restore \
 ```
 
 **3. 监控指标**
+
 ```bash
 # 查看 etcd 健康状态
 etcdctl endpoint health
@@ -689,12 +716,14 @@ etcdctl endpoint status --write-out=table
 #### etcd 性能调优
 
 **关键指标监控**：
+
 - `etcd_server_has_leader`：是否有 Leader
 - `etcd_server_leader_changes_seen_total`：Leader 变更次数
 - `etcd_disk_backend_commit_duration_seconds`：提交延迟
 - `etcd_network_peer_round_trip_time_seconds`：节点间 RTT
 
 **调优建议**：
+
 ```yaml
 # K3s etcd 调优参数
 --etcd-expose-metrics=true                  # 暴露监控指标
@@ -711,6 +740,7 @@ etcdctl endpoint status --write-out=table
 **常见问题**：
 
 1. **etcd 空间不足**
+
 ```bash
 # 错误: "etcdserver: mvcc: database space exceeded"
 # 解决：触发压缩和碎片整理
@@ -719,6 +749,7 @@ etcdctl defrag
 ```
 
 2. **Leader 选举失败**
+
 ```bash
 # 检查网络连接
 etcdctl endpoint status --cluster -w table
@@ -728,6 +759,7 @@ etcdctl endpoint health --cluster
 ```
 
 3. **数据损坏恢复**
+
 ```bash
 # 从快照恢复
 k3s server \
@@ -740,7 +772,7 @@ k3s server \
 在 Kuscia 隐私计算场景中，etcd 存储的关键数据：
 
 | 数据类型 | 存储路径示例 | 大小估算 | 更新频率 |
-|---------|------------|---------|---------|
+| --------- | ------------ | --------- | --------- |
 | DomainData | `/registry/kuscia.secretflow/domaindatas/alice/train-001` | ~5KB | 低频 |
 | DomainDataGrant | `/registry/kuscia.secretflow/domaindatagrants/alice/grant-001` | ~3KB | 中频 |
 | Domain | `/registry/kuscia.secretflow/domains/alice` | ~2KB | 极低频 |
@@ -748,6 +780,7 @@ k3s server \
 | KusciaTask | `/registry/kuscia.secretflow/kusciatasks/alice/task-001` | ~8KB | 高频 |
 
 **容量规划**：
+
 - 单个 DomainData 对象：~5KB
 - 单个 DomainDataGrant 对象：~3KB
 - 假设 1000 个数据资产 + 5000 个授权记录
@@ -764,7 +797,7 @@ k3s server \
 #### DomainData Spec 字段说明
 
 | 字段名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
+| -------- | ------ | ------ | ------ |
 | `relativeURI` | string | 是 | 相对于数据源的 URI 路径。完整路径 = DataSourceURI + RelativeURI |
 | `author` | string | 是 | 数据创建者/作者 |
 | `name` | string | 是 | 人类可读的名称，可以重复 |
@@ -779,7 +812,7 @@ k3s server \
 #### DataColumn 字段说明
 
 | 字段名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
+| -------- | ------ | ------ | ------ |
 | `name` | string | 是 | 列名 |
 | `type` | string | 是 | 列数据类型（如：string, int, float, double 等） |
 | `comment` | string | 否 | 列注释说明 |
@@ -799,6 +832,7 @@ k3s server \
 基于文件目录结构的分区方式，适用于本地文件系统、OSS 等存储。
 
 **数据结构**：
+
 ```go
 type Partition struct {
     Type   string       `json:"type"`   // "path"
@@ -807,6 +841,7 @@ type Partition struct {
 ```
 
 **实际示例**：
+
 ```yaml
 apiVersion: kuscia.secretflow/v1alpha1
 kind: DomainData
@@ -845,6 +880,7 @@ spec:
 ```
 
 **对应的文件系统结构**：
+
 ```
 /data/users/
 ├── dt=2024-01-01/
@@ -865,12 +901,14 @@ spec:
 ```
 
 **使用场景**：
+
 - **时间序列数据**：按日期/小时分区
 - **多租户数据**：按租户 ID 分区
 - **地域数据**：按地区/国家分区
 - **业务分类**：按业务线/产品线分区
 
 **查询优化**：
+
 ```python
 # 隐私计算任务中可以指定分区过滤，减少数据传输
 {
@@ -888,12 +926,14 @@ spec:
 阿里云 ODPS（Open Data Processing Service，现称 MaxCompute）的分区表结构。
 
 **ODPS 分区特点**：
+
 - 托管在阿里云 MaxCompute 平台
 - 支持海量数据（PB 级别）
 - 分区作为表的一级结构
 - 支持动态分区和静态分区
 
 **配置示例**：
+
 ```yaml
 apiVersion: kuscia.secretflow/v1alpha1
 kind: DomainData
@@ -936,6 +976,7 @@ spec:
 ```
 
 **ODPS SQL 对应**：
+
 ```sql
 -- 创建分区表
 CREATE TABLE orders (
@@ -958,6 +999,7 @@ SELECT * FROM orders WHERE ds='20240101' AND city_code='330100';
 ```
 
 **Kuscia 中的使用**：
+
 ```python
 # 在隐私计算任务中引用 ODPS 分区数据
 from secretflow.data.vertical import read_csv
@@ -972,7 +1014,7 @@ data = read_csv(
 #### 分区 vs 非分区对比
 
 | 特性 | 非分区表 | 分区表 |
-|------|---------|--------|
+| ------ | --------- | -------- |
 | **数据存储** | 单一文件/表 | 多个分区目录/子表 |
 | **查询性能** | 全表扫描 | 分区裁剪，快速定位 |
 | **数据管理** | 整体管理 | 可按分区删除/更新 |
@@ -983,6 +1025,7 @@ data = read_csv(
 #### 分区最佳实践
 
 **1. 选择合适的分区字段**
+
 ```yaml
 # ✅ 好的分区设计
 partitions:
@@ -1004,11 +1047,13 @@ partitions:
 ```
 
 **2. 控制分区数量**
+
 - 单个表的分区数建议 < 10,000
 - 避免分区过小（< 1MB）
 - 定期合并小分区
 
 **3. 分区命名规范**
+
 ```yaml
 # 推荐格式
 partitions:
@@ -1024,6 +1069,7 @@ partitions:
 ```
 
 **4. 分区生命周期管理**
+
 ```yaml
 # 通过 attributes 标注分区策略
 attributes:
@@ -1233,6 +1279,7 @@ status:
 ```
 
 **对应的文件系统结构**：
+
 ```
 /data/users/behavior/
 ├── dt=2024-01-01/
@@ -1257,6 +1304,7 @@ status:
 ```
 
 **隐私计算任务中使用分区数据**：
+
 ```python
 import secretflow as sf
 
@@ -1353,6 +1401,7 @@ status:
 ```
 
 **ODPS SQL 对应操作**：
+
 ```sql
 -- 在 ODPS 中创建分区表
 CREATE TABLE IF NOT EXISTS alice_project.transactions (
@@ -1395,6 +1444,7 @@ ALTER TABLE alice_project.transactions DROP PARTITION (ds='20230101');
 ```
 
 **在 Kuscia 隐私计算中使用**：
+
 ```python
 import secretflow as sf
 from secretflow.data.vertical import read_odps_table
@@ -1485,6 +1535,7 @@ status:
 ```
 
 **文件系统结构**：
+
 ```
 iot/sensors/
 ├── dt=2024-01-01/
@@ -1512,16 +1563,19 @@ DomainData 提供了完整的 RESTful API 和 gRPC 接口，支持数据的注�
 ### 1. 注册 DomainData (Create)
 
 #### HTTP API
+
 ```
 POST /api/v1/kusciaapi/domaindata/create
 ```
 
 #### gRPC API
+
 ```protobuf
 rpc CreateDomainData(CreateDomainDataRequest) returns (CreateDomainDataResponse);
 ```
 
 #### 请求示例 (curl)
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/create \
   -H "Content-Type: application/json" \
@@ -1557,6 +1611,7 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/create \
 ```
 
 #### 响应示例
+
 ```json
 {
   "status": {
@@ -1574,11 +1629,13 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/create \
 #### 单个查询
 
 **HTTP API**
+
 ```
 POST /api/v1/kusciaapi/domaindata/query
 ```
 
 **请求示例**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/query \
   -H "Content-Type: application/json" \
@@ -1594,6 +1651,7 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/query \
 ```
 
 **响应示例**
+
 ```json
 {
   "status": {
@@ -1633,11 +1691,13 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/query \
 #### 批量查询
 
 **HTTP API**
+
 ```
 POST /api/v1/kusciaapi/domaindata/batchquery
 ```
 
 **请求示例**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/batchquery \
   -H "Content-Type: application/json" \
@@ -1661,11 +1721,13 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/batchquery \
 ### 3. 列出 DomainData (List)
 
 #### HTTP API
+
 ```
 POST /api/v1/kusciaapi/domaindata/list
 ```
 
 #### 请求示例
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/list \
   -H "Content-Type: application/json" \
@@ -1683,6 +1745,7 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/list \
 ```
 
 #### 响应示例
+
 ```json
 {
   "status": {
@@ -1708,11 +1771,13 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/list \
 ### 4. 更新 DomainData (Update)
 
 #### HTTP API
+
 ```
 POST /api/v1/kusciaapi/domaindata/update
 ```
 
 #### 请求示例
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/update \
   -H "Content-Type: application/json" \
@@ -1735,11 +1800,13 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/update \
 ### 5. 删除 DomainData (Delete)
 
 #### HTTP API
+
 ```
 POST /api/v1/kusciaapi/domaindata/delete
 ```
 
 #### 请求示例
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/delete \
   -H "Content-Type: application/json" \
@@ -1753,6 +1820,7 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindata/delete \
 ```
 
 #### 响应示例
+
 ```json
 {
   "status": {
@@ -1777,6 +1845,7 @@ service DomainDataService {
 ```
 
 **使用示例 (Go)**
+
 ```go
 import (
     "context"
@@ -1823,7 +1892,7 @@ DomainDataGrant 用于实现跨域的数据授权，允许一个域（授权方�
 #### DomainDataGrant Spec 字段说明
 
 | 字段名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
+| -------- | ------ | ------ | ------ |
 | `author` | string | 是 | 授权创建者 |
 | `domainDataID` | string | 是 | 被授权的 DomainData ID |
 | `grantDomain` | string | 是 | 被授权的域 ID |
@@ -1834,7 +1903,7 @@ DomainDataGrant 用于实现跨域的数据授权，允许一个域（授权方�
 #### GrantLimit 字段说明
 
 | 字段名 | 类型 | 必填 | 说明 |
-|--------|------|------|------|
+| -------- | ------ | ------ | ------ |
 | `expirationTime` | Time | 否 | 过期时间 |
 | `useCount` | int | 否 | 使用次数限制，0 表示无限制 |
 | `grantMode` | []GrantType | 否 | 授权模式：normal, metadata, file |
@@ -1844,6 +1913,7 @@ DomainDataGrant 用于实现跨域的数据授权，允许一个域（授权方�
 | `inputConfig` | string | 否 | 输入配置 |
 
 #### GrantType 枚举
+
 - `normal`: 正常授权，可访问完整数据
 - `metadata`: 仅元数据授权，只能查看数据结构
 - `file`: 文件级授权，可访问原始文件
@@ -1902,11 +1972,13 @@ status:
 #### 创建授权 (Create)
 
 **HTTP API**
+
 ```
 POST /api/v1/kusciaapi/domaindatagrant/create
 ```
 
 **请求示例**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindatagrant/create \
   -H "Content-Type: application/json" \
@@ -1931,11 +2003,13 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindatagrant/create \
 #### 查询授权 (Query)
 
 **HTTP API**
+
 ```
 POST /api/v1/kusciaapi/domaindatagrant/query
 ```
 
 **请求示例**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindatagrant/query \
   -H "Content-Type: application/json" \
@@ -1953,11 +2027,13 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindatagrant/query \
 #### 列出授权 (List)
 
 **HTTP API**
+
 ```
 POST /api/v1/kusciaapi/domaindatagrant/list
 ```
 
 **请求示例**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindatagrant/list \
   -H "Content-Type: application/json" \
@@ -1976,6 +2052,7 @@ curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindatagrant/list \
 #### 批量查询授权 (BatchQuery)
 
 **HTTP API**
+
 ```
 POST /api/v1/kusciaapi/domaindatagrant/batchquery
 ```
@@ -1983,6 +2060,7 @@ POST /api/v1/kusciaapi/domaindatagrant/batchquery
 #### 更新授权 (Update)
 
 **HTTP API**
+
 ```
 POST /api/v1/kusciaapi/domaindatagrant/update
 ```
@@ -1990,11 +2068,13 @@ POST /api/v1/kusciaapi/domaindatagrant/update
 #### 删除授权 (Delete)
 
 **HTTP API**
+
 ```
 POST /api/v1/kusciaapi/domaindatagrant/delete
 ```
 
 **请求示例**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/kusciaapi/domaindatagrant/delete \
   -H "Content-Type: application/json" \
@@ -2208,26 +2288,31 @@ spec:
 ## 最佳实践
 
 ### 1. 命名规范
+
 - `domaindata_id`: 使用有意义的唯一标识，如 `{业务域}-{数据类型}-{版本}`
 - `name`: 使用清晰的中文或英文描述
 - `relativeURI`: 采用分层目录结构，如 `{业务}/{子业务}/{文件名}`
 
 ### 2. 元数据管理
+
 - 充分利用 `attributes` 字段记录额外信息
 - 为表格类型数据完整定义 `columns`
 - 添加版本号、创建时间、业务描述等属性
 
 ### 3. 数据安全
+
 - 根据实际需求设置最小权限的 `grantMode`
 - 设置合理的 `expirationTime` 和 `useCount`
 - 限制 `components` 范围，避免过度授权
 
 ### 4. 数据质量
+
 - 为列定义添加 `comment` 说明
 - 正确设置 `notNullable` 约束
 - 标注数据格式、单位等信息
 
 ### 5. 生命周期管理
+
 - 定期清理过期的 DomainData
 - 监控 DomainDataGrant 的使用情况
 - 及时撤销不再需要的授权
@@ -2237,18 +2322,23 @@ spec:
 ## 常见问题
 
 ### Q1: DomainData 和 DomainDataSource 的关系？
+
 **A**: DomainDataSource 描述数据存储的位置和访问方式（如本地文件系统、OSS、ODPS），DomainData 描述具体的数据资产及其元数据。一个 DataSource 可以包含多个 DomainData。
 
 ### Q2: 如何确保 DomainData 的唯一性？
+
 **A**: `domaindata_id` 在同一域（namespace）内必须唯一。系统会自动校验，重复创建会返回错误。
 
 ### Q3: 授权后如何使用数据？
+
 **A**: 被授权方可以在任务中通过 `domaindata_id` 引用已授权的数据，系统会根据 DomainDataGrant 验证访问权限。
 
 ### Q4: 如何查看数据的使用历史？
+
 **A**: 通过查询 DomainDataGrant 的 `status.use_records` 字段，可以看到每次使用的时间、组件和输出。
 
 ### Q5: 支持哪些文件格式？
+
 **A**: 目前支持 CSV、Parquet、JSON 等常见格式，通过 `fileFormat` 字段指定。对于数据库类型的数据源，格式由数据源本身决定。
 
 ---

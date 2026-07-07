@@ -37,6 +37,8 @@ run:
 
 # output configuration options
 output:
+  # sort results before applying sort-order
+  sort-results: true
   # sort order
   sort-order:
     - linter

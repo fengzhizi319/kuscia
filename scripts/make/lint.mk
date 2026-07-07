@@ -24,7 +24,7 @@
 lint-golang: # Run golang linter.
 	@$(LOG_TARGET)
 	golangci-lint --version
-	golangci-lint run --out-format=colored-line-number --config=.golangci.yml
+	golangci-lint run --config=.golangci.yml
 
 
 # ========================================= yaml lint ==============================================

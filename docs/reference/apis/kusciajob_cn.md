@@ -30,14 +30,14 @@
 
 #### 请求（CreateJobRequest）
 
-| 字段              | 类型                                           | 选填 | 描述                                                                                                                         |
-|-----------------|----------------------------------------------|----|----------------------------------------------------------------------------------------------------------------------------|
-| header          | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                    |
-| job_id          | string                                       | 必填 | JobID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
-| initiator       | string                                       | 必填 | 发起方节点 ID                                                                                                                   |
-| max_parallelism | int32                                        | 可选 | 并发度，参考 [KusciaJob 概念](../concepts/kusciajob_cn.md)                                                                         |
-| tasks           | [Task](#task)[]                              | 必填 | 任务参数                                                                                                                       |
-| custom_fields   | map<string, string>                          | 可选 | 自定义参数，会同步给参与方，key不超过38个字符，value不超过63个字符。                                                                                                            |
+| 字段 | 类型 | 选填 | 描述 |
+| ----------------- | ---------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------- |
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| job_id | string | 必填 | JobID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
+| initiator | string | 必填 | 发起方节点 ID |
+| max_parallelism | int32 | 可选 | 并发度，参考 [KusciaJob 概念](../concepts/kusciajob_cn.md) |
+| tasks | [Task](#task)[] | 必填 | 任务参数 |
+| custom_fields | map<string, string> | 可选 | 自定义参数，会同步给参与方，key不超过38个字符，value不超过63个字符。 |
 
 #### 响应（CreateJobResponse）
 
@@ -596,11 +596,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
 
 #### 请求（StopJobRequest）
 
-| 字段     | 类型                                           | 选填 | 描述      |
-|--------|----------------------------------------------|----|---------|
+| 字段 | 类型 | 选填 | 描述 |
+| -------- | ---------------------------------------------- | ---- | --------- |
 | header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| job_id | string                                       | 必填 | JobID   |
-| reason | string                                       | 可选 | 停止Job的原因   |
+| job_id | string | 必填 | JobID |
+| reason | string | 可选 | 停止Job的原因 |
 
 #### 响应（StopJobResponse）
 
@@ -702,11 +702,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 
 #### 请求（SuspendJobRequest）
 
-| 字段     | 类型                                           | 选填 | 描述      |
-|--------|----------------------------------------------|----|---------|
+| 字段 | 类型 | 选填 | 描述 |
+| -------- | ---------------------------------------------- | ---- | --------- |
 | header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| job_id | string                                       | 必填 | JobID   |
-| reason | string                                       | 可选 | 暂停Job的原因   |
+| job_id | string | 必填 | JobID |
+| reason | string | 可选 | 暂停Job的原因 |
 
 #### 响应（SuspendJobResponse）
 
@@ -759,11 +759,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/suspend' \
 
 #### 请求（RestartJobRequest）
 
-| 字段     | 类型                                           | 选填 | 描述      |
-|--------|----------------------------------------------|----|---------|
+| 字段 | 类型 | 选填 | 描述 |
+| -------- | ---------------------------------------------- | ---- | --------- |
 | header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| job_id | string                                       | 必填 | JobID   |
-| reason | string                                       | 可选 | 重跑Job的原因   |
+| job_id | string | 必填 | JobID |
+| reason | string | 可选 | 重跑Job的原因 |
 
 #### 响应（RestartJobResponse）
 
@@ -816,11 +816,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/restart' \
 
 #### 请求（CancelJobRequest）
 
-| 字段     | 类型                                           | 选填 | 描述      |
-|--------|----------------------------------------------|----|---------|
+| 字段 | 类型 | 选填 | 描述 |
+| -------- | ---------------------------------------------- | ---- | --------- |
 | header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| job_id | string                                       | 必填 | JobID   |
-| reason | string                                       | 可选 | 取消Job的原因   |
+| job_id | string | 必填 | JobID |
+| reason | string | 可选 | 取消Job的原因 |
 
 #### 响应（CancelJobResponse）
 
@@ -891,10 +891,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 
 ### Party
 
-| 字段        | 类型     | 选填 | 描述       |
-|-----------|--------|----|----------|
+| 字段 | 类型 | 选填 | 描述 |
+| ----------- | -------- | ---- | ---------- |
 | domain_id | string | 必填 | DomainID |
-| role      | string | 可选 | 参与方角色，该字段由引擎自定义，对应到 [appImage](../concepts/appimage_cn.md#appimage-ref) 的部署模版中；更多参考 [KusciaJob](../concepts/kusciajob_cn.md#create-kuscia-job)       |
+| role | string | 可选 | 参与方角色，该字段由引擎自定义，对应到 [appImage](../concepts/appimage_cn.md#appimage-ref) 的部署模版中；更多参考 [KusciaJob](../concepts/kusciajob_cn.md#create-kuscia-job) |
 | resources | JobResource | 可选 | 参与方资源配置 |
 | bandwidth_limits | [BandwidthLimit](#bandwidth-limit)[] | 可选 | 节点请求其他节点的带宽限制配置 |
 
@@ -923,17 +923,17 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 
 ### Task
 
-| 字段                       | 类型                                 | 选填 | 描述                                                                                                                                                        |
-|--------------------------|------------------------------------|----|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| app_image                | string                             | 必填 | 任务镜像                                                                                                                                                      |
-| parties                  | [Party](#party)[]                  | 必填 | 参与方节点 ID                                                                                                                                                  |
-| alias                    | string                             | 必填 | 任务别名，同一个 Job 中唯一，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)                    |
-| task_id                  | string                             | 可选 | 任务 ID，如果不填，Kuscia 将随机生成唯一的 task_id ，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
-| dependencies             | string[]                           | 必填 | 依赖任务，通过 alias 字段来编排 Job 中 Task 之间的依赖关系                                                                                                                    |
-| task_input_config        | string                             | 必填 | 任务配置                                                                                                                                                      |
-| priority                 | string                             | 可选 | 优先级，值越大优先级越高                                                                                                                                              |
-| schedule_config          | [ScheduleConfig](#schedule-config) | 可选 | 任务调度配置                                                                                                                                                    |
-| tolerable                | bool                               | 可选 | 标识 Task 是否可容忍失败（默认为 false），若 tolerable=true 即使此 task 失败也不会导致 Job 失败。若 tolerable=false 则此 task 失败会判定整个 Job 失败。                     |
+| 字段 | 类型 | 选填 | 描述 |
+| -------------------------- | ------------------------------------ | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| app_image | string | 必填 | 任务镜像 |
+| parties | [Party](#party)[] | 必填 | 参与方节点 ID |
+| alias | string | 必填 | 任务别名，同一个 Job 中唯一，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
+| task_id | string | 可选 | 任务 ID，如果不填，Kuscia 将随机生成唯一的 task_id ，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
+| dependencies | string[] | 必填 | 依赖任务，通过 alias 字段来编排 Job 中 Task 之间的依赖关系 |
+| task_input_config | string | 必填 | 任务配置 |
+| priority | string | 可选 | 优先级，值越大优先级越高 |
+| schedule_config | [ScheduleConfig](#schedule-config) | 可选 | 任务调度配置 |
+| tolerable | bool | 可选 | 标识 Task 是否可容忍失败（默认为 false），若 tolerable=true 即使此 task 失败也不会导致 Job 失败。若 tolerable=false 则此 task 失败会判定整个 Job 失败。 |
 
 {#schedule-config}
 

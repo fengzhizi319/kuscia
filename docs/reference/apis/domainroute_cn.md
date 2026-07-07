@@ -427,11 +427,11 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 
 详细参考 [DomainRoute 概念](../concepts/domainroute_cn.md) 。
 
-| 字段                        | 类型     | 选填 | 描述       |
-|---------------------------|--------|----|----------|
-| tls_ca                    | string | 必填 | TLS 的 CA，BASE64 编码格式 |
+| 字段 | 类型 | 选填 | 描述 |
+| --------------------------- | -------- | ---- | ---------- |
+| tls_ca | string | 必填 | TLS 的 CA，BASE64 编码格式 |
 | source_client_private_key | string | 必填 | 来源客户端的私钥，BASE64 编码格式 |
-| source_client_cert        | string | 必填 | 来源客户端的证书，BASE64 编码格式 |
+| source_client_cert | string | 必填 | 来源客户端的证书，BASE64 编码格式 |
 
 {#token-config}
 

@@ -29,7 +29,7 @@ K3s 是 Rancher Labs 开发的轻量级 Kubernetes 发行版，专为资源受�
 **主要区别对比**：
 
 | 特性 | Kubernetes (标准版) | K3s | Kuscia 中的 K3s |
-|------|-------------------|-----|----------------|
+| ------ | ------------------- | ----- | ---------------- |
 | **二进制大小** | > 2GB | ~100MB | ~100MB |
 | **内存占用** | > 2GB | 512MB-1GB | ~300MB (空闲) |
 | **CPU 要求** | 多核 (推荐 2C+) | 1核即可 | 1核即可 |
@@ -82,7 +82,7 @@ args := []string{
 **性能对比**：
 
 | 指标 | 标准 K8s | K3s | Kuscia K3s |
-|------|----------|-----|------------|
+| ------ | ---------- | ----- | ------------ |
 | 内存占用 | >2GB | 512MB-1GB | ~300MB |
 | CPU 占用 | 多核 | 单核 | 单核 |
 | 启动时间 | >5分钟 | 1分钟内 | ~30秒 |
@@ -287,7 +287,7 @@ func initKusciaEnvAfterReady(ctx context.Context) error {
 **可用的标准API接口**：注册后，以下标准Kubernetes API接口可自动使用：
 
 | HTTP方法 | API路径 | 说明 | 示例 |
-|---------|--------|------|------|
+| --------- | -------- | ------ | ------ |
 | GET | `/apis/kuscia.secretflow/v1alpha1/namespaces/{namespace}/{resources}` | 列出指定命名空间下的资源 | `GET /apis/kuscia.secretflow/v1alpha1/namespaces/alice/domaindatas` |
 | GET | `/apis/kuscia.secretflow/v1alpha1/namespaces/{namespace}/{resources}/{name}` | 获取指定资源 | `GET /apis/kuscia.secretflow/v1alpha1/namespaces/alice/domaindatas/user-table` |
 | POST | `/apis/kuscia.secretflow/v1alpha1/namespaces/{namespace}/{resources}` | 创建资源 | `POST /apis/kuscia.secretflow/v1alpha1/namespaces/alice/domaindatas` |
@@ -331,6 +331,7 @@ informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 这种方式避免了手动编写底层的 HTTP 请求代码，提供了类型安全的接口和丰富的功能。
 
 **常用资源类型**：
+
 - `domaindatas` - 域数据资源
 - `domaindatagrants` - 域数据授权资源
 - `domains` - 域资源
@@ -397,7 +398,7 @@ func (c *Controller) syncDomainDataGrantHandler(ctx context.Context, key string)
 ##### 2.3.3.1 优势对比
 
 | 传统方式 | Kuscia 方式 |
-|---------|------------|
+| --------- | ------------ |
 | 需要预先安装 Kubernetes 集群 | 一键启动，无需外部依赖 |
 | 需要手动注册 CRD | 自动注册，开箱即用 |
 | 需要管理多个组件 | 一体化管理，简化运维 |
@@ -526,7 +527,7 @@ func (s *Server) CreateDomainData(w http.ResponseWriter, r *http.Request) {
 **工作量对比**：
 
 | 功能 | Kubernetes CRD | 纯 Go 实现 |
-|------|---------------|-----------|
+| ------ | --------------- | ----------- |
 | API 定义 | YAML 声明 | 手动定义 Request/Response 结构 |
 | HTTP Server | API Server 内置 | 需要自己实现路由、Handler |
 | 参数验证 | OpenAPI Schema 自动生成 | 每个字段手动验证 |
@@ -618,7 +619,7 @@ func (s *Server) WatchDomainDatas(ctx context.Context, sinceRevision int64) (<-c
 **工作量对比**：
 
 | 功能 | Kubernetes Informer | 纯 Go 实现 |
-|------|---------------------|-----------|
+| ------ | --------------------- | ----------- |
 | 事件监听 | 内置 Watch API | 自己实现长轮询 |
 | 本地缓存 | Indexer 自动维护 | 自己实现缓存结构 |
 | 断线重连 | Reflector 自动处理 | 自己实现重试逻辑 |
@@ -712,7 +713,7 @@ func (s *DomainDataStore) Get(namespace, name string) (*DomainData, error) {
 **工作量对比**：
 
 | 功能 | Kubernetes etcd | 纯 Go 实现 |
-|------|----------------|-----------|
+| ------ | ---------------- | ----------- |
 | 数据存储 | etcd 内置 | 自己选数据库、建表 |
 | 序列化 | Protocol Buffer 自动生成 | 手动 JSON 序列化 |
 | 事务支持 | etcd 原子操作 | 自己实现事务 |
@@ -790,7 +791,7 @@ func (c *DomainDataCache) ListByLabel(labelKey, labelValue string) []*DomainData
 **工作量对比**：
 
 | 功能 | Kubernetes Lister | 纯 Go 实现 |
-|------|-------------------|-----------|
+| ------ | ------------------- | ----------- |
 | 本地缓存 | Indexer 自动维护 | 自己实现 Map 结构 |
 | 索引查询 | Label Index 内置 | 自己维护索引 Map |
 | 缓存同步 | Informer 自动更新 | 自己监听变化 |
@@ -882,7 +883,7 @@ func (m *RBACMiddleware) CheckPermission(ctx context.Context, user, resource, ve
 **工作量对比**：
 
 | 功能 | Kubernetes RBAC | 纯 Go 实现 |
-|------|----------------|-----------|
+| ------ | ---------------- | ----------- |
 | 权限定义 | YAML 声明 | 自己设计数据结构 |
 | 权限检查 | API Server 自动拦截 | 每个 Handler 手动调用 |
 | 权限缓存 | 内置缓存 | 自己实现 |
@@ -956,6 +957,7 @@ kubectl explain domaindata.spec  # 查看字段说明
 ```
 
 **纯 Go 实现需要**：
+
 - ❌ 自己开发 CLI 工具（cobra/cli）
 - ❌ 自己实现表格输出
 - ❌ 自己实现交互式编辑
@@ -977,6 +979,7 @@ kubectl explain domaindata.spec  # 查看字段说明
 ```
 
 **纯 Go 实现需要**：
+
 - ❌ 自己埋点
 - ❌ 自己暴露指标
 - ❌ 自己定义指标规范
@@ -1006,6 +1009,7 @@ func TestDomainDataController(t *testing.T) {
 ```
 
 **纯 Go 实现需要**：
+
 - ❌ 自己 Mock 数据库
 - ❌ 自己 Mock HTTP Server
 - ❌ 自己构造测试数据
@@ -1022,6 +1026,7 @@ func TestDomainDataController(t *testing.T) {
 - ✅ 招聘容易（K8s 工程师很多）
 
 **纯 Go 实现**：
+
 - ❌ 需要自己编写完整文档
 - ❌ 遇到问题无人可问
 - ❌ 只能招聘熟悉该系统的人
@@ -1033,7 +1038,7 @@ func TestDomainDataController(t *testing.T) {
 以实现 **DomainData 资源的 CRUD + Watch + 缓存 + 权限控制** 为例：
 
 | 模块 | Kubernetes CRD | 纯 Go 实现 |
-|------|---------------|-----------|
+| ------ | --------------- | ----------- |
 | **类型定义** | 100 行 | 100 行 |
 | **API Server** | 0 行（内置） | 500 行 |
 | **存储层** | 0 行（etcd） | 1000 行 |
@@ -1054,7 +1059,7 @@ func TestDomainDataController(t *testing.T) {
 #### 2.4.4 长期维护成本对比
 
 | 维度 | Kubernetes CRD | 纯 Go 实现 |
-|------|---------------|-----------|
+| ------ | --------------- | ----------- |
 | **新功能开发** | 快速（复用现有框架） | 慢（需要改造基础设施） |
 | **Bug 修复** | 少（K8s 已验证） | 多（自己踩坑） |
 | **性能优化** | 自动享受 K8s 优化 | 自己调优 |
@@ -1086,6 +1091,7 @@ func TestDomainDataController(t *testing.T) {
 ---
 
 ## 3. Kuscia 的三种运行模式
+
 **控制平面的含义**
 
 控制平面是 Kubernetes 集群的大脑，负责管理整个集群的状态和协调各种操作。在 Kuscia 中，控制平面包含了一系列核心组件。
@@ -1093,6 +1099,7 @@ func TestDomainDataController(t *testing.T) {
 **主要作用**
 
 控制平面主要有以下几个关键作用：
+
 - ✅ 集群管理：维护集群的整体状态，包括节点健康状况、资源分配等
 - ✅ 工作负载调度：决定在哪些节点上运行应用容器，并确保期望状态与实际状态一致
 - ✅ API 服务：提供 REST API 接口供用户和其他组件与集群交互
@@ -1101,10 +1108,12 @@ func TestDomainDataController(t *testing.T) {
 
 **在 Kuscia 中的应用**
 Kuscia 有两种运行模式：
+
 - **Autonomy Mode**：Kuscia 自有控制平面，可以独立运行
 - **Lite Mode**：不自带控制平面，作为工作节点连接到 Master 节点
 这种设计允许 Kuscia 在不同的部署场景下灵活使用，既可以在独立环境中运行完整功能，也可以作为更大集群的一部分协同工作。
 Lite 模式是作为工作节点接入到 Master 节点，这意味着它将控制平面的职责委托给 Master 节点，自己专注于本地的资源管理任务。
+
 ### 3.1 模式 1：Autonomy Mode（自治模式）
 
 ```
@@ -1136,6 +1145,7 @@ Lite 模式是作为工作节点接入到 Master 节点，这意味着它将控�
 ```
 
 **特点**：
+
 - ✅ **无需外部 K8s 集群**
 - ✅ **单二进制文件启动**
 - ✅ **资源占用极低**（最低 1C2G）
@@ -1197,12 +1207,14 @@ spec:
 ```
 
 **特点**：
+
 - ⚠️ **需要外部 K8s 集群**
 - ✅ **可以利用现有 K8s 基础设施**
 - ✅ **适合大规模集群部署**
 - ⚠️ **配置复杂度更高**
 
 **使用场景**：
+
 - 企业已有 K8s 集群
 - 需要跨多个节点调度任务
 - 需要 K8s 的高级功能（如 HPA、PDB 等）
@@ -1232,7 +1244,7 @@ Lite Mode 与 Autonomy Mode 不同，它**不自带控制平面**，而是作为
 **与 Autonomy 的区别**：
 
 | 特性 | Autonomy | Lite |
-|------|----------|------|
+| ------ | ---------- | ------ |
 | 控制平面 | 自带 K3s | 无，依赖 Master |
 | 部署位置 | 可独立部署 | 必须注册到 Master |
 | 适用场景 | 单机构 P2P | 大型机构中心化组网 |
@@ -1263,7 +1275,7 @@ Lite Mode 与 Autonomy Mode 不同，它**不自带控制平面**，而是作为
 **K3s** 是 Rancher 开发的轻量级 Kubernetes 发行版，特点：
 
 | 特性 | 说明 |
-|------|------|
+| ------ | ------ |
 | **轻量化** | 二进制文件 < 100MB |
 | **单文件** | 包含所有 K8s 组件 |
 | **低资源** | 最低 512MB 内存即可运行 |
@@ -1323,6 +1335,7 @@ func (s *k3sModule) Run(ctx context.Context) error {
 ```
 
 **关键点**：
+
 - ✅ K3s 是 Kuscia 进程的**子进程**
 - ✅ 通过 `exec.Command` 启动，生命周期绑定
 - ✅ 使用 `supervisor` 管理，自动重启
@@ -1343,6 +1356,7 @@ func (s *k3sModule) Run(ctx context.Context) error {
 ```
 
 **优点**：
+
 - 无需外部依赖
 - 部署简单
 - 适合单机
@@ -1359,6 +1373,7 @@ master:
 ```
 
 **优点**：
+
 - 高可用
 - 数据持久化
 - 适合生产环境
@@ -1366,7 +1381,7 @@ master:
 **存储方式对比**：
 
 | 特性 | 嵌入式 etcd | 外部 MySQL/PostgreSQL | 外部 etcd |
-|------|------------|----------------------|----------|
+| ------ | ------------ | ---------------------- | ---------- |
 | 部署复杂度 | 低 | 中 | 高 |
 | 高可用 | 单节点 | 依赖数据库集群 | 原生 Raft 集群 |
 | 备份恢复 | etcd snapshot | 数据库备份工具 | etcd snapshot |
@@ -1459,11 +1474,11 @@ Kuscia 并不是“拉起 K3s 进程后立刻继续”，而是显式等待 K3s 
 
 ```go
 go func() {
-	s.readyError = s.startCheckReady(ctx)
-	if s.readyError == nil {
-		s.readyError = s.initKusciaEnvAfterReady(ctx)
-	}
-	close(s.readyCh)
+ s.readyError = s.startCheckReady(ctx)
+ if s.readyError == nil {
+  s.readyError = s.initKusciaEnvAfterReady(ctx)
+ }
+ close(s.readyCh)
 }()
 ```
 
@@ -1493,7 +1508,7 @@ Kuscia 通过嵌入式 K3s 复用了大量 Kubernetes 能力，但由于隐私�
 **总体适用性一览**：
 
 | K8s 能力 | Kuscia 中是否可用 | 是否依赖容器 | 说明 |
-|----------|------------------|--------------|------|
+| ---------- | ------------------ | -------------- | ------ |
 | CRD | ✅ 完全可用 | ❌ 不依赖 | Kuscia 所有业务对象都是 CRD |
 | Namespace | ✅ 完全可用 | ❌ 不依赖 | 逻辑隔离，按域划分 |
 | RBAC | ✅ 完全可用 | ❌ 不依赖 | API Server 内置 |
@@ -1770,6 +1785,7 @@ func (h *RunKHandler) Handle(task *v1alpha1.KusciaTask) error {
 ```
 
 **这种情况下**：
+
 - ⚠️ **需要有容器运行时**（Docker、containerd 等）
 - ⚠️ **如果在 Autonomy Mode，需要在宿主机安装 containerd**
 - ⚠️ **如果在外置 K8s Mode，K8s 节点需要有容器运行时**
@@ -1792,6 +1808,7 @@ func (h *RunPHandler) Handle(task *v1alpha1.KusciaTask) error {
 ```
 
 **这种情况下**：
+
 - ✅ **不需要容器运行时**
 - ✅ **直接在宿主机启动进程**
 - ✅ **更轻量，适合简单任务**
@@ -1820,6 +1837,7 @@ spec:
 ```
 
 **依赖关系**：
+
 - ⚠️ **Service 需要 CNI 网络插件**
 - ⚠️ **在 Autonomy Mode，Kuscia 禁用了 flannel（`--flannel-backend=none`）**
 - ⚠️ **需要手动配置网络或使用 hostNetwork**
@@ -1845,7 +1863,7 @@ spec:
 很多初学者会混淆 **Kubernetes Namespace** 和 **Linux Namespace**：
 
 | 特性 | K8s Namespace | Linux Namespace |
-|------|---------------|-----------------|
+| ------ | --------------- | ----------------- |
 | **层级** | API 级别 | 内核级别 |
 | **作用** | 资源分组和权限隔离 | 进程隔离（PID、网络、挂载等） |
 | **实现** | etcd 中的标签字段 | 内核系统调用 |
@@ -2005,6 +2023,7 @@ kubectl get domaindatas -n alice
 ```
 
 **关键点**：
+
 - ✅ 这一切都是**逻辑隔离**
 - ✅ 数据存储在同一个 etcd 中
 - ✅ 通过 `namespace` 字段区分归属
@@ -2052,7 +2071,7 @@ args := []string{
 #### 7.2.2 Kuscia 中 Pod 的特殊性
 
 | 特性 | 标准 K8s | Kuscia 嵌入式 K3s |
-|------|---------|------------------|
+| ------ | --------- | ------------------ |
 | 创建者 | kubelet | Kuscia Agent |
 | 网络分配 | CNI（Flannel/Calico 等） | 不依赖 CNI，由 Envoy + DomainRoute 接管 |
 | 调度器 | kube-scheduler | Kuscia 自定义调度逻辑 |
@@ -2149,7 +2168,7 @@ Kuscia 中的任务 Pod 虽然没有 CNI 分配的 IP，但仍然需要与以下
 ### 7.3 NetworkMesh 组成
 
 | 组件 | 作用 | 说明 |
-|------|------|------|
+| ------ | ------ | ------ |
 | **Envoy** | 边缘/服务代理 | 处理节点内与跨节点流量，支持 mTLS |
 | **DomainRoute / ClusterDomainRoute** | 路由与认证策略 | 定义源域到目的域的通信路径与授权方式 |
 | **CoreDNS（自定义）** | 域内服务发现 | 解析任务 Pod 的 Service 域名 |
@@ -2198,7 +2217,7 @@ Pod B / K3s ApiServer (bob)
 ### 7.6 对 Kubernetes Service 的理解差异
 
 | 场景 | 标准 Kubernetes | Kuscia 嵌入式 K3s |
-|------|----------------|------------------|
+| ------ | ---------------- | ------------------ |
 | Pod IP 网络 | 通过 CNI 分配 | 不依赖 CNI |
 | Service 负载均衡 | kube-proxy + iptables/IPVS | Envoy 代理 |
 | 跨节点通信 | 依赖 CNI 路由 | 依赖 DomainRoute + Envoy |
@@ -2224,7 +2243,7 @@ DataMesh 是 Kuscia 中负责数据资产管理、数据授权与数据访问的
 DataMesh 启动时会同时启动两个服务端点：
 
 | 协议 | 默认端口 | 默认监听地址 | 用途说明 |
-|------|---------|-------------|---------|
+| ------ | --------- | ------------- | --------- |
 | **HTTP** | `8070` | 空字符串（监听所有网卡） | 提供 DomainData、DomainDataSource、DomainDataGrant 等 RESTful API，以及 `/healthZ` 健康检查接口 |
 | **gRPC / Arrow Flight** | `8071` | 空字符串（监听所有网卡） | 提供基于 Arrow Flight 的数据上传、下载与元数据查询接口 |
 
@@ -2275,7 +2294,7 @@ dataMesh:
 `dataMesh` 节点下目前支持以下字段：
 
 | 字段 | 类型 | 默认值 | 说明 |
-|------|------|-------|------|
+| ------ | ------ | ------- | ------ |
 | `disableTLS` | `bool` | `false` | 是否禁用 TLS。默认启用 TLS，HTTP/gRPC 均使用 Kuscia 自签名证书 |
 | `dataProxyList` | `[]DataProxyConfig` | `[]` | 外部数据源代理列表，用于将特定类型的数据源访问转发到 DataProxy |
 
@@ -2364,7 +2383,7 @@ Kuscia 的 Agent 模块负责任务 Pod 的生命周期管理，目前支持三�
 ### 8.1 运行时概览
 
 | 运行时 | 实现方式 | 隔离性 | 是否需要容器引擎 | 典型部署 |
-|--------|----------|--------|------------------|----------|
+| -------- | ---------- | -------- | ------------------ | ---------- |
 | **RunC** | 原生 Linux 容器（namespace + cgroup） | 强 | 需要 containerd | Docker/VM 部署 |
 | **RunP** | 直接启动进程，使用 PRoot 做轻量隔离 | 弱 | 不需要 | K8s 内嵌、开发测试 |
 | **RunK** | 对接外部 Kubernetes 集群创建 Pod | 强 | 需要外部 K8s | 大规模生产集群 |
@@ -2399,11 +2418,13 @@ sudo apt-get install docker.io
 ```
 
 **适用场景**：
+
 - ✅ 需要强隔离（文件系统、网络、PID）
 - ✅ 生产环境、多租户共享节点
 - ✅ 任务需要特定系统库或运行环境
 
 **限制**：
+
 - ⚠️ 通常需要特权或较高的宿主机权限
 - ⚠️ 启动速度比 RunP 慢
 
@@ -2435,12 +2456,14 @@ pip3 install secretflow
 ```
 
 **适用场景**：
+
 - ✅ 性能敏感（无容器开销）
 - ✅ 简单任务（不需要复杂隔离）
 - ✅ 资源受限（无法运行容器）
 - ✅ 开发调试（直接看进程输出）
 
 **限制**：
+
 - ⚠️ 隔离性弱，任务间可能相互影响
 - ⚠️ 安全风险扩散较高
 
@@ -2471,18 +2494,20 @@ spec:
 ```
 
 **适用场景**：
+
 - ✅ 大规模、高并发任务
 - ✅ 需要利用现有 K8s 调度与运维体系
 - ✅ 需要自动扩缩容、资源配额等高级能力
 
 **限制**：
+
 - ⚠️ 需要外部 K8s 集群
 - ⚠️ 配置复杂度更高
 
 ### 8.5 运行时对比
 
 | 特性 | RunC | RunP | RunK |
-|------|------|------|------|
+| ------ | ------ | ------ | ------ |
 | **隔离性** | 强（namespace/cgroup） | 弱（进程级） | 强（外部 K8s 容器） |
 | **启动速度** | 中（秒级） | 快（毫秒级） | 慢（依赖外部调度） |
 | **资源开销** | 中 | 低 | 中 |
@@ -2512,6 +2537,7 @@ spec:
 ### 场景 1：单机开发环境
 
 **需求**：
+
 - 开发者笔记本
 - 快速原型验证
 - 不需要多节点
@@ -2532,6 +2558,7 @@ spec:
 ```
 
 **Kubernetes 配置有效性**：
+
 - ✅ CRD 完全工作
 - ✅ Namespace 隔离有效
 - ✅ Informer/Controller 正常运行
@@ -2543,6 +2570,7 @@ spec:
 ### 场景 2：边缘计算节点
 
 **需求**：
+
 - 资源受限（2C4G）
 - 离线运行
 - 数据本地处理
@@ -2557,6 +2585,7 @@ spec:
 ```
 
 **特点**：
+
 - ✅ 无需网络连接（不依赖外部 K8s）
 - ✅ 资源占用低（< 1GB 内存）
 - ✅ 数据本地存储
@@ -2567,6 +2596,7 @@ spec:
 ### 场景 3：企业私有云
 
 **需求**：
+
 - 多节点集群
 - 高可用
 - 统一资源调度
@@ -2582,6 +2612,7 @@ kubectl apply -f kuscia-configmap.yaml
 ```
 
 **特点**：
+
 - ✅ 利用现有 K8s 基础设施
 - ✅ 高可用（多副本）
 - ✅ 统一监控和日志
@@ -2592,6 +2623,7 @@ kubectl apply -f kuscia-configmap.yaml
 ### 场景 4：混合云联邦学习
 
 **需求**：
+
 - 多方参与
 - 跨云部署
 - 数据安全隔离
@@ -2612,6 +2644,7 @@ kubectl apply -f kuscia-configmap.yaml
 ```
 
 **Kubernetes 配置作用**：
+
 - ✅ 每方独立的 Namespace 隔离
 - ✅ DomainDataGrant 跨域授权
 - ✅ RBAC 控制访问权限
@@ -2626,11 +2659,13 @@ kubectl apply -f kuscia-configmap.yaml
 **答**：完全可以！
 
 **原因**：
+
 1. **Autonomy Mode 隐藏了 K8s 复杂性**
    - 你只需要运行一个二进制文件
    - K3s 自动启动，无需手动配置
    
 2. **可以使用简化的配置**
+
    ```yaml
    # 最简配置
    domainID: my-domain
@@ -2639,6 +2674,7 @@ kubectl apply -f kuscia-configmap.yaml
    ```
 
 3. **HTTP API 更友好**
+
    ```bash
    # 不需要懂 kubectl
    curl -X POST http://localhost:8080/api/v1/domaindatas \
@@ -2659,7 +2695,7 @@ kubectl apply -f kuscia-configmap.yaml
 **性能数据**：
 
 | 指标 | 数值 |
-|------|------|
+| ------ | ------ |
 | **内存占用** | ~300MB（空闲时） |
 | **CPU 占用** | < 1%（无负载时） |
 | **API 延迟** | < 5ms（本地查询） |
@@ -2697,6 +2733,7 @@ if !pkgcom.IsRootUser() {
 ```
 
 **限制**：
+
 - ⚠️ 不能使用 privileged 端口（< 1024）
 - ⚠️ 某些系统调用受限
 - ✅ 但核心功能完全正常
@@ -2710,6 +2747,7 @@ if !pkgcom.IsRootUser() {
 **迁移步骤**：
 
 1. **备份数据**
+
    ```bash
    # 导出 etcd 数据
    etcdctl snapshot save backup.db \
@@ -2717,6 +2755,7 @@ if !pkgcom.IsRootUser() {
    ```
 
 2. **在新集群恢复**
+
    ```bash
    # 恢复到外部 K8s
    etcdctl snapshot restore backup.db \
@@ -2724,6 +2763,7 @@ if !pkgcom.IsRootUser() {
    ```
 
 3. **修改配置**
+
    ```yaml
    # 从 Autonomy Mode 切换到 Master Mode
    mode: Master
@@ -2732,6 +2772,7 @@ if !pkgcom.IsRootUser() {
    ```
 
 4. **重启 Kuscia**
+
    ```bash
    ./kuscia start --config master.yaml
    ```
@@ -2747,6 +2788,7 @@ if !pkgcom.IsRootUser() {
 **安全保障**：
 
 1. **API Server 强制检查**
+
    ```go
    // Kubernetes API Server 源码
    func (r *REST) Get(ctx context.Context, name string) (runtime.Object, error) {
@@ -2759,6 +2801,7 @@ if !pkgcom.IsRootUser() {
    ```
 
 2. **RBAC 权限控制**
+
    ```yaml
    # Alice 只能访问 alice namespace
    apiVersion: rbac.authorization.k8s.io/v1
@@ -2771,17 +2814,20 @@ if !pkgcom.IsRootUser() {
    ```
 
 3. **审计日志**
+
    ```bash
    # 记录所有 API 调用
    tail -f /var/lib/kuscia/logs/k3s-audit.log
    ```
 
 **但不是物理隔离**：
+
 - ⚠️ 数据在同一个 etcd 中
 - ⚠️ 如果有 etcd 访问权限，可以看到所有数据
 - ⚠️ Root 用户可以读取 etcd 文件
 
 **增强安全**：
+
 ```yaml
 # 启用 etcd 加密
 spec:
@@ -2799,7 +2845,7 @@ spec:
 **优势对比**：
 
 | 维度 | 纯 Go 实现 | 基于 K8s |
-|------|-----------|----------|
+| ------ | ----------- | ---------- |
 | **开发工作量** | 巨大（需重写 API、存储、缓存） | 小（复用 K8s 生态） |
 | **可靠性** | 需自行测试和验证 | K8s 经过全球验证 |
 | **扩展性** | 需自行设计插件系统 | CRD + Webhook 成熟 |
@@ -2812,6 +2858,7 @@ spec:
 要实现"监听数据变化并同步"：
 
 **纯 Go 实现**（假设）：
+
 ```go
 // 需要自己实现...
 - HTTP Server 接收请求
@@ -2825,6 +2872,7 @@ spec:
 ```
 
 **基于 K8s**：
+
 ```go
 // 使用 Informer，几十行搞定
 informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
@@ -2869,7 +2917,7 @@ master:
 **答**：K3s API Server 默认监听 `6443`（可通过配置修改）。此外 Kuscia 自身还会暴露：
 
 | 端口 | 用途 |
-|------|------|
+| ------ | ------ |
 | 6443 | K3s API Server（内部） |
 | 8082 | KusciaAPI HTTP |
 | 8083 | KusciaAPI gRPC |
@@ -2890,7 +2938,7 @@ Kuscia 的嵌入式 K3s 不是完整的 Kubernetes，而是**精简定制版**�
 #### 1. **启用的 K8s 核心组件**
 
 | 组件 | 状态 | 说明 |
-|------|------|------|
+| ------ | ------ | ------ |
 | **API Server** | ✅ 启用 | 提供 RESTful API，所有操作的入口 |
 | **etcd** | ✅ 启用 | 存储所有 CRD 对象和集群状态 |
 | **Controller Manager** | ⚠️ 部分启用 | 运行内置控制器（如 Namespace、ServiceAccount） |
@@ -3017,6 +3065,7 @@ kuscia-system     Active   10d
 ```
 
 **作用**：
+
 - ✅ 数据隔离（不同域的数据在不同 namespace）
 - ✅ 权限隔离（RBAC 按 namespace 授权）
 - ✅ 资源隔离（可以限制每个 namespace 的资源配额）
@@ -3080,7 +3129,7 @@ roleRef:
 以下功能由 **Kuscia 自己实现**，不依赖 K8s：
 
 | 功能 | 实现方式 | 说明 |
-|------|---------|------|
+| ------ | --------- | ------ |
 | **任务调度** | Kuscia Scheduler | 自己的调度算法（考虑数据位置、资源等） |
 | **容器运行时** | RunK/RunP | RunK 调用 containerd，RunP 直接启动进程 |
 | **网络通信** | Kuscia Transport | 自己的 gRPC/HTTP 通信框架 |
@@ -3194,6 +3243,7 @@ func (s *k3sModule) Run(ctx context.Context) error {
 ```
 
 **关键点**：
+
 - ✅ Kuscia 决定 K3s 何时启动
 - ✅ Kuscia 决定 K3s 的参数配置
 - ✅ Kuscia 通过 Supervisor 监控 K3s 进程
@@ -3237,6 +3287,7 @@ func (s *k3sModule) startCheckReady(ctx context.Context) error {
 ```
 
 **检查流程**：
+
 ```
 Kuscia 主进程启动
        ↓
@@ -3339,6 +3390,7 @@ func (s *k3sModule) initKusciaEnvAfterReady(ctx context.Context) error {
 ```
 
 **自动化程度**：
+
 - ✅ 无需手动注册 CRD
 - ✅ 启动时自动检测并注册
 - ✅ 支持 CRD 版本升级
@@ -3410,6 +3462,7 @@ func NewControllersModule(i *ModuleRuntimeConfigs) (Module, error) {
 ```
 
 **控制器管理器职责**：
+
 - ✅ 启动所有业务控制器
 - ✅ 提供健康检查接口（`:8090/healthz`）
 - ✅ 管理工作协程池
@@ -3532,6 +3585,7 @@ GET http://localhost:8090/healthz
 ```
 
 **关键理念**：
+
 - ✅ Kuscia 是 **Owner**，K3s 是 **Managed Component**
 - ✅ K3s 对上层透明，用户感知不到 K3s 的存在
 - ✅ Kuscia 负责所有运维操作（升级、备份、恢复）
@@ -3551,6 +3605,7 @@ GET http://localhost:8090/healthz
 ##### A. **主镜像：`secretflow/kuscia`**
 
 **镜像地址**：
+
 ```bash
 # 阿里云镜像仓库（国内）
 secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:latest
@@ -3562,26 +3617,29 @@ docker.io/secretflow/kuscia:1.2.0b0
 ```
 
 **构建方式**（来自 `scripts/make/image.mk`）：
+
 ```makefile
 TAG = ${KUSCIA_VERSION_TAG}-${DATETIME}
 IMG := secretflow/kuscia:${TAG}
 
 .PHONY: image
 image: build
-	DOCKER_BUILDKIT=1
-	@$(call start_docker_buildx)
-	docker buildx build -t ${IMG} \
-	  --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} \
-	  --build-arg DEPS_IMAGE=${DEPS_IMAGE} \
-	  -f ./build/dockerfile/kuscia-anolis.Dockerfile \
-	  . --platform linux/${ARCH} --load
+ DOCKER_BUILDKIT=1
+ @$(call start_docker_buildx)
+ docker buildx build -t ${IMG} \
+   --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} \
+   --build-arg DEPS_IMAGE=${DEPS_IMAGE} \
+   -f ./build/dockerfile/kuscia-anolis.Dockerfile \
+   . --platform linux/${ARCH} --load
 ```
 
 **支持的架构**：
+
 - ✅ `linux/amd64` (x86_64)
 - ✅ `linux/arm64` (ARM64, Apple Silicon)
 
 **多架构构建**：
+
 ```bash
 # 创建多架构构建器
 docker buildx create --name kuscia --platform linux/arm64,linux/amd64
@@ -3598,30 +3656,36 @@ docker buildx build -t secretflow/kuscia:latest \
 ##### B. **依赖镜像**
 
 **kuscia-deps**（基础依赖）：
+
 ```bash
 secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.7.0b0
 ```
 
 包含：
+
 - Python 运行时
 - 系统库（openssl、curl 等）
 - 常用工具（kubectl、helm 等）
 
 **kuscia-envoy**（网关）：
+
 ```bash
 secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-envoy:0.6.2b0
 ```
 
 包含：
+
 - Envoy Proxy
 - 自定义过滤器
 
 **proot**（进程隔离）：
+
 ```bash
 secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/proot
 ```
 
 包含：
+
 - PRoot 工具（无 root 权限的 chroot）
 - 用于 RunP 运行时
 
@@ -3630,20 +3694,23 @@ secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/proot
 ##### C. **监控镜像**
 
 **kuscia-monitor**：
+
 ```bash
 docker.io/secretflow/kuscia-monitor:latest
 ```
 
 包含：
+
 - Prometheus Exporter
 - 自定义监控指标
 
 构建命令：
+
 ```makefile
 .PHONY: build-monitor
 build-monitor:
-	docker build -t secretflow/kuscia-monitor \
-	  -f ./build/dockerfile/kuscia-monitor.Dockerfile .
+ docker build -t secretflow/kuscia-monitor \
+   -f ./build/dockerfile/kuscia-monitor.Dockerfile .
 ```
 
 ---
@@ -3665,6 +3732,7 @@ secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/secretflow-anolis8:1.
 **用途**：联邦学习、隐私计算
 
 **使用示例**：
+
 ```yaml
 apiVersion: kuscia.secretflow/v1alpha1
 kind: KusciaJob
@@ -3887,6 +3955,7 @@ CMD ["start"]
 ```
 
 **镜像大小优化**：
+
 - 使用多阶段构建
 - 清理不必要的文件
 - 压缩二进制文件
@@ -3912,7 +3981,7 @@ CMD ["start"]
 **标签策略**：
 
 | 标签 | 含义 | 更新频率 |
-|------|------|----------|
+| ------ | ------ | ---------- |
 | `latest` | 最新稳定版 | 每次发布更新 |
 | `1.2.0` | 特定版本 | 固定不变 |
 | `1.2.0b0` | Beta 版 | 测试期间更新 |
@@ -3964,6 +4033,7 @@ trivy image secretflow/kuscia:1.2.0b0
 ```
 
 **签名验证**（未来计划）：
+
 ```bash
 # 使用 Cosign 验证签名
 cosign verify secretflow/kuscia:1.2.0b0
@@ -4120,6 +4190,7 @@ cosign verify secretflow/kuscia:1.2.0b0
 ❌ 不依赖外部 Kubernetes 集群
 ❌ 不依赖容器运行时（除非使用 RunK/RunC）
 ```
+
 ## 15. Kuscia 如何向内置 K3s 发送指令
 
 Kuscia 对嵌入式 K3s 的管理不只是“拉起进程”，还包括持续地向 K3s 发送各类指令来完成资源创建、状态查询、事件监听和故障恢复。本节详细说明 Kuscia 与 K3s 之间的指令交互方式、典型场景和失败处理。
@@ -4202,7 +4273,7 @@ func applyFile(conf *ModuleRuntimeConfigs, file string) {
 **其他 kubectl 使用场景**：
 
 | 场景 | 示例命令 |
-|------|----------|
+| ------ | ---------- |
 | 查看资源 | `kubectl get domaindatas -n alice` |
 | 查看日志 | `kubectl logs <pod> -n alice` |
 | 进入容器 | `kubectl exec -it <pod> -n alice -- /bin/bash` |
@@ -4244,7 +4315,7 @@ func applyFile(conf *ModuleRuntimeConfigs, file string) {
 **三个 clientset 的关系**：
 
 | 字段 | 类型 | 作用范围 | 典型使用场景 |
-|------|------|----------|--------------|
+| ------ | ------ | ---------- | -------------- |
 | `KubeClient` | `kubernetes.Interface` | 标准 K8s 资源 | 创建 Namespace、ServiceAccount、RBAC、Secret、查询节点等 |
 | `KusciaClient` | `kusciaclientset.Interface` | Kuscia 自定义资源 | 创建/监听 DomainData、KusciaJob、KusciaTask、DomainRoute 等 |
 | `ExtensionsClient` | `apiextensionsclientset.Interface` | CRD 元数据 | 查询或维护 CRD 定义（较少直接使用，通常由 kubectl apply 完成） |
@@ -4361,7 +4432,7 @@ Informer 本质上是对 K3s API Server 的 **List & Watch** 封装，因此 K3s
 通过 `k8s.io/client-go/informers` 创建：
 
 | 资源类型 | Informer 获取方式 | 典型监听目的 |
-|----------|-------------------|--------------|
+| ---------- | ------------------- | -------------- |
 | Node | `factory.Core().V1().Nodes()` | 感知节点就绪/资源变化 |
 | Namespace | `factory.Core().V1().Namespaces()` | 感知域命名空间创建/删除 |
 | Pod | `factory.Core().V1().Pods()` | 跟踪任务 Pod 生命周期 |
@@ -4376,7 +4447,7 @@ Informer 本质上是对 K3s API Server 的 **List & Watch** 封装，因此 K3s
 通过 `github.com/secretflow/kuscia/pkg/crd/informers/externalversions` 创建：
 
 | 资源类型 | Informer 获取方式 | 典型监听目的 |
-|----------|-------------------|--------------|
+| ---------- | ------------------- | -------------- |
 | Domain | `factory.Kuscia().V1alpha1().Domains()` | 节点/域注册与证书变更 |
 | DomainData | `factory.Kuscia().V1alpha1().DomainDatas()` | 数据发布、授权、更新 |
 | DomainDataGrant | `factory.Kuscia().V1alpha1().DomainDataGrants()` | 跨域数据授权变化 |
@@ -4599,7 +4670,7 @@ func (s *k3sModule) initKusciaEnvAfterReady(ctx context.Context) error {
 ### 15.6 常见指令场景对照表
 
 | 业务场景 | 使用方式 | 示例 |
-|----------|----------|------|
+| ---------- | ---------- | ------ |
 | 注册 CRD | kubectl | `kubectl --kubeconfig kubeconfig apply -f crds/v1alpha1/...yaml` |
 | 初始化集群资源 | kubectl | `kubectl --kubeconfig kubeconfig apply -f conf/domain-cluster-res.yaml` |
 | 创建 Namespace | Go Client | `clients.KubeClient.CoreV1().Namespaces().Create(...)` |
@@ -4656,7 +4727,7 @@ if err != nil && k8serrors.IsConflict(err) {
 ### 15.8 与外部 K8s 模式的区别
 
 | 维度 | 嵌入式 K3s（Autonomy） | 外部 K8s（Master） |
-|------|------------------------|--------------------|
+| ------ | ------------------------ | -------------------- |
 | 进程管理 | Kuscia 通过 Supervisor 管理 K3s | Kuscia 不管理外部 K8s |
 | 客户端地址 | `https://127.0.0.1:6443` | 配置文件中指定的 API Server |
 | 认证方式 | 本地证书/kubeconfig | 通常使用 ServiceAccount Token |
@@ -4698,7 +4769,7 @@ if err != nil && k8serrors.IsConflict(err) {
 **关键对应关系**：
 
 | Kuscia 概念 | K3s 概念 | 作用 |
-|-------------|----------|------|
+| ------------- | ---------- | ------ |
 | Domain | Namespace | 逻辑参与方与资源隔离边界 |
 | Domain ID | Namespace Name | 通常相同，例如 `alice` |
 | Domain Cert | Secret / 证书配置 | 用于跨域身份认证 |
@@ -4711,6 +4782,7 @@ Kuscia 启动时会在 K3s 中完成以下初始化：
 
 1. **创建 Domain 对应的 Namespace**  
    例如在 Autonomy 模式下启动域 `alice` 时，Kuscia 会调用：
+
    ```go
    clients.KubeClient.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
        ObjectMeta: metav1.ObjectMeta{Name: "alice"},
@@ -4719,6 +4791,7 @@ Kuscia 启动时会在 K3s 中完成以下初始化：
 
 2. **创建 Domain CR**  
    在 K3s 中创建一个 `Domain` 自定义资源，记录该域的证书信息：
+
    ```go
    clients.KusciaClient.KusciaV1alpha1().Domains().Create(ctx, &kusciaapisv1alpha1.Domain{
        ObjectMeta: metav1.ObjectMeta{Name: "alice"},
@@ -4730,6 +4803,7 @@ Kuscia 启动时会在 K3s 中完成以下初始化：
 
 3. **创建跨域 Namespace**  
    用于存放需要多个域共同可见的协调资源（如 `KusciaJob`）：
+
    ```go
    clients.KubeClient.CoreV1().Namespaces().Create(ctx, &corev1.Namespace{
        ObjectMeta: metav1.ObjectMeta{Name: "cross-domain"},
@@ -4843,7 +4917,7 @@ Namespace cross-domain
 **隔离规则**：
 
 | 资源类型 | 所在 Namespace | 谁能看到 |
-|----------|----------------|----------|
+| ---------- | ---------------- | ---------- |
 | DomainData | 各 Domain Namespace | 仅该 Domain（及被授权方） |
 | KusciaTask | 各 Domain Namespace | 仅该 Domain |
 | Pod / Service / Secret | 各 Domain Namespace | 仅该 Domain |
@@ -4891,7 +4965,6 @@ kubectl get domains
 - **资源归属由 `metadata.namespace` 决定**：创建 DomainData、KusciaTask 等单域资源时，放在对应 Domain 的 Namespace。
 - **跨域协调资源放在 `cross-domain`**：`KusciaJob` 及其授权 `DomainDataGrant` 放在该命名空间，供所有参与方可见。
 - **参与方通过 `domain_id` 显式指定**：跨域作业中，`parties[].domain_id` 明确说明每个子任务由哪个域执行。
-
 
 ## 17. Kuscia 数据存储与 DataMesh
 
@@ -5012,7 +5085,7 @@ spec:
 关键字段含义：
 
 | 字段 | 含义 |
-|------|------|
+| ------ | ------ |
 | `name` | 数据对象名称 |
 | `type` | 数据类型：`table` / `model` / `rule` / `report` |
 | `relative_uri` | 相对于数据源的存储路径或对象键 |
@@ -5024,7 +5097,7 @@ spec:
 **不需要**。`relative_uri` 是相对于 `DomainDataSource` 的**相对路径**，DataMesh 会自动将其与数据源中的基路径拼接，得到实际访问位置。
 
 | 数据源类型 | `DomainDataSource` 基路径 | `relative_uri` | DataMesh 解析后的实际位置 |
-|------------|---------------------------|----------------|---------------------------|
+| ------------ | --------------------------- | ---------------- | --------------------------- |
 | localfs | `/var/lib/kuscia/var/storage/data` | `user-table.csv` | `/var/lib/kuscia/var/storage/data/user-table.csv` |
 | oss | `bucket=kuscia-data`, `prefix=alice/` | `user-table.csv` | `oss://kuscia-data/alice/user-table.csv` |
 | mysql | `database=alice_db` | `user_table` | `SELECT * FROM alice_db.user_table` |
@@ -5096,12 +5169,14 @@ DataMesh IO Channel 选择器
 2. **类型路由**：当引擎请求访问某个 `DomainData` 时，DataMesh 先读取 `DomainData.data_source` 字段，再查询同名的 `DomainDataSource`，根据 `spec.type` 选择对应的 IO Channel。
 
 3. **凭据解密**：对于 OSS、MySQL 等需要认证的后端，`DomainDataSource` 中的密码、Secret 等敏感信息是加密的。DataMesh 在访问前会调用解密逻辑：
+
    ```go
    encryptedInfo := kusciaDomainDataSource.Spec.Data["encryptedInfo"]
    info, err := s.decryptInfo(encryptedInfo)
    ```
 
 4. **路径拼接**：DataMesh 将 `DomainDataSource` 中的基路径与 `DomainData.relative_uri` 拼接，得到最终访问位置。例如：
+
    ```go
    filePath := path.Join(ds.Info.Localfs.Path, data.RelativeUri)
    ```
@@ -5141,7 +5216,7 @@ func Run(ctx context.Context, conf *config.DataMeshConfig, kusciaClient ...) err
 ```
 
 | Bean | 文件 | 作用 |
-|------|------|------|
+| ------ | ------ | ------ |
 | HTTP Server | `pkg/datamesh/bean/http_server_bean.go` | 启动 HTTP 元数据服务 |
 | gRPC Server | `pkg/datamesh/bean/grpc_server_bean.go` | 启动 gRPC 元数据服务 + Arrow Flight 服务 |
 | Operator | `pkg/datamesh/bean/operator_bean.go` | 启动时注册默认 `localfs` 数据源 |
@@ -5250,7 +5325,7 @@ func (dp *FlightIO) GetFlightInfo(ctx context.Context, msg proto.Message) (*flig
 **需要注意的边界情况**：
 
 | 场景 | DataMesh 行为 |
-|------|---------------|
+| ------ | --------------- |
 | `DomainData` 引用了不存在的 `DomainDataSource` | Flight 请求会失败，返回数据源不存在错误 |
 | `DomainDataSource` 存在但凭据解密失败 | 请求失败，通常是证书或加密配置问题 |
 | `DomainData` 被删除 | 已缓存的 Flight ticket 在过期前仍可能可用，新请求会返回 NotFound |
@@ -5277,7 +5352,7 @@ func (dp *FlightIO) GetFlightInfo(ctx context.Context, msg proto.Message) (*flig
 **主要组件**：
 
 | 组件 | 作用 |
-|------|------|
+| ------ | ------ |
 | HTTP Server | 提供 RESTful 风格的元数据管理接口 |
 | gRPC Server | 提供 gRPC 风格的元数据管理接口 |
 | Arrow Flight Service | 提供数据读写能力，引擎通过 Flight 协议拉取/推送数据 |
@@ -5292,7 +5367,7 @@ Kuscia 中的数据操作分为两类：**内部元数据管理** 和 **外部�
 在 Kuscia 内部（如 Kuscia 控制台、运维脚本、Controller、Agent），可以直接通过标准 K8s 接口管理 `DomainData`、`DomainDataSource`、`DomainDataGrant`：
 
 | 操作 | 工具/接口 | 示例 |
-|------|-----------|------|
+| ------ | ----------- | ------ |
 | 创建 DomainData | kubectl / KusciaAPI / Go Client | `kubectl apply -f domaindata.yaml` |
 | 更新 DomainDataSource | kubectl / KusciaAPI / Go Client | `kubectl patch domaindatasource ...` |
 | 授权跨域数据 | kubectl / KusciaAPI / Go Client | `kubectl apply -f domaindatagrant.yaml` |
@@ -5305,11 +5380,11 @@ Kuscia 中的数据操作分为两类：**内部元数据管理** 和 **外部�
 对于运行在 Kuscia 内部容器中的引擎（如 SecretFlow、其他隐私计算算法），它们**不能直接访问底层文件系统、OSS 或数据库**，而是必须通过 DataMesh 提供的 Arrow Flight 接口：
 
 | 操作 | DataMesh 接口 | 说明 |
-|------|---------------|------|
+| ------ | --------------- | ------ |
 | 获取数据访问票据 | `GetFlightInfo` | 传入 `CommandDomainDataQuery` 或 `CommandDomainDataUpdate` |
 | 读取数据 | `DoGet` | 根据票据拉取数据流 |
 | 写入数据 | `DoPut` | 根据票据推送数据流 |
-| 元数据查询（可选）| gRPC/HTTP `DomainDataService` | 查询 `DomainData` 的列、类型、作者等信息 |
+| 元数据查询（可选） | gRPC/HTTP `DomainDataService` | 查询 `DomainData` 的列、类型、作者等信息 |
 
 ```text
                     ┌─────────────────────────────────────────┐
@@ -5339,7 +5414,7 @@ Kuscia 中的数据操作分为两类：**内部元数据管理** 和 **外部�
 **3. 边界总结**
 
 | 场景 | 使用接口 | 谁能使用 | 是否接触实际数据 |
-|------|----------|----------|------------------|
+| ------ | ---------- | ---------- | ------------------ |
 | 管理 DomainData / DomainDataSource / DomainDataGrant | kubectl / KusciaAPI / Go Client | Kuscia 内部组件、管理员 | 否，只操作元数据 |
 | 读取/写入实际数据 | DataMesh Arrow Flight (`GetFlightInfo` / `DoGet` / `DoPut`) | 任务引擎（SecretFlow 等） | 是 |
 | 查询数据元信息 | DataMesh gRPC/HTTP 元数据接口 | 引擎或外部系统 | 否，只返回元数据 |
@@ -5381,6 +5456,7 @@ DataMesh 与数据存储的关系可以概括为：**DataMesh 不直接保存业
 以读取本地文件为例，完整流程如下：
 
 1. **客户端构造 Flight 查询请求**
+
    ```protobuf
    CommandDomainDataQuery {
      domaindata_id = "user-table"
@@ -5388,6 +5464,7 @@ DataMesh 与数据存储的关系可以概括为：**DataMesh 不直接保存业
    ```
 
 2. **DataMesh 解析请求上下文**
+
    ```go
    data, datasource, err := reqCtx.GetDomainDataAndSource(ctx)
    // data.RelativeUri = "alice/user-table.csv"
@@ -5396,6 +5473,7 @@ DataMesh 与数据存储的关系可以概括为：**DataMesh 不直接保存业
    ```
 
 3. **生成 FlightInfo 票据**
+
    ```go
    filePath := path.Join(ds.Info.Localfs.Path, data.RelativeUri)
    ticketUUID := uuid.New().String()
@@ -5403,6 +5481,7 @@ DataMesh 与数据存储的关系可以概括为：**DataMesh 不直接保存业
    ```
 
 4. **客户端凭票据读取数据**
+
    ```go
    // DoGet(ticketUUID)
    // DataMesh 根据 ticket 找到缓存的上下文
@@ -5416,7 +5495,7 @@ DataMesh 与数据存储的关系可以概括为：**DataMesh 不直接保存业
 DataMesh 目前支持多种内置存储后端：
 
 | 后端类型 | 类型标识 | 说明 |
-|----------|----------|------|
+| ---------- | ---------- | ------ |
 | 本地文件系统 | `localfs` | 默认数据源，路径在 `var/storage/data` 下 |
 | OSS / S3 兼容 | `oss` | 支持阿里云 OSS 等 S3 兼容对象存储 |
 | MySQL | `mysql` | 通过 SQL 读取表数据 |
@@ -5434,6 +5513,7 @@ Kuscia 通过以下机制保证不同 Domain 的数据隔离：
    - alice 命名空间下的数据对象，bob 无法直接读取。
 
 2. **Author 字段标识所有者**
+
    ```go
    kusciaDomainData.Spec.Author = s.conf.KubeNamespace // alice
    ```
@@ -5480,7 +5560,6 @@ DataMesh 解析 DomainData → DomainDataSource → 实际文件/数据库
 - **DataMesh 是统一数据访问层**，根据 `DomainDataSource.type` 选择对应的 IO Channel，通过 Apache Arrow Flight 为引擎提供与后端无关的读写能力。
 - 跨域数据使用需要 `DomainDataGrant` 授权，控制器会验证签名、有效期、使用次数，并将数据拷贝到目标域。
 - 数据隔离主要依靠 K3s Namespace + Author 字段 + 授权拷贝机制实现。
-
 
 ## 18. 附录 A：如何将宿主机命令转换为 Docker 命令
 

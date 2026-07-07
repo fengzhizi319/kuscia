@@ -6,8 +6,8 @@
 
 ```go
 func (c *Command) Execute() error {
-	_, err := c.ExecuteC()
-	return err
+ _, err := c.ExecuteC()
+ return err
 }
 ```
 
@@ -99,4 +99,3 @@ Kuscia 的命令基本都通过 Cobra 定义，例如：
 2. 看根命令如何注册各个子命令。
 3. 找到目标子命令的 `RunE` / `PreRunE`。
 4. 再进入业务逻辑函数，例如模块启动、配置加载或资源初始化。
-

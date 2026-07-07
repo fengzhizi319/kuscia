@@ -30,16 +30,16 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 
 #### 请求（CreateDomainDataSourceRequest）
 
-| 字段              | 类型                                           | 选填 | 描述                                                                                                                                                                                     |
-|-----------------|----------------------------------------------|----|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| header          | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                                                                                |
-| domain_id       | string                                       | 必填 | 节点ID                                                                                                                                                                                   |
-| datasource_id   | string                                       | 选填 | 数据源 ID，如果不填，则会由 kusciaapi 自动生成，并在 response 中返回。如果填写，则会使用填写的值，请注意需满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
-| type            | string                                       | 必填 | 数据源类型，支持 localfs, oss, mysql, odps                                                                                                                                                     |
-| name            | string                                       | 可选 | 数据源名称（无需唯一）                                                                                                                                                                            |
-| info            | [DataSourceInfo](#data-source-info)          | 必填 | 数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。                                                                                                                  |
-| info_key        | string                                       | 选填 | info 与 info_key 字段二者填一个即可，info_key 用于从 Kuscia ConfigManager 的加密后端中获取数据源的信息。                                                                                                            |
-| access_directly | bool                                         | 可选 | 隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。                                              |
+| 字段 | 类型 | 选填 | 描述 |
+| ----------------- | ---------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| domain_id | string | 必填 | 节点ID |
+| datasource_id | string | 选填 | 数据源 ID，如果不填，则会由 kusciaapi 自动生成，并在 response 中返回。如果填写，则会使用填写的值，请注意需满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
+| type | string | 必填 | 数据源类型，支持 localfs, oss, mysql, odps |
+| name | string | 可选 | 数据源名称（无需唯一） |
+| info | [DataSourceInfo](#data-source-info) | 必填 | 数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。 |
+| info_key | string | 选填 | info 与 info_key 字段二者填一个即可，info_key 用于从 Kuscia ConfigManager 的加密后端中获取数据源的信息。 |
+| access_directly | bool | 可选 | 隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。 |
 
 {#create-domain-data-source-response}
 
@@ -194,16 +194,16 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
 
 #### 请求（UpdateDomainDataSourceRequest）
 
-| 字段              | 类型                                           | 选填 | 描述                                                                                                                            |
-|-----------------|----------------------------------------------|----|-------------------------------------------------------------------------------------------------------------------------------|
-| header          | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                       |
-| domain_id       | string                                       | 必填 | 节点ID                                                                                                                          |
-| datasource_id   | string                                       | 必填 | 要更新的数据源 ID                                                                                                                    |
-| type            | string                                       | 必填 | 数据源类型，支持 localfs, oss, mysql                                                                                                  |
-| name            | string                                       | 可选 | 数据源名称（无需唯一）                                                                                                                   |
-| info            | [DataSourceInfo](#data-source-info)          | 必填 | 数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。                                                         |
-| info_key        | string                                       | 选填 | info 与 info_key 字段二者填一个即可，info_key 用于从 Kuscia ConfigManager 的加密后端中获取数据源的信息。                                                   |
-| access_directly | bool                                         | 可选 | 隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。 |
+| 字段 | 类型 | 选填 | 描述 |
+| ----------------- | ---------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------- |
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| domain_id | string | 必填 | 节点ID |
+| datasource_id | string | 必填 | 要更新的数据源 ID |
+| type | string | 必填 | 数据源类型，支持 localfs, oss, mysql |
+| name | string | 可选 | 数据源名称（无需唯一） |
+| info | [DataSourceInfo](#data-source-info) | 必填 | 数据源信息，详情见 [DataSourceInfo](#data-source-info) ，当设置 info_key 时，此字段可不填。 |
+| info_key | string | 选填 | info 与 info_key 字段二者填一个即可，info_key 用于从 Kuscia ConfigManager 的加密后端中获取数据源的信息。 |
+| access_directly | bool | 可选 | 隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。 |
 
 #### 响应（UpdateDomainDataSourceResponse）
 
@@ -661,37 +661,37 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 
 ### OssDataSourceInfo
 
-| 字段                | 类型     | 选填 | 描述                                                                               |
-|-------------------|--------|----|----------------------------------------------------------------------------------|
-| endpoint          | string | 必填 | 对象存储系统的链接地址，如: <https://oss.xxx.cn-xxx.com> 或 <http://127.0.0.1:9000>                |
-| bucket            | string | 必填 | 对象存储系统桶 bucket 名称                                                                |
-| prefix            | string | 选填 | 存储系统的路径前缀，可不填，当需要通过路径前缀prefix隔离区分不同数据文件时填写，如：data/traindata/ 或 data/predictdata/ |
-| access_key_id     | string | 必填 | 访问 OSS 所需的 AK                                                                    |
-| access_key_secret | string | 必填 | 访问 OSS 所需的 SK                                                                    |
-| virtualhost       | bool   | 选填 | 若为阿里云 OSS 需要设置 virtualhost=true，[详见文档](https://help.aliyun.com/zh/oss/developer-reference/overview-24?scm=20140722.S_help%40%40%E6%96%87%E6%A1%A3%40%40375247.S_RQW%40ag0%2BBB2%40ag0%2BBB1%40ag0%2Bos0.ID_375247-RL_virtualhost-LOC_doc%7EUND%7Eab-OR_ser-V_4-P0_1&spm=a2c4g.11186623.0.i3) 。                                           |
-| version           | string | 选填 | AWS S3 协议版本号，可不填                                                                 |
+| 字段 | 类型 | 选填 | 描述 |
+| ------------------- | -------- | ---- | ---------------------------------------------------------------------------------- |
+| endpoint | string | 必填 | 对象存储系统的链接地址，如: <https://oss.xxx.cn-xxx.com> 或 <http://127.0.0.1:9000> |
+| bucket | string | 必填 | 对象存储系统桶 bucket 名称 |
+| prefix | string | 选填 | 存储系统的路径前缀，可不填，当需要通过路径前缀prefix隔离区分不同数据文件时填写，如：data/traindata/ 或 data/predictdata/ |
+| access_key_id | string | 必填 | 访问 OSS 所需的 AK |
+| access_key_secret | string | 必填 | 访问 OSS 所需的 SK |
+| virtualhost | bool | 选填 | 若为阿里云 OSS 需要设置 virtualhost=true，[详见文档](https://help.aliyun.com/zh/oss/developer-reference/overview-24?scm=20140722.S_help%40%40%E6%96%87%E6%A1%A3%40%40375247.S_RQW%40ag0%2BBB2%40ag0%2BBB1%40ag0%2Bos0.ID_375247-RL_virtualhost-LOC_doc%7EUND%7Eab-OR_ser-V_4-P0_1&spm=a2c4g.11186623.0.i3) 。 |
+| version | string | 选填 | AWS S3 协议版本号，可不填 |
 
 {#database-data-source-info}
 
 ### DatabaseDataSourceInfo
 
-| 字段       | 类型     | 选填 | 描述                       |
-|----------|--------|----|--------------------------|
+| 字段 | 类型 | 选填 | 描述 |
+| ---------- | -------- | ---- | -------------------------- |
 | endpoint | string | 必填 | 数据库的地址，如: localhost:3306 |
-| user     | string | 必填 | 数据库用户名                   |
-| password | string | 必填 | 数据库密码                    |
-| database | string | 必填 | 数据库名称                    |
+| user | string | 必填 | 数据库用户名 |
+| password | string | 必填 | 数据库密码 |
+| database | string | 必填 | 数据库名称 |
 
 {#odps-data-source-info}
 
 ### OdpsDataSourceInfo
 
-| 字段                | 类型     | 选填 | 描述                                 |
-|-------------------|--------|----|------------------------------------|
-| endpoint          | string | 必填 | 服务地址，如: <http://service.xxx.com/api> |
-| access_key_id     | string | 必填 | 访问 ODPS 所需的 AK                     |
-| access_key_secret | string | 必填 | 访问 ODPS 所需的 SK                     |
-| project           | string | 必填 | 访问 ODPS 的项目                        |
+| 字段 | 类型 | 选填 | 描述 |
+| ------------------- | -------- | ---- | ------------------------------------ |
+| endpoint | string | 必填 | 服务地址，如: <http://service.xxx.com/api> |
+| access_key_id | string | 必填 | 访问 ODPS 所需的 AK |
+| access_key_secret | string | 必填 | 访问 ODPS 所需的 SK |
+| project | string | 必填 | 访问 ODPS 的项目 |
 
 {#query-domain-data-source-request-data}
 

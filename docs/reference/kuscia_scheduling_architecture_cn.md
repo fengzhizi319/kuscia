@@ -97,6 +97,7 @@ type CreateJobRequest struct {
 ```
 
 **关键代码路径**:
+
 - Handler: `pkg/kusciaapi/handler/httphandler/job/create.go`
 - Service: `pkg/kusciaapi/service/job_service.go`
 
@@ -140,6 +141,7 @@ func (h *jobService) CreateJob(ctx context.Context, request *kusciaapi.CreateJob
 ```
 
 **TaskConfig结构包含**:
+
 ```go
 type TaskConfig struct {
     TaskId          string           // 任务ID
@@ -166,6 +168,7 @@ type Party struct {
 **文件**: `pkg/controllers/kusciajob/controller.go`
 
 **工作流程**:
+
 1. **Informer监听**: 通过Kubernetes Informer监听KusciaJob的增删改事件
 2. **入队处理**: 将变化的Job加入工作队列
 3. **Sync处理**: 从队列取出Job进行同步处理
@@ -197,6 +200,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (retErr error)
 #### 2.2 Job状态机
 
 **状态流转**:
+
 ```
 Initialized → PendingApproval → Running → Succeeded/Failed
                   ↓
@@ -206,6 +210,7 @@ Initialized → PendingApproval → Running → Succeeded/Failed
 **Handler工厂**: `pkg/controllers/kusciajob/handler/factory.go`
 
 根据不同状态调用不同的Handler:
+
 - `initialized_handler.go`: 初始化处理，创建KusciaTask
 - `pending_approval_handler.go`: 等待审批
 - `running_handler.go`: 运行中监控
@@ -213,6 +218,7 @@ Initialized → PendingApproval → Running → Succeeded/Failed
 - `failed_handler.go`: 失败处理
 
 **创建KusciaTask**:
+
 ```go
 // 在initialized_handler中
 for _, taskTemplate := range job.Spec.Tasks {
@@ -243,6 +249,7 @@ for _, taskTemplate := range job.Spec.Tasks {
 **文件**: `pkg/controllers/kusciatask/controller.go`
 
 **核心职责**:
+
 - 监听KusciaTask状态变化
 - 管理Task的生命周期
 - 创建底层资源(Pod、Service、ConfigMap)
@@ -275,6 +282,7 @@ func (c *Controller) syncHandler(key string) (retErr error) {
 这是**最关键的阶段**，负责创建所有运行时资源。
 
 **Handle流程**:
+
 ```go
 func (h *PendingHandler) Handle(kusciaTask *kusciaapisv1alpha1.KusciaTask) (needUpdate bool, err error) {
     // 1. 准备Task资源
@@ -609,6 +617,7 @@ func generateKusciaConfigMap(partyKit *PartyKitInfo, podKit *PodKitInfo) *v1.Con
 ```
 
 **ClusterDef结构示例** (Ray集群配置):
+
 ```protobuf
 message ClusterDef {
     repeated Party parties = 1;
@@ -633,6 +642,7 @@ message Service {
 **文件**: `pkg/controllers/taskresourcegroup/controller.go`
 
 **核心功能**:
+
 1. **资源预留管理**: 确保所有参与方的资源都就绪
 2. **生命周期控制**: 管理Task资源的超时和重试
 3. **跨域协调**: 协调不同域的TaskResource状态
@@ -665,6 +675,7 @@ func (c *Controller) syncHandler(ctx context.Context, key string) (err error) {
 ```
 
 **TRG状态流转**:
+
 ```
 Pending → Reserving → Reserved → Released
                     ↓
@@ -682,6 +693,7 @@ Pending → Reserving → Reserved → Released
 当Pod被调度到节点后，Kuscia Agent接管Pod的生命周期管理。
 
 **SyncLoop主循环**:
+
 ```go
 func (pc *PodsController) syncLoop(ctx context.Context, handler SyncHandler, updates <-chan kubetypes.PodUpdate) {
     for {
@@ -705,6 +717,7 @@ func (pc *PodsController) syncLoopIteration(...) bool {
 ```
 
 **HandlePodAdditions**:
+
 ```go
 func (pc *PodsController) HandlePodAdditions(pods []*corev1.Pod) {
     for _, pod := range pods {
@@ -760,6 +773,7 @@ func (pc *PodsController) syncPod(ctx context.Context, updateType kubetypes.Sync
 **文件**: `pkg/agent/kuberuntime/kuberuntime_manager.go`
 
 **SyncPod实现**:
+
 ```go
 func (m *kubeRuntimeManager) SyncPod(ctx context.Context, pod *v1.Pod, 
     podStatus *pkgcontainer.PodStatus, reasonCache *ReasonCache) error {
@@ -782,6 +796,7 @@ func (m *kubeRuntimeManager) SyncPod(ctx context.Context, pod *v1.Pod,
 ```
 
 **startContainer流程**:
+
 ```go
 func (m *kubeRuntimeManager) startContainer(ctx context.Context, pod *v1.Pod, 
     podSandboxID string, container *v1.Container, ...) error {
@@ -810,6 +825,7 @@ func (m *kubeRuntimeManager) startContainer(ctx context.Context, pod *v1.Pod,
 当Pod中的容器启动后，根据AppImage中定义的Command和Args，执行以下操作:
 
 **典型Ray Head节点启动命令**:
+
 ```bash
 ray start --head \
   --port=6379 \
@@ -819,6 +835,7 @@ ray start --head \
 ```
 
 **Ray Worker节点启动命令**:
+
 ```bash
 ray start \
   --address=$RAY_HEAD_SERVICE.alice.svc:6379 \
@@ -827,6 +844,7 @@ ray start \
 ```
 
 **SecretFlow任务启动**:
+
 ```python
 import secretflow as sf
 import ray
@@ -849,6 +867,7 @@ if __name__ == '__main__':
 #### 6.2 任务输入配置 (TaskInputConfig)
 
 **JSON格式示例**:
+
 ```json
 {
   "task_type": "psi",  // 隐私集合求交

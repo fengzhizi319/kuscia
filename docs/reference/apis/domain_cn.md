@@ -26,14 +26,14 @@
 
 #### 请求（CreateDomainRequest）
 
-| 字段                 | 类型                                           | 选填 | 描述                                                                                                                                                                                                                                                            |
-|--------------------|----------------------------------------------|----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| header             | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                                                                                                                                                       |
-| domain_id          | string                                       | 必填 | 节点 ID 需要符合 RFC 1123 标签名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。 |
-| role               | string                                       | 可选 | 角色：\["", "partner"]；中心化模式使用(""), 点对点模式使用("partner")，更多请参考 [Domain 概念](../concepts/domain_cn.md)                                                                                                                                                               |
-| cert               | string                                       | 可选 | 仅`点对点`模式需要填写此字段，此字段为隐私计算节点证书（位于待添加节点的`/home/kuscia/var/certs/domain.crt`），参考 [Domain 概念](../concepts/domain_cn.md)                                                                                                                                            |
-| master_domain_id   | string                                  | 可选 | Master Domain ID，默认值为 Domain ID。中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填；普通中心化模式，点对点模式不需要填写                                                                                                                                                                          |
-| auth_center        | [AuthCenter](#auth-center)                   | 已废弃 | 节点的授权模式（已废弃，不需填写）                                                                                                                                                                                                                                                       |
+| 字段 | 类型 | 选填 | 描述 |
+| -------------------- | ---------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| domain_id | string | 必填 | 节点 ID 需要符合 RFC 1123 标签名规则要求，参考 [DomainId 规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。 |
+| role | string | 可选 | 角色：\["", "partner"]；中心化模式使用(""), 点对点模式使用("partner")，更多请参考 [Domain 概念](../concepts/domain_cn.md) |
+| cert | string | 可选 | 仅`点对点`模式需要填写此字段，此字段为隐私计算节点证书（位于待添加节点的`/home/kuscia/var/certs/domain.crt`），参考 [Domain 概念](../concepts/domain_cn.md) |
+| master_domain_id | string | 可选 | Master Domain ID，默认值为 Domain ID。中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填；普通中心化模式，点对点模式不需要填写 |
+| auth_center | [AuthCenter](#auth-center) | 已废弃 | 节点的授权模式（已废弃，不需填写） |
 
 #### 响应（CreateDomainResponse）
 
@@ -97,14 +97,14 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
 
 #### 请求（UpdateDomainRequest）
 
-| 字段               | 类型                                           | 选填 | 描述                                                                                   |
-|------------------|----------------------------------------------|----|--------------------------------------------------------------------------------------|
-| header           | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                              |
-| domain_id        | string                                       | 必填 | 节点 ID                                                                                |
-| role             | string                                       | 必填 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md)                         |
-| cert             | string                                       | 必填 | 仅`点对点`模式需要填写此字段, 此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md)  |
-| master_domain_id | string                                       | 必填 | Master Domain ID，默认值为 Domain ID。中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填，普通中心化模式，点对点模式不需要填写 |
-| auth_center      | [AuthCenter](#auth-center)                   | 已废弃 | 节点的授权模式（已废弃，不需填写）                                                                              |
+| 字段 | 类型 | 选填 | 描述 |
+| ------------------ | ---------------------------------------------- | ---- | -------------------------------------------------------------------------------------- |
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| domain_id | string | 必填 | 节点 ID |
+| role | string | 必填 | 角色：\["", "partner"]，参考 [Domain 概念](../concepts/domain_cn.md) |
+| cert | string | 必填 | 仅`点对点`模式需要填写此字段, 此字段为 BASE64 编码格式的隐私计算节点证书，参考 [Domain 概念](../concepts/domain_cn.md) |
+| master_domain_id | string | 必填 | Master Domain ID，默认值为 Domain ID。中心化 x 中心化、中心化 x 点对点组网模式 Lite 节点必填，普通中心化模式，点对点模式不需要填写 |
+| auth_center | [AuthCenter](#auth-center) | 已废弃 | 节点的授权模式（已废弃，不需填写） |
 
 #### 响应（UpdateDomainResponse）
 
@@ -404,12 +404,12 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 
 ### NodeStatus
 
-| 字段                   | 类型     | 描述                                           |
-|----------------------|--------|----------------------------------------------|
-| name                 | string | 节点名称                                         |
-| status               | string | 节点状态 Ready, NotReady                         |
-| version              | string | 节点 Agent 版本                                  |
-| last_heartbeat_time  | string | 最后心跳时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
+| 字段 | 类型 | 描述 |
+| ---------------------- | -------- | ---------------------------------------------- |
+| name | string | 节点名称 |
+| status | string | 节点状态 Ready, NotReady |
+| version | string | 节点 Agent 版本 |
+| last_heartbeat_time | string | 最后心跳时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
 | last_transition_time | string | 最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
 
 {#deploy-token-status}

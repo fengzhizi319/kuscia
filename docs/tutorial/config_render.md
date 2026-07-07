@@ -81,11 +81,11 @@ spec:
 | 内置 | TASK_ID | `{{.TASK_ID}}` | 表示任务的 ID，当应用启动为 KusciaJob 时有效 | secretflow-task-20230406162606 |
 | 内置 | SERVING_ID | `{{.SERVING_ID}}` | 表示服务的 ID，当应用启动为 KusciaDeployment 时有效 | serving-20230406162606 |
 | 内置 | ALLOCATED_PORTS | `{{.ALLOCATED_PORTS}}` | Kuscia为应用动态分配的端口，应用需要根据分配的端口来启动应用，内容结构请[参考这里](https://github.com/secretflow/kuscia/blob/main/proto/api/v1alpha1/appconfig/app_config.proto#L67) | `{"ports":[{"name":"test","port":26409,"scope":"Cluster","protocol":"HTTP"}]}` |
-| 内置 | TASK_CLUSTER_DEFINE | `{{.TASK_CLUSTER_DEFINE}}` |  Kuscia 分配的任务集群信息，应用可以根据集群信息访问其他参与方， 内容结构请[参考这里](https://github.com/secretflow/kuscia/blob/main/proto/api/v1alpha1/appconfig/app_config.proto#L41) | `{"parties":[{"name":"alice","role":"","services":[{"portName":"test","endpoints":["alice-test-0-test.alice.svc"]}]}],"selfPartyIdx":0,"selfEndpointIdx":0}` |
+| 内置 | TASK_CLUSTER_DEFINE | `{{.TASK_CLUSTER_DEFINE}}` | Kuscia 分配的任务集群信息，应用可以根据集群信息访问其他参与方， 内容结构请[参考这里](https://github.com/secretflow/kuscia/blob/main/proto/api/v1alpha1/appconfig/app_config.proto#L41) | `{"parties":[{"name":"alice","role":"","services":[{"portName":"test","endpoints":["alice-test-0-test.alice.svc"]}]}],"selfPartyIdx":0,"selfEndpointIdx":0}` |
 | 内置 | KUSCIA_DOMAIN_ID | `{{.KUSCIA_DOMAIN_ID}}` | 节点ID | 对应配置文件中的 `domainId` | alice |
 | 任务 | TASK_INPUT_CONFIG | `{{.TASK_INPUT_CONFIG}}` | 任务的运行参数，对应到 KusciaAPI/KusciaJob/KusciaTask 中的 taskInputConfig 参数； Kuscia不会关注实际内容是什么，只当做字符串透传 | |
-| 任务 | INPUT_CONFIG | `{{.INPUT_CONFIG}}` | 服务的运行参数，对应到 KusciaAPI/KusciaDeployment 中的 inputConfig 参数；Kuscia不会关注实际内容是什么，只当做字符串透传 |  |
-| 任务 | CLUSTER_DEFINE | `{{.CLUSTER_DEFINE}}` | Kuscia 分配的任务集群信息，应用可以根据集群信息访问其他参与方(当为 KusciaDeployment 时生效) |  |
+| 任务 | INPUT_CONFIG | `{{.INPUT_CONFIG}}` | 服务的运行参数，对应到 KusciaAPI/KusciaDeployment 中的 inputConfig 参数；Kuscia不会关注实际内容是什么，只当做字符串透传 | |
+| 任务 | CLUSTER_DEFINE | `{{.CLUSTER_DEFINE}}` | Kuscia 分配的任务集群信息，应用可以根据集群信息访问其他参与方(当为 KusciaDeployment 时生效) | |
 
 ### 渲染规则
 

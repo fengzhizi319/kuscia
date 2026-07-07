@@ -5,12 +5,12 @@ DomainDataGrant 表示被 Kuscia 管理的数据授权对象。请参考 [Domain
 
 ## 接口总览
 
-| 方法名                                              | 请求类型                        | 响应类型                         | 描述       |
-|--------------------------------------------------|-----------------------------|------------------------------|----------|
-| [CreateDomainDataGrant](#create-domain-data-grant) | CreateDomainDataGrantRequest | CreateDomainDataGrantResponse     | 创建数据对象授权   |
-| [UpdateDomainDataGrant](#update-domain-data-grant) | UpdateDomainDataGrantRequest | UpdateDomainDataGrantResponse     | 更新数据对象授权   |
-| [DeleteDomainDataGrant](#delete-domain-data-grant) | DeleteDomainDataGrantRequest | DeleteDomainDataGrantResponse     | 删除数据对象授权   |
-| [QueryDomainDataGrant](#query-domain-data-grant) | QueryDomainDataGrantRequest | QueryDomainDataGrantResponse      | 查询数据对象授权   |
+| 方法名 | 请求类型 | 响应类型 | 描述 |
+| -------------------------------------------------- | ----------------------------- | ------------------------------ | ---------- |
+| [CreateDomainDataGrant](#create-domain-data-grant) | CreateDomainDataGrantRequest | CreateDomainDataGrantResponse | 创建数据对象授权 |
+| [UpdateDomainDataGrant](#update-domain-data-grant) | UpdateDomainDataGrantRequest | UpdateDomainDataGrantResponse | 更新数据对象授权 |
+| [DeleteDomainDataGrant](#delete-domain-data-grant) | DeleteDomainDataGrantRequest | DeleteDomainDataGrantResponse | 删除数据对象授权 |
+| [QueryDomainDataGrant](#query-domain-data-grant) | QueryDomainDataGrantRequest | QueryDomainDataGrantResponse | 查询数据对象授权 |
 | [BatchQueryDomainDataGrant](#batch-query-domain-data-grant) | BatchQueryDomainDataGrantRequest | BatchQueryDomainDataGrantResponse | 批量查询数据对象授权 |
 
 ## 接口详情
@@ -27,16 +27,16 @@ DomainDataGrant 表示被 Kuscia 管理的数据授权对象。请参考 [Domain
 
 #### 请求（CreateDomainDataGrantRequest）
 
-| 字段            | 类型                                           | 选填 | 描述                                                                                                                             |
-|---------------|----------------------------------------------|----|--------------------------------------------------------------------------------------------------------------------------------|
-| header        | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| 字段 | 类型 | 选填 | 描述 |
+| --------------- | ---------------------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------- |
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
 | domaindatagrant_id | string | 可选 | 数据对象授权 ID，如果不填，则会由 kusciaapi 自动生成，并在 response 中返回。如果填写，则会使用填写的值，请注意需满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
-| domaindata_id | string | 必填 | 数据对象 ID   |
-| grant_domain  | string | 必填 | 被授权节点ID       |
-| limit         | [GrantLimit](#grant-limit-entity) | 选填 | 授权限制条件  |
-| description   | map<string, string> | 可选 | 自定义描述 |
-| domain_id     | string | 必填 | 授权信息所有者节点ID |
-| signature     | string | 可选 | 表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。 目前该字段为预留字段，暂未开启，填空字符串即可 |
+| domaindata_id | string | 必填 | 数据对象 ID |
+| grant_domain | string | 必填 | 被授权节点ID |
+| limit | [GrantLimit](#grant-limit-entity) | 选填 | 授权限制条件 |
+| description | map<string, string> | 可选 | 自定义描述 |
+| domain_id | string | 必填 | 授权信息所有者节点ID |
+| signature | string | 可选 | 表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。 目前该字段为预留字段，暂未开启，填空字符串即可 |
 
 {#create-domain-data-grant-response}
 
@@ -93,16 +93,16 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/create' \
 
 #### 请求（UpdateDomainDataGrantRequest）
 
-| 字段            | 类型                                           | 选填 | 描述                                                                                                                               |
-|---------------|----------------------------------------------|----|----------------------------------------------------------------------------------------------------------------------------------|
-| header        | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| 字段 | 类型 | 选填 | 描述 |
+| --------------- | ---------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
 | domaindatagrant_id | string | 必填 | 数据对象授权ID |
-| domaindata_id | string | 必填 | 数据对象ID  |
-| grant_domain  | string | 必填 | 被授权节点ID       |
-| limit         | [GrantLimit](#grant-limit-entity) | 选填 | 授权限制条件  |
-| description   | map<string, string> | 可选 | 自定义描述 |
-| domain_id     | string | 必填 | 授权信息所有者节点ID |
-| signature     | string | 可选 | 表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。目前该字段为预留字段，暂未开启，填空字符串即可 |
+| domaindata_id | string | 必填 | 数据对象ID |
+| grant_domain | string | 必填 | 被授权节点ID |
+| limit | [GrantLimit](#grant-limit-entity) | 选填 | 授权限制条件 |
+| description | map<string, string> | 可选 | 自定义描述 |
+| domain_id | string | 必填 | 授权信息所有者节点ID |
+| signature | string | 可选 | 表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。目前该字段为预留字段，暂未开启，填空字符串即可 |
 
 #### 响应（UpdateDomainDataGrantResponse）
 
@@ -379,22 +379,22 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/batchQuery' \
 ### GrantLimit
 
 | 字段 | 类型 | 选填 | 描述 |
-|---------------|------------------------------|----|------------------------------------------------------------------------------------------------------------------------------------|
-| expiration_time   | int64             | 选填 | 授权过期时间，Unix 时间戳，精确到纳秒    |
-| use_count         | int32             | 选填 | 授权使用次数                          |
-| flow_id           | string            | 选填 | 授权对应的任务流ID                     |
-| components        | repeated string   | 选填 | 授权可用的组件ID                       |
-| initiator         | string            | 选填 | 授权指定的发起方                       |
-| input_config      | string            | 选填 | 授权指定的算子输入参数                  |
+| --------------- | ------------------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| expiration_time | int64 | 选填 | 授权过期时间，Unix 时间戳，精确到纳秒 |
+| use_count | int32 | 选填 | 授权使用次数 |
+| flow_id | string | 选填 | 授权对应的任务流ID |
+| components | repeated string | 选填 | 授权可用的组件ID |
+| initiator | string | 选填 | 授权指定的发起方 |
+| input_config | string | 选填 | 授权指定的算子输入参数 |
 
 {#query-domain-data-grant-request-data}
 
 ### QueryDomainDataGrantRequestData
 
 | 字段 | 类型 | 选填 | 描述 |
-|---------------|------------------------------|----|------------------------------------------------------------------------------------------------------------------------------------|
-| domain_id             | string | 必填 | 节点 ID        |
-| domaindatagrant_id    | string | 必填 | 数据对象授权 ID |
+| --------------- | ------------------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| domain_id | string | 必填 | 节点 ID |
+| domaindatagrant_id | string | 必填 | 数据对象授权 ID |
 
 {#domain-data-grant-entity}
 
@@ -410,15 +410,15 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/batchQuery' \
 ### DomainDataGrantData
 
 | 字段 | 类型 | 描述 |
-|---------------|------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
-| domaindatagrant_id    | string |数据对象授权 ID |
-| author                | string |  数据对象授权方节点 ID |
-| domaindata_id         | string | 数据对象 ID  |
-| grant_domain          | string | 被授权节点 ID       |
-| limit                 | [GrantLimit](#grant-limit-entity) | 授权限制条件  |
-| description           | map<string, string> |  自定义描述 |
-| domain_id             | string | 授权信息所有者节点 ID |
-| signature             | string | 表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。目前该字段为预留字段，暂未开启，暂时为空字符串 |
+| --------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| domaindatagrant_id | string | 数据对象授权 ID |
+| author | string | 数据对象授权方节点 ID |
+| domaindata_id | string | 数据对象 ID |
+| grant_domain | string | 被授权节点 ID |
+| limit | [GrantLimit](#grant-limit-entity) | 授权限制条件 |
+| description | map<string, string> | 自定义描述 |
+| domain_id | string | 授权信息所有者节点 ID |
+| signature | string | 表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。目前该字段为预留字段，暂未开启，暂时为空字符串 |
 
 {#domain-data-grant-status-entity}
 

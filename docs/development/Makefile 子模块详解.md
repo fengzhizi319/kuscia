@@ -29,14 +29,14 @@ Kuscia 是一个 Go 项目，除了编译 Go 代码外，还需要：
 ```makefile
 # kuscia/Makefile
 _run:
-	@$(MAKE) --warn-undefined-variables \
-		-f scripts/make/common.mk \
-		-f scripts/make/docs.mk \
-		-f scripts/make/image.mk \
-		-f scripts/make/golang.mk \
-		-f scripts/make/lint.mk \
-		-f scripts/make/fate.mk \
-		$(MAKECMDGOALS)
+ @$(MAKE) --warn-undefined-variables \
+  -f scripts/make/common.mk \
+  -f scripts/make/docs.mk \
+  -f scripts/make/image.mk \
+  -f scripts/make/golang.mk \
+  -f scripts/make/lint.mk \
+  -f scripts/make/fate.mk \
+  $(MAKECMDGOALS)
 
 $(if $(MAKECMDGOALS),$(MAKECMDGOALS): %: _run)
 ```
@@ -44,7 +44,7 @@ $(if $(MAKECMDGOALS),$(MAKECMDGOALS): %: _run)
 ### 关键点
 
 | 项 | 说明 |
-|---|---|
+| --- | --- |
 | `$(MAKECMDGOALS)` | 用户输入的目标，例如 `image`、`test`、`help`。 |
 | `_run` | 实际执行递归 make 的目标。 |
 | `-f <file>` | 显式指定本次递归 make 要读取的 Makefile 文件。可以多次指定，后加载的文件中的定义会覆盖前面同名定义（按 Makefile 规则）。 |
@@ -164,7 +164,7 @@ endef
 #### 3.1.2 主要目标执行步骤
 
 | 目标 | 执行命令 | 说明 |
-|---|---|---|
+| --- | --- | --- |
 | `manifests` | `bash hack/generate-crds.sh` | 根据 Go types 生成 Kubernetes CRD YAML。 |
 | `gen-clientset` | `bash hack/update-codegen.sh` | 生成 CRD 对应的 clientset、informer、lister。 |
 | `gen-proto-code` | `bash hack/proto-to-go.sh` | 将 `.proto` 文件编译为 Go 代码。 |
@@ -229,7 +229,7 @@ VERSION_CHECK_DIRS   ?= docs scripts hack
 #### 3.2.2 主要目标执行步骤
 
 | 目标 | 依赖 | 执行步骤 |
-|---|---|---|
+| --- | --- | --- |
 | `sphinx-clean` | 无 | 1. 判断 `docs/_build/` 是否存在。<br>2. 若存在则 `rm -rf docs/_build`。 |
 | `sphinx-build` | `sphinx-clean` `markdown-check` | 1. 打印日志。<br>2. 输出 `python3`、`pip3`、`sphinx-build` 版本。<br>3. 执行 `sphinx-build -b html -D language=zh_CN docs/. docs/_build`。<br>4. 执行 `make link-check` 检查死链。<br>5. 打印成功日志。 |
 | `sphinx-preview` | `sphinx-build` | 执行 `sphinx-autobuild docs/. docs/_build`，启动带热重载的本地预览服务器。 |
@@ -276,7 +276,7 @@ DEPS_IMAGE  ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 ```
 
 | 变量 | 说明 | 示例值 |
-|---|---|---|
+| --- | --- | --- |
 | `TAG` | `${KUSCIA_VERSION_TAG}-${DATETIME}` | `v1.2.0b0-21-g09537e5-20260707183000` |
 | `IMG` | Kuscia 主镜像完整名称 | `secretflow/kuscia:v1.2.0b0-21-g09537e5-20260707183000` |
 | `PROOT_IMAGE` | proot 镜像名 | `secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/proot` |
@@ -287,11 +287,11 @@ DEPS_IMAGE  ?= secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia
 
 ```makefile
 define start_docker_buildx
-	if [ -z "$$(docker buildx inspect kuscia 2>/dev/null)" ]; then \
-		echo "create kuscia builder"; \
-		docker buildx create --name kuscia --platform linux/arm64,linux/amd64; \
-	fi; \
-	docker buildx use kuscia
+ if [ -z "$$(docker buildx inspect kuscia 2>/dev/null)" ]; then \
+  echo "create kuscia builder"; \
+  docker buildx create --name kuscia --platform linux/arm64,linux/amd64; \
+ fi; \
+ docker buildx use kuscia
 endef
 ```
 
@@ -307,7 +307,7 @@ endef
 #### 3.3.3 主要目标执行步骤
 
 | 目标 | 依赖 | 执行步骤 |
-|---|---|---|
+| --- | --- | --- |
 | `proot` | 无 | 1. `export GOARCH=${ARCH}`。<br>2. 调用 `start_docker_buildx`。<br>3. `DOCKER_BUILDKIT=1 docker buildx build -t ${PROOT_IMAGE} -f ./build/dockerfile/proot-build.Dockerfile . --platform linux/${ARCH} --load`。 |
 | `deps-image` | 无 | 1. 调用 `start_docker_buildx`。<br>2. `docker buildx build -t ${DEPS_IMAGE} -f ./build/dockerfile/base/kuscia-deps.Dockerfile . --platform linux/${ARCH} --load`。 |
 | `image` | `build`（golang.mk） | 1. `export GOARCH=${ARCH}`。<br>2. 设置 `DOCKER_BUILDKIT=1`。<br>3. 调用 `start_docker_buildx`。<br>4. `docker buildx build -t ${IMG} --build-arg KUSCIA_ENVOY_IMAGE=${ENVOY_IMAGE} --build-arg DEPS_IMAGE=${DEPS_IMAGE} -f ./build/dockerfile/kuscia-anolis.Dockerfile . --platform linux/${ARCH} --load`。 |
@@ -336,6 +336,10 @@ make deps-image
 make build-monitor
 ```
 
+```text
+
+```
+
 ---
 
 ### 3.4 `golang.mk` —— Go 代码编译与测试
@@ -362,7 +366,7 @@ TEST_SUITE ?= all
 #### 3.4.2 主要目标执行步骤
 
 | 目标 | 依赖 | 执行步骤 |
-|---|---|---|
+| --- | --- | --- |
 | `fmt` | 无 | 执行 `go fmt ./...`，格式化所有 Go 源文件。 |
 | `vet` | 无 | 执行 `go vet ./...`，进行静态分析。 |
 | `test` | 无 | 1. `rm -rf ./test-results` 并 `mkdir -p test-results`。<br>2. 对 `cmd/...` 包执行 `go test -v ... --parallel 4 -gcflags="all=-N -l" -coverprofile=test-results/cmd.covprofile.out`，结果 `tee` 到 `test-results/cmd.output.txt`。<br>3. 对 `pkg/...` 包执行类似测试，输出到 `test-results/pkg.output.txt`。<br>4. 用 `go-junit-report` 将输出转为 JUnit XML。<br>5. 合并覆盖率文件到 `test-results/coverage.out`。<br>6. 用 `gocover-cobertura` 生成 `test-results/coverage.xml`。 |
@@ -394,7 +398,7 @@ make integration_test TEST_SUITE=center.base
 #### 3.5.1 主要目标执行步骤
 
 | 目标 | 执行步骤 |
-|---|---|
+| --- | --- |
 | `lint-golang` | 1. `golangci-lint --version`。<br>2. `golangci-lint run --out-format=colored-line-number --config=.golangci.yml`。 |
 | `lint-yaml` | 1. `yamllint --version`。<br>2. `yamllint --config-file=./scripts/linter/yamllint/.yamllint .`。 |
 | `lint-markdown` | 执行 `markdownlint --config ./scripts/linter/markdown/markdown_lint_config.yaml --fix '**/*.md'`，自动修复 Markdown 风格问题。 |
@@ -407,7 +411,7 @@ make integration_test TEST_SUITE=center.base
 **别名目标**（只做一层转发）：
 
 | 别名 | 实际目标 |
-|---|---|
+| --- | --- |
 | `go-check` | `lint-golang` |
 | `yaml-check` | `lint-yaml` |
 | `shell-check` | `lint-shell-check` |
@@ -447,7 +451,7 @@ ADAPTER_IMG ?= secretflow/fate-adapter:${TAG}
 ```
 
 | 变量 | 说明 | 默认值 |
-|---|---|---|
+| --- | --- | --- |
 | `TAG` | 镜像 tag | `0.0.1` |
 | `DEPLOY_IMG` | FATE 部署镜像 | `secretflow/fate-deploy-basic:0.0.1` |
 | `ADAPTER_IMG` | FATE 适配镜像 | `secretflow/fate-adapter:0.0.1` |
@@ -455,7 +459,7 @@ ADAPTER_IMG ?= secretflow/fate-adapter:${TAG}
 #### 3.6.2 主要目标执行步骤
 
 | 目标 | 依赖 | 执行步骤 |
-|---|---|---|
+| --- | --- | --- |
 | `fate-clean` | 无 | `rm -rf ./thirdparty/fate/build/app`。 |
 | `fate-build` | `fmt` `vet` | 1. `export GOARCH=amd64`。<br>2. 执行 `bash ./thirdparty/fate/hack/build.sh`。 |
 | `fate-adaptor-app-image` | `fate-build` | `docker build -t ${ADAPTER_IMG} -f ./thirdparty/fate/build/dockerfile/kuscia-job-adapter.Dockerfile ./thirdparty/fate`。 |
@@ -538,7 +542,7 @@ DOCKER_BUILDKIT=1 docker buildx build \
 ## 5. 常用命令速查
 
 | 命令 | 说明 |
-|---|---|
+| --- | --- |
 | `make help` | 查看所有目标及分组帮助。 |
 | `make image` | 代码检查 → 编译 → 构建 Kuscia Docker 镜像。 |
 | `make image ARCH=arm64` | 指定 arm64 架构构建镜像。 |
@@ -556,7 +560,7 @@ DOCKER_BUILDKIT=1 docker buildx build \
 ## 6. 小结
 
 | `.mk` 文件 | 主要职责 | 典型目标 |
-|---|---|---|
+| --- | --- | --- |
 | `common.mk` | 公共变量、shell 设置、代码生成、help | `generate`、`manifests`、`help` |
 | `docs.mk` | 文档构建、死链检查、错误码文档、版本校验 | `docs`、`docs-preview`、`gen_error_code_doc` |
 | `image.mk` | Docker 镜像构建、buildx builder 管理 | `image`、`deps-image`、`proot`、`build-monitor` |

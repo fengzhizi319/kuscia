@@ -32,7 +32,7 @@
 ## 2. 环境要求
 
 | 项目 | 要求 |
-|------|------|
+| ------ | ------ |
 | 操作系统 | macOS、CentOS 7/8、Ubuntu 16.04+、Windows（WSL2 Ubuntu） |
 | CPU 架构 | x86_64 / amd64 / arm64 |
 | Docker | ≥ 20.10.24 |
@@ -131,7 +131,7 @@ DataMesh 是 Kuscia 的数据访问层，负责：
 ### 4.2 默认端口
 
 | 协议 | 容器内端口 | 说明 |
-|------|-----------|------|
+| ------ | ----------- | ------ |
 | HTTP | 8070 | DataMesh API、健康检查 |
 | gRPC / Arrow Flight | 8071 | 数据读写、DomainData gRPC 服务 |
 
@@ -268,7 +268,7 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init \
 常用端口说明：
 
 | 容器内端口 | 用途 | 脚本参数 |
-|-----------|------|---------|
+| ----------- | ------ | --------- |
 | 1080 | 节点间认证鉴权（Gateway） | `-p` |
 | 80 | 节点内部应用访问（Envoy） | `-q` |
 | 8082 | KusciaAPI HTTP | `-k` |
@@ -409,7 +409,7 @@ chmod u+x uninstall.sh
 ### 9.1 关键文件路径
 
 | 用途 | 路径（宿主机） |
-|------|---------------|
+| ------ | --------------- |
 | master 配置文件 | `${PWD}/${USER}-kuscia-master/kuscia.yaml` |
 | lite 配置文件 | `${PWD}/${USER}-kuscia-lite-<domain>/kuscia.yaml` |
 | autonomy 配置文件 | `${PWD}/${USER}-kuscia-autonomy-<domain>/kuscia.yaml` |
@@ -417,7 +417,7 @@ chmod u+x uninstall.sh
 | 节点日志目录 | `${PWD}/${USER}-kuscia-lite-<domain>/logs` |
 
 | 用途 | 路径（容器内） |
-|------|---------------|
+| ------ | --------------- |
 | 主配置 | `/home/kuscia/etc/conf/kuscia.yaml` |
 | 数据目录 | `/home/kuscia/var/storage/data` |
 | 日志目录 | `/home/kuscia/var/logs` |
@@ -426,7 +426,7 @@ chmod u+x uninstall.sh
 ### 9.2 常用环境变量
 
 | 变量 | 说明 |
-|------|------|
+| ------ | ------ |
 | `KUSCIA_IMAGE` | Kuscia 镜像 |
 | `SECRETFLOW_IMAGE` | SecretFlow 引擎镜像 |
 | `DOMAIN_HOST_PORT` | 节点对外 HTTPS 端口（`-p`） |

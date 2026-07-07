@@ -26,18 +26,18 @@ DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 
 
 #### 请求（CreateDomainDataRequest）
 
-| 字段            | 类型                                           | 选填 | 描述                                                                                                                              |
-|---------------|----------------------------------------------|----|---------------------------------------------------------------------------------------------------------------------------------|
-| header        | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                         |
-| domaindata_id | string                                       | 可选 | 数据对象ID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)     |
-| name          | string                                       | 必填 | 名称                                                                                                                              |
-| type          | string                                       | 必填 | 类型，如\[table,model,rule,report]，大小写敏感                                                                                     |
-| relative_uri  | string                                       | 必填 | 相对数据源所在位置的路径，参考 [DomainData 概念](../../concepts/domaindata_cn.md)                                                                 |
-| datasource_id | string                                       | 可选 | 数据源 ID，不填写则使用默认数据源，参考 [DomainData 概念](../../concepts/domaindata_cn.md)                                                            |
-| attributes    | map<string,string>                           | 可选 | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../../concepts/domaindata_cn.md)                                                 |
-| partition     | [Partition](#datamesh-partition)                      | 可选 | 暂不支持                                                                                                                            |
-| columns       | [DataColumn](#datamesh-data-column) array             | 必填 | 列信息                                                                                                                             |
-| vendor        | string                                       | 可选 | 来源，用于查询接口筛选数据对象，参考 [ListDomainDataRequestData](#datamesh-list-domain-data-request-data) 和 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| 字段 | 类型 | 选填 | 描述 |
+| --------------- | ---------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------- |
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| domaindata_id | string | 可选 | 数据对象ID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
+| name | string | 必填 | 名称 |
+| type | string | 必填 | 类型，如\[table,model,rule,report]，大小写敏感 |
+| relative_uri | string | 必填 | 相对数据源所在位置的路径，参考 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| datasource_id | string | 可选 | 数据源 ID，不填写则使用默认数据源，参考 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| attributes | map<string,string> | 可选 | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| partition | [Partition](#datamesh-partition) | 可选 | 暂不支持 |
+| columns | [DataColumn](#datamesh-data-column) array | 必填 | 列信息 |
+| vendor | string | 可选 | 来源，用于查询接口筛选数据对象，参考 [ListDomainDataRequestData](#datamesh-list-domain-data-request-data) 和 [DomainData 概念](../../concepts/domaindata_cn.md) |
 
 {#datamesh-create-domain-data-response}
 
@@ -108,18 +108,18 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/create \
 
 #### 请求（UpdateDomainDataRequest）
 
-| 字段            | 类型                                     | 选填 | 描述                                                                                                                                 |
-|---------------|----------------------------------------|----|------------------------------------------------------------------------------------------------------------------------------------|
-| header        | [RequestHeader](summary_cn.md#请求和响应约定) | 可选 | 自定义请求内容                                                                                                                            |
-| domaindata_id | string                                 | 必填 | 数据对象ID                                                                                                                             |
-| name          | string                                 | 必填 | 名称                                                                                                                                 |
-| type          | string                                 | 必填 | 类型，\[table,model,rule,report,unknown]，大小写敏感                                                                                        |
-| relative_uri  | string                                 | 必填 | 相对数据源所在位置的路径，参考 [DomainData 概念](../../concepts/domaindata_cn.md)                                                                    |
-| datasource_id | string                                 | 可选 | 数据源 ID，不填写则使用默认数据源，参考 [DomainData 概念](../../concepts/domaindata_cn.md)                                                               |
-| attributes    | map<string,string>                     | 可选 | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../../concepts/domaindata_cn.md)                                                    |
-| partition     | [Partition](#datamesh-partition)                | 可选 | 暂不支持                                                                                                                               |
-| columns       | [DataColumn](#datamesh-data-column)[]           | 必填 | 列信息                                                                                                                                |
-| vendor        | string                                 | 可选 | 来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#datamesh-list-domain-data-request-data) 和 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| 字段 | 类型 | 选填 | 描述 |
+| --------------- | ---------------------------------------- | ---- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| header | [RequestHeader](summary_cn.md#请求和响应约定) | 可选 | 自定义请求内容 |
+| domaindata_id | string | 必填 | 数据对象ID |
+| name | string | 必填 | 名称 |
+| type | string | 必填 | 类型，\[table,model,rule,report,unknown]，大小写敏感 |
+| relative_uri | string | 必填 | 相对数据源所在位置的路径，参考 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| datasource_id | string | 可选 | 数据源 ID，不填写则使用默认数据源，参考 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| attributes | map<string,string> | 可选 | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| partition | [Partition](#datamesh-partition) | 可选 | 暂不支持 |
+| columns | [DataColumn](#datamesh-data-column)[] | 必填 | 列信息 |
+| vendor | string | 可选 | 来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#datamesh-list-domain-data-request-data) 和 [DomainData 概念](../../concepts/domaindata_cn.md) |
 
 #### 响应（UpdateDomainDataResponse）
 
@@ -256,28 +256,28 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
 
 ### ListDomainDataRequestData
 
-| 字段                | 类型     | 选填 | 描述   |
-|-------------------|--------|----|------|
-| domain_id         | string | 必填 | 节点ID |
-| domaindata_type   | string | 可选 | 类型   |
-| domaindata_vendor | string | 可选 | 来源   |
+| 字段 | 类型 | 选填 | 描述 |
+| ------------------- | -------- | ---- | ------ |
+| domain_id | string | 必填 | 节点ID |
+| domaindata_type | string | 可选 | 类型 |
+| domaindata_vendor | string | 可选 | 来源 |
 
 {#datamesh-domain-data-entity}
 
 ### DomainData
 
-| 字段            | 类型                           | 选填 | 描述                                                                                                                                 |
-|---------------|------------------------------|----|------------------------------------------------------------------------------------------------------------------------------------|
-| domaindata_id | string                       | 必填 | 数据对象ID                                                                                                                             |
-| name          | string                       | 必填 | 名称                                                                                                                                 |
-| type          | string                       | 必填 | 类型，\[table,model,rule,report,unknown]，大小写敏感                                                                                        |
-| relative_uri  | string                       | 必填 | 相对数据源所在位置的路径，参考 [DomainData 概念](../../concepts/domaindata_cn.md)                                                                    |
-| domain_id     | string                       | 必填 | 节点ID                                                                                                                               |
-| datasource_id | string                       | 必填 | 数据源 ID，参考 [DomainData 概念](../../concepts/domaindata_cn.md)                                                                           |
-| attributes    | map<string,string>           | 可选 | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../../concepts/domaindata_cn.md)                                                    |
-| partition     | [Partition](#datamesh-partition)      | 可选 | 暂不支持                                                                                                                               |
-| columns       | [DataColumn](#datamesh-data-column)[] | 必填 | 列信息                                                                                                                                |
-| vendor        | string                       | 可选 | 来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#datamesh-list-domain-data-request-data) 和 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| 字段 | 类型 | 选填 | 描述 |
+| --------------- | ------------------------------ | ---- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| domaindata_id | string | 必填 | 数据对象ID |
+| name | string | 必填 | 名称 |
+| type | string | 必填 | 类型，\[table,model,rule,report,unknown]，大小写敏感 |
+| relative_uri | string | 必填 | 相对数据源所在位置的路径，参考 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| domain_id | string | 必填 | 节点ID |
+| datasource_id | string | 必填 | 数据源 ID，参考 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| attributes | map<string,string> | 可选 | 自定义属性，用作用户或应用算法组件为数据对象添加扩展信息，参考 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| partition | [Partition](#datamesh-partition) | 可选 | 暂不支持 |
+| columns | [DataColumn](#datamesh-data-column)[] | 必填 | 列信息 |
+| vendor | string | 可选 | 来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#datamesh-list-domain-data-request-data) 和 [DomainData 概念](../../concepts/domaindata_cn.md) |
 
 {#datamesh-partition}
 
@@ -292,8 +292,8 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
 
 ### DataColumn
 
-| 字段      | 类型     | 选填 | 描述                                                                     |
-|---------|--------|----|------------------------------------------------------------------------|
-| name    | string | 必填 | 列名称                                                                    |
-| type    | string | 必填 | 类型，当前版本由应用算法组件定义和消费，参考 [DomainData 概念](../../concepts/domaindata_cn.md) |
-| comment | string | 可选 | 列注释                                                                    |
+| 字段 | 类型 | 选填 | 描述 |
+| --------- | -------- | ---- | ------------------------------------------------------------------------ |
+| name | string | 必填 | 列名称 |
+| type | string | 必填 | 类型，当前版本由应用算法组件定义和消费，参考 [DomainData 概念](../../concepts/domaindata_cn.md) |
+| comment | string | 可选 | 列注释 |

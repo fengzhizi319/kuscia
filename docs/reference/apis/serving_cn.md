@@ -25,14 +25,14 @@
 
 #### 请求（CreateServingRequest）
 
-| 字段                   | 类型                                           | 选填 | 描述                                                                                                                                                      |
-|----------------------|----------------------------------------------|----|---------------------------------------------------------------------------------------------------------------------------------------------------------|
-| header               | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                                                                                                 |
-| serving_id           | string                                       | 必填 | ServingID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)                         |
-| serving_input_config | string                                       | 可选 | 应用配置。[Secretflow Serving 预测应用配置参考](https://www.secretflow.org.cn/zh-CN/docs/serving/main/topics/deployment/serving_on_kuscia#configuration-description) |
-| initiator            | string                                       | 必填 | 发起方节点 DomainID                                                                                                                                          |
-| parties              | [ServingParty](#serving-party)[]             | 必填 | 参与方信息                                                                                                                                                   |
-| affinity_mode        | string                                       | 可选 | Pod 调度亲和性模式。可选值："none"（无亲和性）、"affinity"（亲和性）、"anti-affinity"（反亲和性）。默认值为 "anti-affinity"（如果未指定或为空）                                                                      |
+| 字段 | 类型 | 选填 | 描述 |
+| ---------------------- | ---------------------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
+| serving_id | string | 必填 | ServingID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
+| serving_input_config | string | 可选 | 应用配置。[Secretflow Serving 预测应用配置参考](https://www.secretflow.org.cn/zh-CN/docs/serving/main/topics/deployment/serving_on_kuscia#configuration-description) |
+| initiator | string | 必填 | 发起方节点 DomainID |
+| parties | [ServingParty](#serving-party)[] | 必填 | 参与方信息 |
+| affinity_mode | string | 可选 | Pod 调度亲和性模式。可选值："none"（无亲和性）、"affinity"（亲和性）、"anti-affinity"（反亲和性）。默认值为 "anti-affinity"（如果未指定或为空） |
 
 #### 响应（CreateServingResponse）
 
@@ -605,25 +605,25 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 
 ### ServingParty
 
-| 字段                  | 类型                                 | 选填 | 描述                                                                                                                                                                                                                                                                                                                                              |
-|---------------------|------------------------------------| ------ |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| domain_id           | string                             | 必填 | 节点 ID                                                                                                                                                                                                                                                                                                                                           |
-| app_image           | string                             | 必填 | 应用镜像，对应 [AppImage](../concepts/appimage_cn.md) 资源名称。<br/>在调用更新接口时，如果更新该字段，当前仅会使用新的 [AppImage](../concepts/appimage_cn.md) 资源中的应用镜像 Name 和 Tag 信息，更新预测应用                                                                                                                                                                                         |
-| role                | string                             | 可选 | 角色，详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 `deployTemplates.role`                                                                                                                                                                                                                                                                     |
-| replicas            | int32                              | 可选 | 应用总副本数，即启动的应用实例个数。默认为 1                                                                                                                                                                                                                                                                                                                         |
-| update_strategy     | [UpdateStrategy](#update-strategy) | 可选 | 应用升级策略                                                                                                                                                                                                                                                                                                                                          |
-| resources           | [Resource](#resource)[]            | 可选 | 应用运行资源。若不设时，那么不会限制应用运行过程中使用的资源大小                                                                                                                                                                                                                                                                                                                |
-| service_name_prefix | string                             | 可选 | 自定义应用服务名称前缀。长度不超过 48 个字符，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。 <br/> - 若配置，则应用服务名称拼接规则为 `{service_name_prefix}-{port_name}`，port_name 对应 [AppImage](../concepts/appimage_cn.md) 中的 `deployTemplates.spec.containers.ports.name` </br> - 若不配置，Kuscia 随机生成应用服务名称 |
+| 字段 | 类型 | 选填 | 描述 |
+| --------------------- | ------------------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| domain_id | string | 必填 | 节点 ID |
+| app_image | string | 必填 | 应用镜像，对应 [AppImage](../concepts/appimage_cn.md) 资源名称。<br/>在调用更新接口时，如果更新该字段，当前仅会使用新的 [AppImage](../concepts/appimage_cn.md) 资源中的应用镜像 Name 和 Tag 信息，更新预测应用 |
+| role | string | 可选 | 角色，详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 `deployTemplates.role` |
+| replicas | int32 | 可选 | 应用总副本数，即启动的应用实例个数。默认为 1 |
+| update_strategy | [UpdateStrategy](#update-strategy) | 可选 | 应用升级策略 |
+| resources | [Resource](#resource)[] | 可选 | 应用运行资源。若不设时，那么不会限制应用运行过程中使用的资源大小 |
+| service_name_prefix | string | 可选 | 自定义应用服务名称前缀。长度不超过 48 个字符，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。 <br/> - 若配置，则应用服务名称拼接规则为 `{service_name_prefix}-{port_name}`，port_name 对应 [AppImage](../concepts/appimage_cn.md) 中的 `deployTemplates.spec.containers.ports.name` </br> - 若不配置，Kuscia 随机生成应用服务名称 |
 
 {#update-strategy}
 
 ### UpdateStrategy
 
-| 字段              | 类型     | 选填 | 描述                                                                                                                                                              |
-|-----------------|--------|----|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| type            | string | 必填 | 应用升级策略类型：支持"Recreate"和"RollingUpdate"两种类型<br/> "Recreate"：表示重建，在创建新的应用之前，所有现有应用都会被删除<br/> "RollingUpdate"：表示滚动升级，当应用升级时，结合"max_surge"和"max_unavailable"控制滚动升级过程 |
-| max_surge       | string | 可选 | 用来指定可以创建的超出应用总副本数的应用数量。默认为总副本数的"25%"。max_unavailable为0，则此值不能为0                                                                                                  |
-| max_unavailable | string | 可选 | 用来指定升级过程中不可用的应用副本个数上限。默认为总副本数的"25%"。max_surge为0，则此值不能为0                                                                                                         |
+| 字段 | 类型 | 选填 | 描述 |
+| ----------------- | -------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| type | string | 必填 | 应用升级策略类型：支持"Recreate"和"RollingUpdate"两种类型<br/> "Recreate"：表示重建，在创建新的应用之前，所有现有应用都会被删除<br/> "RollingUpdate"：表示滚动升级，当应用升级时，结合"max_surge"和"max_unavailable"控制滚动升级过程 |
+| max_surge | string | 可选 | 用来指定可以创建的超出应用总副本数的应用数量。默认为总副本数的"25%"。max_unavailable为0，则此值不能为0 |
+| max_unavailable | string | 可选 | 用来指定升级过程中不可用的应用副本个数上限。默认为总副本数的"25%"。max_surge为0，则此值不能为0 |
 
 {#resource}
 
