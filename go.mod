@@ -61,7 +61,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250512202823-5a2f75b736a9
 	google.golang.org/grpc v1.72.2
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
-	google.golang.org/protobuf v1.36.6
+	google.golang.org/protobuf v1.36.11
 	gopkg.in/h2non/gock.v1 v1.1.2
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
