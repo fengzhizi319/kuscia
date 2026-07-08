@@ -1217,3 +1217,338 @@ build-kuscia-secretflow-images.sh          make image (image.mk)
 > 一句话总结：
 > - **`make image`** 是 Kuscia 官方单项目构建入口，执行完整的代码检查，适合 Kuscia 独立开发。
 > - **`build-kuscia-secretflow-images.sh`** 是 sfwork 工作区层面的统一打包脚本，能把 Kuscia 与 SecretFlow 一起构建、推送、导出 tar，适合二次开发和 CI 场景。
+
+### 12.9 `build-kuscia-secretflow-images.sh` 会调用 `kuscia/scripts/make/*.mk` 吗？
+
+**不会。**
+
+`build-kuscia-secretflow-images.sh` 是一个完全独立的 Bash 脚本，它在 `kuscia/scripts/make/*.mk` 之外实现了一套自洽的构建流程。脚本里没有任何 `make`、`make image` 或 `-f scripts/make/xxx.mk` 的调用。
+
+具体对比如下：
+
+| 构建步骤 | `build-kuscia-secretflow-images.sh` | `kuscia/scripts/make/*.mk` |
+| --- | --- | --- |
+| **Kuscia 二进制编译** | 直接调用 `kuscia/hack/build.sh -t kuscia` | 由 `golang.mk` 的 `build` 目标调用 `hack/build.sh` |
+| **Kuscia 镜像构建** | 直接调用 `docker buildx build -f kuscia-anolis.Dockerfile` | 由 `image.mk` 的 `image` 目标调用 `docker buildx build` |
+| **SecretFlow wheel 构建** | 直接 `docker run secretflow/release-ci:latest .../entry.sh` | 不涉及 |
+| **SecretFlow 镜像构建** | 直接 `docker build -f secretflow/docker/dev/Dockerfile` | 不涉及 |
+| **代码检查（fmt/vet）** | 不执行 | `golang.mk` / `lint.mk` 在 `make image` 依赖链中执行 |
+| **基础镜像变量** | 脚本内部定义 `ENVOY_IMAGE`、`DEPS_IMAGE`，注释说明与 `image.mk` 保持一致 | `image.mk` 里通过 `?=` 定义同名变量 |
+
+脚本里唯一提到 `image.mk` 的地方是一行注释：
+
+```bash
+# Kuscia 官方基础镜像（与 kuscia/scripts/make/image.mk 保持一致）。
+```
+
+这只是为了说明脚本使用的基础镜像版本和官方 `make image` 保持一致，方便切换两种构建方式时得到一致的产物。
+
+#### 为什么会有这个疑问？
+
+因为 `kuscia/Makefile` 和 `kuscia/scripts/make/*.mk` 是 Kuscia 官方构建体系：
+
+- `make image` → 读取 `scripts/make/image.mk`
+- `make build` → 读取 `scripts/make/golang.mk`
+- `make test` → 读取 `scripts/make/golang.mk`
+- `make check` → 读取 `scripts/make/lint.mk`
+
+而 `build-kuscia-secretflow-images.sh` 是为了把 **Kuscia + SecretFlow** 两个项目一起打包而额外封装的脚本，它选择绕过 `make` 的完整检查链，直接调用底层命令，从而：
+
+1. 支持同时构建 SecretFlow 镜像；
+2. 出包速度更快；
+3. 不强制依赖 `make` 环境。
+
+#### 什么时候该关心 `.mk` 文件？
+
+| 场景 | 是否需要关心 `.mk` |
+| --- | --- |
+| 使用 `bash kuscia/scripts/build-kuscia-secretflow-images.sh` | 不需要，脚本自给自足 |
+| 使用 `cd kuscia && make image` / `make build` / `make test` | 需要，`make` 会加载这些 `.mk` |
+| 需要修改 Kuscia 的编译参数、Docker build arg、代码检查流程 | 需要，修改对应 `.mk` 文件 |
+| 想统一两种构建方式的基础镜像版本 | 需要，同时修改 `.mk` 和脚本中的变量 |
+
+> 一句话：`build-kuscia-secretflow-images.sh` 和 `scripts/make/*.mk` 是平行的两套构建入口，前者不调用后者；前者为 sfwork 工作区二次开发提供一站式打包，后者是 Kuscia 官方 `make` 构建子模块。
+
+### 12.10 `hack/build.sh` 与 `make build` 的关系
+
+`hack/build.sh` 是 Kuscia 的底层 Go 编译脚本，`make build` 则是 Makefile 官方入口；**`make build` 依赖并调用 `hack/build.sh`，但额外执行代码检查和产物整理**。
+
+#### 职责对比
+
+| 维度 | `hack/build.sh` | `make build` |
+| --- | --- | --- |
+| **定位** | 底层 Go 编译脚本 | `scripts/make/golang.mk` 定义的 Makefile 目标 |
+| **实际编译命令** | `go build -ldflags=... -o build/apps/kuscia/kuscia ./cmd/kuscia` | 内部调用 `bash hack/build.sh -t kuscia` |
+| **代码检查** | 不执行 | 先执行 `check_code`：`fmt` → `vet` → `verify_error_code` |
+| **产物整理** | 只生成 `build/apps/...` | 额外执行 `mkdir -p build/linux/${ARCH}` 并 `cp -rp build/apps build/linux/${ARCH}` |
+| **可构建目标** | 支持 `-t kuscia` / `-t transport` | 目前只构建 `kuscia` 主二进制 |
+
+#### 调用链
+
+```text
+make image
+  └── make build          # scripts/make/golang.mk
+        ├── check_code    # go fmt / go vet / verify_error_code
+        ├── hack/build.sh -t kuscia
+        └── cp build/apps → build/linux/${ARCH}/
+```
+
+#### 实际使用示例
+
+```bash
+cd /home/charles/code/sfwork/kuscia
+
+# 只编译二进制，不检查代码，不整理到 build/linux/
+bash hack/build.sh -t kuscia
+
+# 编译前先 fmt / vet / verify_error_code，并把产物复制到 build/linux/${ARCH}/
+make build
+```
+
+#### 与一键打包脚本的关系
+
+`build-kuscia-secretflow-images.sh` 为了快速出包，**没有调用 `make build`**，而是直接复刻了它的核心步骤：
+
+```bash
+GOOS=linux GOARCH="${ARCH}" bash hack/build.sh -t kuscia
+mkdir -p "build/linux/${ARCH}"
+cp -rp build/apps "build/linux/${ARCH}/"
+```
+
+也就是说：
+
+- 它和 `make build` 最终都调用 `hack/build.sh` 生成二进制；
+- 它和 `make build` 都会把 `build/apps` 复制到 `build/linux/${ARCH}/`；
+- 它比 `make build` **少了 `fmt` / `vet` / `verify_error_code` 检查**。
+
+> 一句话总结：`hack/build.sh` 是“编译器”，`make build` 是“带代码检查的编译+产物整理流程”，一键打包脚本则为了速度跳过检查直接调用 `hack/build.sh`。
+
+### 12.11 `hack/` 目录的由来与作用
+
+在 Go 项目（尤其是 Kubernetes 生态）里，`hack/` 是一个常见的目录约定。它**不是“黑客/攻击”的意思**，而是指 **“给开发者用的脚本、工具、临时/实验性脚本”**。
+
+#### 由来
+
+- `hack/` 放的是**构建、代码生成、CI、发布辅助脚本**；
+- 这些脚本不参与最终产品的运行，只用于开发、编译、测试、打包；
+- 名字来源于早期开源项目里 “hacky scripts”（折腾脚本）的自嘲说法；
+- 最著名的例子是 Kubernetes 项目，它的 `hack/` 目录里包含了大量构建、代码生成、CI 脚本，Kuscia 沿用了这一约定。
+
+#### 在 Kuscia 里的作用
+
+Kuscia 的 `hack/` 目录集中存放编译、代码生成、版本检查等辅助脚本。它们不会被编译进最终二进制，也不会出现在 Kuscia 运行时容器里（除非构建过程临时使用）。
+
+| 文件/目录 | 作用 |
+| --- | --- |
+| `hack/build.sh` | 编译 kuscia / transport 二进制，是 `make build` 和 `build-kuscia-secretflow-images.sh` 底层都会调用的脚本 |
+| `hack/generate-crds.sh` | 根据 CRD Go 类型生成 Kubernetes CRD YAML 定义 |
+| `hack/generate-groups.sh` | 生成 CRD 相关的 clientset / informer / lister 代码 |
+| `hack/proto-to-go.sh` | 把 `.proto` 文件编译成 Go 代码 |
+| `hack/update-codegen.sh` | 统一触发代码生成（CRD、proto、group 等） |
+| `hack/errorcode/` | 错误码 i18n 配置校验与文档生成脚本，`verify_error_code` 目标会调用这里 |
+| `hack/version_check.sh` | 版本号、依赖版本、Go 版本等检查 |
+| `hack/k3s/` | K3s 部署相关脚本和配置 |
+| `hack/k8s/` | Kubernetes 部署相关脚本和配置 |
+| `hack/proot/` | proot 工具构建相关脚本 |
+| `hack/boilerplate.go.txt` | 新 Go 文件的 license header 模板 |
+| `hack/tools.go` | 存放 go generate / code-generation 工具依赖 |
+
+#### 与 `make` 的关系
+
+`make build` 的完整依赖链里，`golang.mk` 最终会调用 `hack/build.sh` 来完成真正的 Go 编译：
+
+```text
+make build
+  └── check_code
+        ├── fmt
+        ├── vet
+        └── verify_error_code   (调用 hack/errorcode/ 下的脚本)
+  └── hack/build.sh -t kuscia
+        └── go build -o build/apps/kuscia/kuscia ./cmd/kuscia
+```
+
+而一键打包脚本 `build-kuscia-secretflow-images.sh` 为了跳过代码检查、直接出包，也是直接调用 `hack/build.sh`：
+
+```bash
+GOOS=linux GOARCH="${ARCH}" bash hack/build.sh -t kuscia
+```
+
+> 一句话总结：`hack/` 是 Kuscia 的“开发者工具箱”，`hack/build.sh` 是其中负责真正编译 kuscia 二进制的脚本，被 `make build` 和一键打包脚本共同使用。
+
+### 12.12 Kuscia + SecretFlow 一体化镜像构建
+
+在二次开发或私有化部署时，有时会希望把 **Kuscia 运行时**和 **SecretFlow 算法环境**打成一个镜像，节点启动后就能直接调度 SecretFlow 任务，而无需再从远端拉取算法镜像。
+
+#### 现有的一体化 Dockerfile
+
+Kuscia 仓库里已经有一个官方的一体化 Dockerfile：
+
+```
+kuscia/build/dockerfile/kuscia-secretflow.Dockerfile
+```
+
+它的特点是：
+
+- 以已经构建好的 **Kuscia 镜像**为基础（`--build-arg KUSCIA_IMAGE=...`）；
+- 以 `secretflow/anolis8-python:3.10.13` 为 Python 环境来源镜像；
+- 从 **PyPI / 阿里云 PyPI 镜像**安装已发布的 `secretflow-lite==${SF_VERSION}`；
+- 把 SecretFlow-lite 算法镜像注册到 Kuscia 本地镜像仓库中，使 `runp` 运行时可以找到它。
+
+这个 Dockerfile 适合**使用官方已发布版本**的场景，不适合直接使用本地 SecretFlow 源码二次开发后的版本。
+
+#### 本地二次开发版本的一体化 Dockerfile
+
+为了支持“本地源码构建出来的 SecretFlow dev wheel + Kuscia 镜像”打包成一体化镜像，已新增：
+
+```
+kuscia/build/dockerfile/kuscia-secretflow-dev.Dockerfile
+```
+
+与官方版本的主要区别：
+
+| 维度 | 官方 `kuscia-secretflow.Dockerfile` | 新增 `kuscia-secretflow-dev.Dockerfile` |
+| --- | --- | --- |
+| SecretFlow 来源 | PyPI 上的 `secretflow-lite` | 本地源码构建的 `secretflow-*.whl` |
+| 构建参数 | `SF_VERSION` | `SF_WHEEL` + `SF_VERSION` |
+| 使用场景 | 生产/复现官方版本 | 二次开发验证本地修改 |
+| Python 环境来源 | `secretflow/anolis8-python:3.10.13` | 同左，确保与 Kuscia 镜像系统库兼容 |
+
+#### 构建步骤
+
+假设已经完成：
+
+1. Kuscia 镜像已构建：`secretflow/kuscia:v1.15.0-dev-20260708120000`
+2. SecretFlow dev wheel 已生成：`secretflow/docker/dev/secretflow-1.15.0.dev20260708-cp310-cp310-linux_x86_64.whl`
+
+执行以下命令构建一体化镜像：
+
+```bash
+cd /home/charles/code/sfwork/kuscia
+
+# 把 wheel 复制到 Dockerfile 所在目录（因为 docker build context 需要包含它）
+cp ../secretflow/docker/dev/secretflow-1.15.0.dev20260708-cp310-cp310-linux_x86_64.whl \
+   build/dockerfile/
+
+# 构建一体化镜像
+docker build \
+    --build-arg KUSCIA_IMAGE=secretflow/kuscia:v1.15.0-dev-20260708120000 \
+    --build-arg SF_WHEEL=secretflow-1.15.0.dev20260708-cp310-cp310-linux_x86_64.whl \
+    --build-arg SF_VERSION=1.15.0-dev \
+    -f build/dockerfile/kuscia-secretflow-dev.Dockerfile \
+    -t secretflow/kuscia-secretflow-dev:1.15.0-dev \
+    build/dockerfile/
+```
+
+构建完成后，本地会出现镜像：
+
+```text
+secretflow/kuscia-secretflow-dev:1.15.0-dev
+```
+
+#### 测试运行方案
+
+##### 1. 启动 Kuscia 节点（一体化镜像）
+
+使用官方部署脚本或直接以 privileged 模式启动容器：
+
+```bash
+docker run -it --rm \
+    --name kuscia-master-dev \
+    --privileged \
+    -p 8082:8082 \
+    -p 8083:8083 \
+    -p 8070:8070 \
+    -p 8071:8071 \
+    secretflow/kuscia-secretflow-dev:1.15.0-dev \
+    kuscia master -d /home/kuscia/var
+```
+
+或者使用 Kuscia 自带的启动脚本：
+
+```bash
+bash kuscia/scripts/deploy/start_standalone.sh \
+    --image secretflow/kuscia-secretflow-dev:1.15.0-dev \
+    --runtime runp
+```
+
+##### 2. 进入容器检查内置镜像
+
+```bash
+docker exec -it kuscia-master-dev bash
+
+# 查看 runp 运行时的本地镜像列表
+kuscia image ls --runtime runp
+```
+
+预期能看到类似：
+
+```text
+secretflow/sf-dev-anolis8:1.15.0-dev
+```
+
+##### 3. 验证 SecretFlow 可导入
+
+```bash
+docker exec -it kuscia-master-dev bash
+python -c "import secretflow; print(secretflow.__version__)"
+```
+
+##### 4. 注册 AppImage 并提交 KusciaJob
+
+KusciaJob 引用的不是镜像名，而是 **AppImage** 名字。可以使用 Kuscia 提供的脚本注册 SecretFlow 的 AppImage：
+
+```bash
+docker exec -it kuscia-master-dev bash
+
+# 使用内置的 SecretFlow 镜像注册 AppImage
+kuscia image builtin secretflow/sf-dev-anolis8:1.15.0-dev
+
+# 或者使用仓库中提供的 AppImage 模板
+# kubectl apply -f kuscia/scripts/templates/app_image.secretflow.yaml
+```
+
+然后提交一个测试 KusciaJob，例如：
+
+```bash
+kubectl apply -f - <<'EOF'
+apiVersion: kuscia.secretflow/v1alpha1
+kind: KusciaJob
+metadata:
+  name: test-secretflow-job
+spec:
+  initiator: alice
+  scheduleMode: Strict
+  parallelism: 1
+  tasks:
+    - appImage: secretflow-image      # 你注册的 AppImage 名称
+      parties:
+        - domainID: alice
+          template:
+            spec:
+              containers:
+                - image: secretflow/sf-dev-anolis8:1.15.0-dev
+                  command:
+                    - python
+                    - -c
+                    - "import secretflow; print('hello secretflow')"
+EOF
+```
+
+##### 5. 查看任务日志
+
+```bash
+kubectl get kusciatask
+kubectl get pod -n alice
+kubectl logs <pod-name> -n alice
+```
+
+如果日志中能看到 `hello secretflow` 或正常输出，说明一体化镜像工作正常。
+
+#### 注意事项
+
+1. **Python 环境兼容性**：本 Dockerfile 使用 `secretflow/anolis8-python:3.10.13` 作为 Python 环境来源，是因为 Kuscia 镜像基于 Anolis OS，glibc 等系统库与 Anolis Python 镜像一致。不要直接把 Ubuntu 系的 `sf-dev-ubuntu` 镜像中的 `/usr/local` 复制到 Kuscia 镜像中，否则容易出现动态库不兼容。
+2. **wheel 必须是 manylinux + cp310**：本地 SecretFlow wheel 应当用 Python 3.10 构建，并且标注 `linux_x86_64`，确保能在 Anolis 容器中安装。
+3. **SF_VERSION 只是镜像 tag**：`kuscia image builtin` 注册的只是镜像记录，真正运行时使用的是当前容器内的 Python 环境。
+4. **如需 GPU**：本 Dockerfile 没有处理 CUDA 驱动和 GPU jaxlib。如果需要在一体化镜像中使用 GPU，需要在阶段 1 额外安装 CUDA 版本的 jaxlib 和相关驱动库。
+
+> 一句话总结：官方 `kuscia-secretflow.Dockerfile` 适合打包已发布的 `secretflow-lite`；新增的 `kuscia-secretflow-dev.Dockerfile` 适合把本地源码构建的 SecretFlow dev wheel 和 Kuscia 镜像打包成一体化镜像，用于二次开发验证。

@@ -32,6 +32,13 @@
 # ----------------------------------------------------------------------------------------------------
 # 构建参数：均可通过 docker build --build-arg <KEY>=<VALUE> 覆盖
 # ----------------------------------------------------------------------------------------------------
+#这个 Dockerfile 的主要作用：
+# 1.基于 Anolis OS（龙蜥操作系统）基础镜像；
+# 2.从 DEPS_IMAGE 复制 Kuscia 的运行依赖（k3s、containerd、CNI 等）；
+# 3.从 ENVOY_IMAGE 复制 Envoy 二进制；
+# 4.把 build/linux/${ARCH}/apps/ 下编译好的 kuscia 二进制拷贝进去；
+# 5.设置入口点、时区、权限等，最终产出 secretflow/kuscia:<version>-<datetime> 镜像。
+# ----------------------------------------------------------------------------------------------------
 
 # Kuscia 依赖镜像，包含 k3s、crictl、kubectl、cni 插件等预编译工具
 ARG DEPS_IMAGE="secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia-deps:0.7.0b0"
