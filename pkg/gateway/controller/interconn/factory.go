@@ -24,6 +24,7 @@ import (
 
 const (
 	interConnProtocolHeader = "x-interconn-protocol"
+	kusciaTokenHeader       = "Kuscia-Token"
 )
 
 var Decorator DomainRouteDecorator

@@ -29,6 +29,10 @@ const (
 	fileFormatUnKnown = "unknown"
 	fileFormatCSV     = "csv"
 	fileFormatBINARY  = "binary"
+
+	dataTypeInt32  = "int32"
+	dataTypeString = "string"
+	dataTypeStr    = "str"
 )
 
 func Convert2PbPartition(partition *k8sv1alpha1.Partition) (pbPartition *pbv1alpha1.Partition) {
@@ -118,7 +122,7 @@ func Convert2ArrowColumnType(colType string) arrow.DataType {
 		return arrow.PrimitiveTypes.Int8
 	case "int16":
 		return arrow.PrimitiveTypes.Int16
-	case "int32":
+	case dataTypeInt32:
 		return arrow.PrimitiveTypes.Int32
 	case "int64", "int":
 		return arrow.PrimitiveTypes.Int64
@@ -153,7 +157,7 @@ func Convert2ArrowColumnType(colType string) arrow.DataType {
 	case "bool":
 		return arrow.FixedWidthTypes.Boolean
 	// STRING UTF8 variable-length string as List<Char>
-	case "string", "str":
+	case dataTypeString, dataTypeStr:
 		return arrow.BinaryTypes.String
 	// LARGE STRING UTF8 variable-length string as List<Char> with 64-bit offsets
 	case "large_string", "large_str", "large_utf8":
@@ -172,7 +176,7 @@ func Convert2DataMeshColumnType(colType arrow.DataType) string {
 	case arrow.PrimitiveTypes.Int16:
 		return "int16"
 	case arrow.PrimitiveTypes.Int32:
-		return "int32"
+		return dataTypeInt32
 	case arrow.PrimitiveTypes.Int64:
 		return "int64"
 	case arrow.PrimitiveTypes.Uint8:
@@ -205,7 +209,7 @@ func Convert2DataMeshColumnType(colType arrow.DataType) string {
 		return "bool"
 	// STRING UTF8 variable-length string as List<Char>
 	case arrow.BinaryTypes.String:
-		return "string"
+		return dataTypeString
 	case arrow.BinaryTypes.LargeString:
 		return "large_string"
 	// Variable-length bytes (no guarantee of UTF8-ness)

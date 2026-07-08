@@ -67,6 +67,10 @@ const (
 
 	// ReasonInvalidEnvironmentVariableNames is the reason used in events emitted when a configmap/secret referenced in a ".spec.containers[*].envFrom" field contains invalid environment variable names.
 	ReasonInvalidEnvironmentVariableNames = "InvalidEnvironmentVariableNames"
+
+	// field paths for downward API
+	specNodeNameFieldPath           = "spec.nodeName"
+	specServiceAccountNameFieldPath = "spec.serviceAccountName"
 )
 
 // populateContainerEnvironment populates the environment of a single container in the specified pod.
@@ -368,9 +372,9 @@ func podFieldSelectorRuntimeValue(fs *corev1.ObjectFieldSelector, pod *corev1.Po
 		return "", err
 	}
 	switch internalFieldPath {
-	case "spec.nodeName":
+	case specNodeNameFieldPath:
 		return pod.Spec.NodeName, nil
-	case "spec.serviceAccountName":
+	case specServiceAccountNameFieldPath:
 		return pod.Spec.ServiceAccountName, nil
 
 	}

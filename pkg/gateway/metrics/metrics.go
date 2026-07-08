@@ -29,6 +29,8 @@ import (
 
 const (
 	metricsMonitorPeriod = 30 * time.Second
+
+	statLabel = "stat"
 )
 
 var (
@@ -37,21 +39,21 @@ var (
 			Name: "cpu",
 			Help: "gateway cpu status",
 		},
-		[]string{"stat"},
+		[]string{statLabel},
 	)
 	gatewayMemStatus = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "mem",
 			Help: "gateway memory status",
 		},
-		[]string{"stat"},
+		[]string{statLabel},
 	)
 	gatewayIOStatus = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "io",
 			Help: "gateway io status",
 		},
-		[]string{"stat"},
+		[]string{statLabel},
 	)
 )
 

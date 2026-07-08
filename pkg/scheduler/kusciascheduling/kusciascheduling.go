@@ -52,6 +52,8 @@ var _ framework.EnqueueExtensions = &KusciaScheduling{}
 const (
 	// Name is the name of the plugin used in Registry and configurations.
 	Name = "KusciaScheduling"
+
+	contentTypeJSON = "application/json"
 )
 
 // New initializes and returns a new KusciaScheduling plugin.
@@ -65,7 +67,7 @@ func New(ctx context.Context, obj runtime.Object, handle framework.Handle) (fram
 	nlog.Infof("%v plugin args: ResourceReservedSeconds=%d", Name, args.ResourceReservedSeconds)
 
 	kubeConfig := *handle.KubeConfig()
-	kubeConfig.ContentType = "application/json"
+	kubeConfig.ContentType = contentTypeJSON
 
 	kusciaClient := kusciaclientset.NewForConfigOrDie(&kubeConfig)
 	kusciaInformerFactory := kusciainformer.NewSharedInformerFactory(kusciaClient, 0)
@@ -104,7 +106,7 @@ func parseArgs(obj runtime.Object) (*kusciaapisv1alpha1.SchedulerPluginArgs, err
 		return nil, fmt.Errorf("obj type is not runtime.Unknown")
 	}
 
-	if ob.ContentType != "application/json" {
+	if ob.ContentType != contentTypeJSON {
 		return nil, fmt.Errorf("obj content type is not application/json")
 	}
 

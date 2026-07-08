@@ -34,6 +34,11 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
+const (
+	dataTypeString = "string"
+	dataTypeStr    = "str"
+)
+
 // IDomainDataService 定义了管理 DomainData（域名数据）的接口。
 // 它包含创建、查询、更新和删除 DomainData 的操作。
 type IDomainDataService interface {
@@ -406,7 +411,7 @@ func CheckColType(cols []*pbv1alpha1.DataColumn, dsType string) error {
 			case "uint", "uint8", "uint16", "uint32", "uint64":
 			case "float", "float32", "float64":
 			case "bool":
-			case "string", "str":
+			case dataTypeString, dataTypeStr:
 				return nil
 			default:
 				err := fmt.Errorf("Col[%s].Type=%s is invalid for mysql", col.Name, col.Type)

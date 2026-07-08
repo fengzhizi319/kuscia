@@ -45,6 +45,11 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
+const (
+	containerStatusUnknownReason  = "ContainerStatusUnknown"
+	containerStatusUnknownMessage = "The container could not be located when the pod was terminated"
+)
+
 // A wrapper around v1.PodStatus that includes a version to enforce that stale pod statuses are
 // not sent to the API server.
 type versionedPodStatus struct {
@@ -341,8 +346,8 @@ func (m *manager) TerminatePod(pod *v1.Pod) {
 			}
 			status.ContainerStatuses[i].State = v1.ContainerState{
 				Terminated: &v1.ContainerStateTerminated{
-					Reason:   "ContainerStatusUnknown",
-					Message:  "The container could not be located when the pod was terminated",
+					Reason:   containerStatusUnknownReason,
+					Message:  containerStatusUnknownMessage,
 					ExitCode: 137,
 				},
 			}
@@ -357,8 +362,8 @@ func (m *manager) TerminatePod(pod *v1.Pod) {
 		}
 		status.InitContainerStatuses[i].State = v1.ContainerState{
 			Terminated: &v1.ContainerStateTerminated{
-				Reason:   "ContainerStatusUnknown",
-				Message:  "The container could not be located when the pod was terminated",
+				Reason:   containerStatusUnknownReason,
+				Message:  containerStatusUnknownMessage,
 				ExitCode: 137,
 			},
 		}

@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"testing"
 
+	"context"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 func TestParallelSearchArray(t *testing.T) {

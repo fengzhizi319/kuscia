@@ -841,7 +841,7 @@ func generateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1al
 	grpcDegrade bool) []*route.Route {
 	httpRoutes := interconn.Decorator.GenerateInternalRoute(dr, dp, token)
 	for _, httpRoute := range httpRoutes {
-		if !isDefaultRoute && dp.Protocol == "GRPC" {
+		if !isDefaultRoute && dp.Protocol == xds.ProtocolGRPC {
 			httpRoute.Match.Headers = []*route.HeaderMatcher{
 				{
 					Name: "content-type",
@@ -858,7 +858,7 @@ func generateInternalRoute(dr *kusciaapisv1alpha1.DomainRoute, dp kusciaapisv1al
 
 		// Add the grpc_http1_reverse_bridge configuration only when it is not a BFIA protocol.
 		// Because BFIAHandler has already handled this configuration.
-		if dr.Spec.InterConnProtocol != kusciaapisv1alpha1.InterConnBFIA && (!grpcDegrade || dp.Protocol == "GRPC") {
+		if dr.Spec.InterConnProtocol != kusciaapisv1alpha1.InterConnBFIA && (!grpcDegrade || dp.Protocol == xds.ProtocolGRPC) {
 			disable := &grpcreversebridge.FilterConfigPerRoute{
 				Disabled: true,
 			}
@@ -884,7 +884,7 @@ func generateInternalRoutes(dr *kusciaapisv1alpha1.DomainRoute, token string, gr
 	n := len(dps)
 	for _, dp := range dps {
 		isDefaultRoute := false
-		if n == 1 || dp.Protocol == "HTTP" {
+		if n == 1 || dp.Protocol == xds.ProtocolHTTP {
 			isDefaultRoute = true
 		}
 		routes = append(routes, generateInternalRoute(dr, dp, token, isDefaultRoute, grpcDegrade)...)
@@ -1089,7 +1089,7 @@ func (c *DomainRouteController) getDefaultClusterNameByDomainRoute(dr *kusciaapi
 	dps := sortDomainPorts(dr.Spec.Endpoint.Ports)
 	n := len(dps)
 	for _, dp := range dps {
-		if n == 1 || dp.Protocol == "HTTP" {
+		if n == 1 || dp.Protocol == xds.ProtocolHTTP {
 			return common.GenerateClusterName(dr.Spec.Source, dr.Spec.Destination, dp.Name)
 		}
 	}

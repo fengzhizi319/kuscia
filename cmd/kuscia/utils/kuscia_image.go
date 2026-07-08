@@ -23,10 +23,10 @@ import (
 	"strings"
 	"time"
 
+	"context"
 	"github.com/google/uuid"
 	"github.com/olekukonko/tablewriter"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/context"
 	"gopkg.in/yaml.v3"
 	runtimeapi "k8s.io/cri-api/pkg/apis/runtime/v1"
 

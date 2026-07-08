@@ -173,11 +173,11 @@ func Test_controller_add_label(t *testing.T) {
 			NetworkStatus: []kusciaapisv1alpha1.GatewayEndpointStatus{
 				{
 					Type: common.GenerateClusterName(alice, bob, "http"),
-					Name: "DomainRoute",
+					Name: domainRouteMetricType,
 				},
 				{
 					Type: common.GenerateClusterName(alice, bob, "http"),
-					Name: "DomainRoute",
+					Name: domainRouteMetricType,
 				},
 			},
 		},

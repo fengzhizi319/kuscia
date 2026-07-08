@@ -38,7 +38,7 @@ func TestGetPrefixIfPresent(t *testing.T) {
 					Ports: []v1alpha1.DomainPort{
 						{
 							Name:       "port",
-							Protocol:   "http",
+							Protocol:   protocolHTTP,
 							PathPrefix: "/prefix",
 							IsTLS:      false,
 							Port:       8080,
@@ -56,7 +56,7 @@ func TestGetPrefixIfPresent(t *testing.T) {
 					Ports: []v1alpha1.DomainPort{
 						{
 							Name:     "port",
-							Protocol: "http",
+							Protocol: protocolHTTP,
 							IsTLS:    false,
 							Port:     8080,
 						},
@@ -83,7 +83,7 @@ func TestGetHandshakePathSuffix(t *testing.T) {
 		// TODO: Add test cases.
 		{
 			name: "case 0",
-			want: "/handshake",
+			want: HandshakePathSuffix,
 		},
 	}
 	for _, tt := range tests {
@@ -113,7 +113,7 @@ func TestGetHandshakePathOfEndpoint(t *testing.T) {
 					Ports: []v1alpha1.DomainPort{
 						{
 							Name:       "port",
-							Protocol:   "http",
+							Protocol:   protocolHTTP,
 							PathPrefix: "/prefix",
 							IsTLS:      false,
 							Port:       8080,
@@ -131,14 +131,14 @@ func TestGetHandshakePathOfEndpoint(t *testing.T) {
 					Ports: []v1alpha1.DomainPort{
 						{
 							Name:     "port",
-							Protocol: "http",
+							Protocol: protocolHTTP,
 							IsTLS:    false,
 							Port:     8080,
 						},
 					},
 				},
 			},
-			want: "/handshake",
+			want: HandshakePathSuffix,
 		},
 	}
 	for _, tt := range tests {

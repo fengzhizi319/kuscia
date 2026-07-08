@@ -40,6 +40,8 @@ import (
 	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
+const queryRelativePath = "query"
+
 type httpServerBean struct {
 	config          *dmconfig.DataMeshConfig
 	ginBean         beans.GinBean
@@ -109,7 +111,7 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: queryRelativePath,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindata.NewQueryDomainDataHandler(domainDataService))},
 				},
 				{
@@ -125,7 +127,7 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: queryRelativePath,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewQueryDomainDataSourceHandler(domainDataSourceService))},
 				},
 			},
@@ -145,7 +147,7 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry) {
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: queryRelativePath,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewQueryDomainDataGrantHandler(domainDataGrantService))},
 				},
 				{

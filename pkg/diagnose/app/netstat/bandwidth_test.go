@@ -19,10 +19,10 @@ import (
 	"reflect"
 	"testing"
 
+	"context"
 	"github.com/agiledragon/gomonkey"
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
-	"golang.org/x/net/context"
 	"gotest.tools/v3/assert"
 )
 

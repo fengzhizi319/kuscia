@@ -92,12 +92,12 @@ func TestParseURL(t *testing.T) {
 		want3   string
 		wantErr bool
 	}{
-		{"case 0", args{"https://test.example.com"}, "https", "test.example.com", 443, "", false},
-		{"case 1", args{"http://test.example.com"}, "http", "test.example.com", 80, "", false},
-		{"case 2", args{"https://127.0.0.1:1080"}, "https", "127.0.0.1", 1080, "", false},
-		{"case 3", args{"http://127.0.0.1:1080"}, "http", "127.0.0.1", 1080, "", false},
-		{"case 4", args{"https://user-kuscia-master:1080"}, "https", "user-kuscia-master", 1080, "", false},
-		{"case 5", args{"http://user-kuscia-master:1080"}, "http", "user-kuscia-master", 1080, "", false},
+		{"case 0", args{"https://test.example.com"}, protocolHTTPS, "test.example.com", 443, "", false},
+		{"case 1", args{"http://test.example.com"}, protocolHTTP, "test.example.com", 80, "", false},
+		{"case 2", args{"https://127.0.0.1:1080"}, protocolHTTPS, "127.0.0.1", 1080, "", false},
+		{"case 3", args{"http://127.0.0.1:1080"}, protocolHTTP, "127.0.0.1", 1080, "", false},
+		{"case 4", args{"https://user-kuscia-master:1080"}, protocolHTTPS, "user-kuscia-master", 1080, "", false},
+		{"case 5", args{"http://user-kuscia-master:1080"}, protocolHTTP, "user-kuscia-master", 1080, "", false},
 		{"case 6", args{"https::///test.example.com"}, "", "", 0, "", true},
 	}
 	for _, tt := range tests {
@@ -131,13 +131,13 @@ func TestDoHTTPWithRetry(t *testing.T) {
 	defer gock.Off()
 
 	gock.New("http://127.0.0.1:80").
-		Get("/handshake").
+		Get(HandshakePathSuffix).
 		MatchType("json").
 		Reply(200).
 		JSON(map[string]int{"value": 100})
 
 	gock.New("http://" + "kuscia-handshake.bob.svc").
-		Post("/handshake").
+		Post(HandshakePathSuffix).
 		MatchType("json").
 		Reply(200).
 		JSON(map[string]int{"value": 200})
@@ -155,9 +155,9 @@ func TestDoHTTPWithRetry(t *testing.T) {
 		wantErr bool
 		wantVal int
 	}{
-		{"case 0", args{in: &Result{Value: 0}, out: result, hp: &HTTPParam{Path: "/handshake", Method: http.MethodGet}}, false, 100},
-		{"case 1", args{in: &Result{Value: 0}, out: result, hp: &HTTPParam{Path: "/handshake", Method: http.MethodPost}}, true, 100},
-		{"case 2", args{in: &Result{Value: 0}, out: result, hp: &HTTPParam{Path: "/handshake", KusciaHost: "kuscia-handshake.bob.svc", Method: http.MethodPost, Transit: true}}, false, 200},
+		{"case 0", args{in: &Result{Value: 0}, out: result, hp: &HTTPParam{Path: HandshakePathSuffix, Method: http.MethodGet}}, false, 100},
+		{"case 1", args{in: &Result{Value: 0}, out: result, hp: &HTTPParam{Path: HandshakePathSuffix, Method: http.MethodPost}}, true, 100},
+		{"case 2", args{in: &Result{Value: 0}, out: result, hp: &HTTPParam{Path: HandshakePathSuffix, KusciaHost: "kuscia-handshake.bob.svc", Method: http.MethodPost, Transit: true}}, false, 200},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

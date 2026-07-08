@@ -58,7 +58,7 @@ func TestPod(t *testing.T) {
 	}{
 		{"field_empty_case", fakeCreatePod("", "", ""), "_()"},
 		{"field_normal_case", fakeCreatePod("test-pod", metav1.NamespaceDefault, "551f5a43-9f2f-11e7-a589-fa163e148d75"), "test-pod_default(551f5a43-9f2f-11e7-a589-fa163e148d75)"},
-		{"nil_pod_case", nil, "<nil>"},
+		{"nil_pod_case", nil, nilString},
 	}
 
 	for _, testCase := range testCases {
@@ -120,7 +120,7 @@ func TestPodWithDeletionTimestamp(t *testing.T) {
 	}{
 		{"timestamp_is_nil_case", false, true, normalDeletionTime, "test-pod_default(551f5a43-9f2f-11e7-a589-fa163e148d75)"},
 		{"timestamp_is_normal_case", false, false, normalDeletionTime, "test-pod_default(551f5a43-9f2f-11e7-a589-fa163e148d75):DeletionTimestamp=2017-09-26T14:37:50Z"},
-		{"pod_is_nil_case", true, false, normalDeletionTime, "<nil>"},
+		{"pod_is_nil_case", true, false, normalDeletionTime, nilString},
 	}
 
 	for _, testCase := range testCases {

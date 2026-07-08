@@ -24,7 +24,7 @@ import (
 
 	"github.com/secretflow/kuscia/pkg/transport/server/common"
 
-	"golang.org/x/net/context"
+	"context"
 	"golang.org/x/net/netutil"
 	"google.golang.org/grpc"
 

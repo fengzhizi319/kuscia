@@ -32,6 +32,8 @@ import (
 	"github.com/secretflow/kuscia/proto/api/v1/interconn"
 )
 
+const statusField = "status"
+
 // createJobHandler defines the handler info for creating job.
 type createJobHandler struct {
 	*ResourcesManager
@@ -116,7 +118,7 @@ func (h *createJobHandler) GetType() (reqType, respType reflect.Type) {
 func (h *createJobHandler) buildResponseData(resp *interconn.CommonResponse, status string) {
 	var err error
 	data := map[string]interface{}{
-		"status": status,
+		statusField: status,
 	}
 	resp.Data, err = structpb.NewStruct(data)
 	if err != nil {

@@ -103,7 +103,7 @@ func (h *pollTaskStatusHandler) GetType() (reqType, respType reflect.Type) {
 // buildResp builds response.
 func (h *pollTaskStatusHandler) buildResp(resp *interconn.CommonResponse, phase kusciaapisv1alpha1.KusciaTaskPhase) {
 	status := map[string]interface{}{
-		"status": bfiacommon.KusciaTaskPhaseToInterConnTaskPhase[phase],
+		statusField: bfiacommon.KusciaTaskPhaseToInterConnTaskPhase[phase],
 	}
 
 	data, err := structpb.NewStruct(status)

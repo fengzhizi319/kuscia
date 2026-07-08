@@ -690,12 +690,12 @@ func TestImageMetaAdapter_Docker(t *testing.T) {
 	assert.Len(t, layers, 1)
 
 	// Test LayerByDiffID
-	layer, err := adapter.LayerByDiffID(v1.Hash{Algorithm: "sha256", Hex: "diff123"})
+	layer, err := adapter.LayerByDiffID(v1.Hash{Algorithm: sha256Algorithm, Hex: "diff123"})
 	assert.Error(t, err) // Mock layer doesn't implement DiffID properly
 	assert.Nil(t, layer)
 
 	// Test LayerByDigest
-	layer, err = adapter.LayerByDigest(v1.Hash{Algorithm: "sha256", Hex: "layer123456"})
+	layer, err = adapter.LayerByDigest(v1.Hash{Algorithm: sha256Algorithm, Hex: "layer123456"})
 	assert.Error(t, err)
 	assert.Nil(t, layer)
 }
@@ -1486,7 +1486,7 @@ func TestImageMetaAdapter_LayerByDigest(t *testing.T) {
 	adapter := &imageMetaAdapter{meta: meta, metaTarReader: tr}
 
 	// Test LayerByDigest with non-existent digest
-	layer, err := adapter.LayerByDigest(v1.Hash{Algorithm: "sha256", Hex: "nonexistent"})
+	layer, err := adapter.LayerByDigest(v1.Hash{Algorithm: sha256Algorithm, Hex: "nonexistent"})
 	assert.Error(t, err)
 	assert.Nil(t, layer)
 }
@@ -1531,7 +1531,7 @@ func TestImageMetaAdapter_LayerByDiffID(t *testing.T) {
 	adapter := &imageMetaAdapter{meta: meta, metaTarReader: tr}
 
 	// Test LayerByDiffID with non-existent diff ID
-	layer, err := adapter.LayerByDiffID(v1.Hash{Algorithm: "sha256", Hex: "nonexistent"})
+	layer, err := adapter.LayerByDiffID(v1.Hash{Algorithm: sha256Algorithm, Hex: "nonexistent"})
 	assert.Error(t, err)
 	assert.Nil(t, layer)
 }
@@ -1580,7 +1580,7 @@ func (m *mockV1Image) Digest() (v1.Hash, error) {
 	if m.returnError {
 		return v1.Hash{}, fmt.Errorf("mock error")
 	}
-	return v1.Hash{Algorithm: "sha256", Hex: "test"}, nil
+	return v1.Hash{Algorithm: sha256Algorithm, Hex: "test"}, nil
 }
 
 func (m *mockV1Image) Layers() ([]v1.Layer, error) {
@@ -1604,7 +1604,7 @@ func (m *mockV1Image) ConfigName() (v1.Hash, error) {
 	if m.returnError {
 		return v1.Hash{}, fmt.Errorf("mock error")
 	}
-	return v1.Hash{Algorithm: "sha256", Hex: "config"}, nil
+	return v1.Hash{Algorithm: sha256Algorithm, Hex: "config"}, nil
 }
 
 func (m *mockV1Image) LayerByDigest(h v1.Hash) (v1.Layer, error) {
@@ -1637,14 +1637,14 @@ func (m *mockLayer) Digest() (v1.Hash, error) {
 	if m.returnError {
 		return v1.Hash{}, fmt.Errorf("mock error")
 	}
-	return v1.Hash{Algorithm: "sha256", Hex: "layer"}, nil
+	return v1.Hash{Algorithm: sha256Algorithm, Hex: "layer"}, nil
 }
 
 func (m *mockLayer) DiffID() (v1.Hash, error) {
 	if m.returnError {
 		return v1.Hash{}, fmt.Errorf("mock error")
 	}
-	return v1.Hash{Algorithm: "sha256", Hex: "diff"}, nil
+	return v1.Hash{Algorithm: sha256Algorithm, Hex: "diff"}, nil
 }
 
 func (m *mockLayer) Compressed() (io.ReadCloser, error) {

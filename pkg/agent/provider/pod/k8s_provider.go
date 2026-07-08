@@ -58,6 +58,8 @@ import (
 
 const (
 	labelOwnerPodName = "kuscia.secretflow/owner-pod-name"
+
+	resolvConfigVolumeName = "resolv-config"
 )
 
 const (
@@ -478,7 +480,7 @@ func (kp *K8sProvider) mountResolveConfig(bkPod *v1.Pod) *v1.ConfigMap {
 	cm := &v1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: kp.namespace,
-			Name:      "resolv-config",
+			Name:      resolvConfigVolumeName,
 		},
 		Data: map[string]string{
 			"resolv.conf": kp.resolveConfigData,
@@ -486,7 +488,7 @@ func (kp *K8sProvider) mountResolveConfig(bkPod *v1.Pod) *v1.ConfigMap {
 	}
 
 	bkPod.Spec.Volumes = append(bkPod.Spec.Volumes, v1.Volume{
-		Name: "resolv-config",
+		Name: resolvConfigVolumeName,
 		VolumeSource: v1.VolumeSource{
 			ConfigMap: &v1.ConfigMapVolumeSource{
 				LocalObjectReference: v1.LocalObjectReference{
@@ -499,7 +501,7 @@ func (kp *K8sProvider) mountResolveConfig(bkPod *v1.Pod) *v1.ConfigMap {
 	for i := range bkPod.Spec.Containers {
 		c := &bkPod.Spec.Containers[i]
 		c.VolumeMounts = append(c.VolumeMounts, v1.VolumeMount{
-			Name:      "resolv-config",
+			Name:      resolvConfigVolumeName,
 			MountPath: "/etc/resolv.conf",
 			SubPath:   "resolv.conf",
 		})

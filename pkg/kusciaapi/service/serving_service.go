@@ -45,6 +45,8 @@ import (
 const (
 	recreateDeploymentStrategyType      string = "Recreate"
 	rollingUpdateDeploymentStrategyType string = "RollingUpdate"
+	rollingUpdateMaxRatio               string = "25%"
+	hostnameTopologyKey                 string = "kubernetes.io/hostname"
 )
 
 const (
@@ -268,11 +270,11 @@ func (s *servingService) buildKusciaDeploymentPartyStrategy(party *kusciaapi.Ser
 		RollingUpdate: &appsv1.RollingUpdateDeployment{
 			MaxUnavailable: &intstr.IntOrString{
 				Type:   1,
-				StrVal: "25%",
+				StrVal: rollingUpdateMaxRatio,
 			},
 			MaxSurge: &intstr.IntOrString{
 				Type:   1,
-				StrVal: "25%",
+				StrVal: rollingUpdateMaxRatio,
 			},
 		},
 	}
@@ -1129,7 +1131,7 @@ func (s *servingService) buildWeightedPodAffinityTerm(servingID string) corev1.W
 					common.LabelKusciaDeploymentName: servingID,
 				},
 			},
-			TopologyKey: "kubernetes.io/hostname",
+			TopologyKey: hostnameTopologyKey,
 		},
 	}
 }

@@ -35,8 +35,8 @@ func TestConvert2PbPartition(t *testing.T) {
 	k8sPartition := &k8sv1alpha1.Partition{
 		Type: "test",
 		Fields: []k8sv1alpha1.DataColumn{
-			{Name: "col1", Type: "int32", Comment: "comment1"},
-			{Name: "col2", Type: "string", Comment: "comment2"},
+			{Name: "col1", Type: dataTypeInt32, Comment: "comment1"},
+			{Name: "col2", Type: dataTypeString, Comment: "comment2"},
 		},
 	}
 
@@ -44,21 +44,21 @@ func TestConvert2PbPartition(t *testing.T) {
 	assert.Equal(t, "test", result.Type)
 	assert.Equal(t, 2, len(result.Fields))
 	assert.Equal(t, "col1", result.Fields[0].Name)
-	assert.Equal(t, "int32", result.Fields[0].Type)
+	assert.Equal(t, dataTypeInt32, result.Fields[0].Type)
 	assert.Equal(t, "comment1", result.Fields[0].Comment)
 }
 
 // TestConvert2PbColumn [Single Test Use Case] Test Scenario: Test converts kube DataColumn array to pb DataColumn array
 func TestConvert2PbColumn(t *testing.T) {
 	k8sColumns := []k8sv1alpha1.DataColumn{
-		{Name: "col1", Type: "int32", Comment: "comment1", NotNullable: true},
-		{Name: "col2", Type: "string", Comment: "comment2", NotNullable: false},
+		{Name: "col1", Type: dataTypeInt32, Comment: "comment1", NotNullable: true},
+		{Name: "col2", Type: dataTypeString, Comment: "comment2", NotNullable: false},
 	}
 
 	result := Convert2PbColumn(k8sColumns)
 	assert.Equal(t, 2, len(result))
 	assert.Equal(t, "col1", result[0].Name)
-	assert.Equal(t, "int32", result[0].Type)
+	assert.Equal(t, dataTypeInt32, result[0].Type)
 	assert.Equal(t, "comment1", result[0].Comment)
 	assert.True(t, result[0].NotNullable)
 }
@@ -74,8 +74,8 @@ func TestConvert2KubePartition(t *testing.T) {
 	pbPartition := &pbv1alpha1.Partition{
 		Type: "test",
 		Fields: []*pbv1alpha1.DataColumn{
-			{Name: "col1", Type: "int32", Comment: "comment1"},
-			{Name: "col2", Type: "string", Comment: "comment2"},
+			{Name: "col1", Type: dataTypeInt32, Comment: "comment1"},
+			{Name: "col2", Type: dataTypeString, Comment: "comment2"},
 		},
 	}
 
@@ -83,21 +83,21 @@ func TestConvert2KubePartition(t *testing.T) {
 	assert.Equal(t, "test", result.Type)
 	assert.Equal(t, 2, len(result.Fields))
 	assert.Equal(t, "col1", result.Fields[0].Name)
-	assert.Equal(t, "int32", result.Fields[0].Type)
+	assert.Equal(t, dataTypeInt32, result.Fields[0].Type)
 	assert.Equal(t, "comment1", result.Fields[0].Comment)
 }
 
 // TestConvert2KubeColumn [Single Test Case] Test Scenario: Test converts a pb DataColumn array to a k8s DataColumn array
 func TestConvert2KubeColumn(t *testing.T) {
 	pbColumns := []*pbv1alpha1.DataColumn{
-		{Name: "col1", Type: "int32", Comment: "comment1", NotNullable: true},
-		{Name: "col2", Type: "string", Comment: "comment2", NotNullable: false},
+		{Name: "col1", Type: dataTypeInt32, Comment: "comment1", NotNullable: true},
+		{Name: "col2", Type: dataTypeString, Comment: "comment2", NotNullable: false},
 	}
 
 	result := Convert2KubeColumn(pbColumns)
 	assert.Equal(t, 2, len(result))
 	assert.Equal(t, "col1", result[0].Name)
-	assert.Equal(t, "int32", result[0].Type)
+	assert.Equal(t, dataTypeInt32, result[0].Type)
 	assert.Equal(t, "comment1", result[0].Comment)
 	assert.True(t, result[0].NotNullable)
 }
@@ -121,7 +121,7 @@ func TestConvert2PbFileFormat(t *testing.T) {
 func TestConvert2ArrowColumnType(t *testing.T) {
 	assert.Equal(t, arrow.PrimitiveTypes.Int8, Convert2ArrowColumnType("int8"))
 	assert.Equal(t, arrow.PrimitiveTypes.Int16, Convert2ArrowColumnType("int16"))
-	assert.Equal(t, arrow.PrimitiveTypes.Int32, Convert2ArrowColumnType("int32"))
+	assert.Equal(t, arrow.PrimitiveTypes.Int32, Convert2ArrowColumnType(dataTypeInt32))
 	assert.Equal(t, arrow.PrimitiveTypes.Int64, Convert2ArrowColumnType("int64"))
 	assert.Equal(t, arrow.PrimitiveTypes.Int64, Convert2ArrowColumnType("int"))
 	assert.Equal(t, arrow.PrimitiveTypes.Uint8, Convert2ArrowColumnType("uint8"))
@@ -143,7 +143,7 @@ func TestConvert2ArrowColumnType(t *testing.T) {
 	assert.Equal(t, arrow.FixedWidthTypes.Duration_s, Convert2ArrowColumnType("duration"))
 
 	assert.Equal(t, arrow.FixedWidthTypes.Boolean, Convert2ArrowColumnType("bool"))
-	assert.Equal(t, arrow.BinaryTypes.String, Convert2ArrowColumnType("string"))
+	assert.Equal(t, arrow.BinaryTypes.String, Convert2ArrowColumnType(dataTypeString))
 	assert.Equal(t, arrow.BinaryTypes.String, Convert2ArrowColumnType("str"))
 	// Test LargeString mappings
 	assert.Equal(t, arrow.BinaryTypes.LargeString, Convert2ArrowColumnType("large_string"))
@@ -157,7 +157,7 @@ func TestConvert2ArrowColumnType(t *testing.T) {
 func TestConvert2DataMeshColumnType(t *testing.T) {
 	assert.Equal(t, "int8", Convert2DataMeshColumnType(arrow.PrimitiveTypes.Int8))
 	assert.Equal(t, "int16", Convert2DataMeshColumnType(arrow.PrimitiveTypes.Int16))
-	assert.Equal(t, "int32", Convert2DataMeshColumnType(arrow.PrimitiveTypes.Int32))
+	assert.Equal(t, dataTypeInt32, Convert2DataMeshColumnType(arrow.PrimitiveTypes.Int32))
 	assert.Equal(t, "int64", Convert2DataMeshColumnType(arrow.PrimitiveTypes.Int64))
 	assert.Equal(t, "uint8", Convert2DataMeshColumnType(arrow.PrimitiveTypes.Uint8))
 	assert.Equal(t, "uint16", Convert2DataMeshColumnType(arrow.PrimitiveTypes.Uint16))
@@ -184,7 +184,7 @@ func TestConvert2DataMeshColumnType(t *testing.T) {
 	assert.Equal(t, "duration", Convert2DataMeshColumnType(arrow.FixedWidthTypes.Duration_ns))
 
 	assert.Equal(t, "bool", Convert2DataMeshColumnType(arrow.FixedWidthTypes.Boolean))
-	assert.Equal(t, "string", Convert2DataMeshColumnType(arrow.BinaryTypes.String))
+	assert.Equal(t, dataTypeString, Convert2DataMeshColumnType(arrow.BinaryTypes.String))
 	assert.Equal(t, "large_string", Convert2DataMeshColumnType(arrow.BinaryTypes.LargeString))
 	assert.Equal(t, "binary", Convert2DataMeshColumnType(arrow.BinaryTypes.Binary))
 	assert.Empty(t, Convert2DataMeshColumnType(arrow.Null))
@@ -202,10 +202,10 @@ func TestArrowSchema2DataMeshColumns(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, len(columns))
 	assert.Equal(t, "col1", columns[0].Name)
-	assert.Equal(t, "int32", columns[0].Type)
+	assert.Equal(t, dataTypeInt32, columns[0].Type)
 	assert.True(t, columns[0].NotNullable)
 	assert.Equal(t, "col2", columns[1].Name)
-	assert.Equal(t, "string", columns[1].Type)
+	assert.Equal(t, dataTypeString, columns[1].Type)
 	assert.False(t, columns[1].NotNullable)
 }
 

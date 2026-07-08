@@ -38,7 +38,7 @@ func CreateCAFile(subjectName, certFile, keyFile string) error {
 	defer caOut.Close()
 
 	if err = pem.Encode(caOut, &pem.Block{
-		Type:  "CERTIFICATE",
+		Type:  CERTIFICATE,
 		Bytes: caBytes,
 	}); err != nil {
 		return err
@@ -51,7 +51,7 @@ func CreateCAFile(subjectName, certFile, keyFile string) error {
 	defer caKeyOut.Close()
 
 	if err = pem.Encode(caKeyOut, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
+		Type:  RsaPKCS1PrivateKey,
 		Bytes: x509.MarshalPKCS1PrivateKey(caKey),
 	}); err != nil {
 		return err

@@ -21,6 +21,9 @@ import (
 	"github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
 )
 
+// HandshakePathSuffix is the fixed suffix used for handshake paths.
+const HandshakePathSuffix = "/handshake"
+
 func GetPrefixIfPresent(endpoint v1alpha1.DomainEndpoint) string {
 	if len(endpoint.Ports) > 0 {
 		return strings.TrimSuffix(endpoint.Ports[0].PathPrefix, "/")
@@ -29,13 +32,13 @@ func GetPrefixIfPresent(endpoint v1alpha1.DomainEndpoint) string {
 }
 
 func GetHandshakePathSuffix() string {
-	return "/handshake"
+	return HandshakePathSuffix
 }
 
 func GetHandshakePathOfEndpoint(endpoint v1alpha1.DomainEndpoint) string {
-	return fmt.Sprintf("%s%s", GetPrefixIfPresent(endpoint), GetHandshakePathSuffix())
+	return fmt.Sprintf("%s%s", GetPrefixIfPresent(endpoint), HandshakePathSuffix)
 }
 
 func GetHandshakePathOfPrefix(pathPrefix string) string {
-	return fmt.Sprintf("%s%s", strings.TrimSuffix(pathPrefix, "/"), GetHandshakePathSuffix())
+	return fmt.Sprintf("%s%s", strings.TrimSuffix(pathPrefix, "/"), HandshakePathSuffix)
 }

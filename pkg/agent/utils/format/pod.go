@@ -26,11 +26,13 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 )
 
+const nilString = "<nil>"
+
 // Pod returns a string representing a pod in a consistent human readable format,
 // with pod UID as part of the string.
 func Pod(pod *v1.Pod) string {
 	if pod == nil {
-		return "<nil>"
+		return nilString
 	}
 	return PodDesc(pod.Name, pod.Namespace, pod.UID)
 }
@@ -58,7 +60,7 @@ func PodDesc(podName, podNamespace string, podUID types.UID) string {
 // deletion timestamp of the pod if it's not nil.
 func PodWithDeletionTimestamp(pod *v1.Pod) string {
 	if pod == nil {
-		return "<nil>"
+		return nilString
 	}
 	var deletionTimestamp string
 	if pod.DeletionTimestamp != nil {

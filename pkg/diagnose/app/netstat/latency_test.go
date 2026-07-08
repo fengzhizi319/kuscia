@@ -19,11 +19,11 @@ import (
 	"testing"
 	"time"
 
+	"context"
 	"github.com/agiledragon/gomonkey"
 	"github.com/secretflow/kuscia/pkg/diagnose/app/client"
 	"github.com/secretflow/kuscia/pkg/diagnose/common"
 	"github.com/secretflow/kuscia/proto/api/v1alpha1/diagnose"
-	"golang.org/x/net/context"
 	"gotest.tools/v3/assert"
 )
 

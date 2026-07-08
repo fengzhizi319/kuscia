@@ -27,6 +27,8 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
+const domainRouteMetricType = "DomainRoute"
+
 func (c *controller) Monitorcdrstatus(ctx context.Context) {
 	_ = c.UpdateStatus(ctx)
 }
@@ -56,7 +58,7 @@ func (c *controller) UpdateStatus(ctx context.Context) error {
 			for _, port := range cdr.Spec.Endpoint.Ports {
 				expectMetricsName := common.GenerateClusterName(cdr.Spec.Source, cdr.Spec.Destination, port.Name)
 				for _, metric := range gw.Status.NetworkStatus {
-					if metric.Type != "DomainRoute" {
+					if metric.Type != domainRouteMetricType {
 						continue
 					}
 					if metric.Name == expectMetricsName && metric.HealthyEndpointsCount > 0 {

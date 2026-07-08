@@ -98,7 +98,7 @@ func (h *queryJobStatusAllHandler) GetType() (reqType, respType reflect.Type) {
 // buildResp builds response.
 func (h *queryJobStatusAllHandler) buildResp(resp *interconn.CommonResponse, content map[string]interface{}, jobStatus string) {
 	status := map[string]interface{}{
-		"status": content,
+		statusField: content,
 	}
 	if jobStatus != "" {
 		status["jobStatus"] = jobStatus

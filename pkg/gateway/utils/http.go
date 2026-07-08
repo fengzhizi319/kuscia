@@ -28,7 +28,11 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
-const KusciaEnvoyMsgHeaderKey = "Kuscia-Error-Message"
+const (
+	KusciaEnvoyMsgHeaderKey = "Kuscia-Error-Message"
+	protocolHTTP            = "http"
+	protocolHTTPS           = "https"
+)
 
 type HTTPParam struct {
 	Method       string
@@ -45,10 +49,10 @@ func ParseURL(url string) (string, string, uint32, string, error) {
 	var port int
 	var err error
 	if strings.HasPrefix(url, "http://") {
-		protocol = "http"
+		protocol = protocolHTTP
 		hostPort = url[7:]
 	} else if strings.HasPrefix(url, "https://") {
-		protocol = "https"
+		protocol = protocolHTTPS
 		hostPort = url[8:]
 	} else {
 		return protocol, host, uint32(port), path, fmt.Errorf("invalid host: %s", url)
@@ -67,7 +71,7 @@ func ParseURL(url string) (string, string, uint32, string, error) {
 			return protocol, host, uint32(port), path, err
 		}
 	} else {
-		if protocol == "http" {
+		if protocol == protocolHTTP {
 			port = 80
 		} else {
 			port = 443

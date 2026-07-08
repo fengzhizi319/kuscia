@@ -388,6 +388,7 @@ func Test_generatePod(t *testing.T) {
 		}
 	}
 
+	//nolint:goconst
 	wantPodYAML := `
 metadata:
   creationTimestamp: null

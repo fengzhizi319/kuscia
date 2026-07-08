@@ -90,14 +90,14 @@ func GenerateX509KeyPair(parent *x509.Certificate, caKey any, cert *x509.Certifi
 	}
 
 	if err = pem.Encode(certOut, &pem.Block{
-		Type:  "CERTIFICATE",
+		Type:  CERTIFICATE,
 		Bytes: certBytes,
 	}); err != nil {
 		return fmt.Errorf("failed to encode cert, detail-> %v", err)
 	}
 
 	if err = pem.Encode(keyOut, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
+		Type:  RsaPKCS1PrivateKey,
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	}); err != nil {
 		return fmt.Errorf("failed to encode key, detail-> %v", err)
@@ -131,7 +131,7 @@ func GenerateX509KeyPairStruct(parent *x509.Certificate, caKey any, certTemplate
 func EncodeRsaKeyToPKCS1(key *rsa.PrivateKey) (string, error) {
 	var keyOut bytes.Buffer
 	if err := pem.Encode(&keyOut, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
+		Type:  RsaPKCS1PrivateKey,
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	}); err != nil {
 		return "", fmt.Errorf("failed to encode key, detail-> %v", err)
@@ -161,7 +161,7 @@ func EncodeRsaKeyToPKCS8(key *rsa.PrivateKey) (string, error) {
 func EncodeCert(cert *x509.Certificate) (string, error) {
 	var certOut bytes.Buffer
 	if err := pem.Encode(&certOut, &pem.Block{
-		Type:  "CERTIFICATE",
+		Type:  CERTIFICATE,
 		Bytes: cert.Raw,
 	}); err != nil {
 		return "", fmt.Errorf("failed to encode cert, detail-> %v", err)

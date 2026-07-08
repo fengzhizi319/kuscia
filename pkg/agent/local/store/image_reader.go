@@ -36,6 +36,8 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
+const sha256Algorithm = "sha256"
+
 type ImageInfo struct {
 	Architecture string `json:"architecture"`
 	OS           string `json:"os"`
@@ -596,7 +598,7 @@ func (a *imageMetaAdapter) Manifest() (*v1.Manifest, error) {
 			// Calculate SHA256 digest from config file content for correctness.
 			// This ensures the manifest is valid and compatible with Docker image consumers.
 			sum := sha256.Sum256(a.meta.RawConfigs[0])
-			configDigest = v1.Hash{Algorithm: "sha256", Hex: hex.EncodeToString(sum[:])}
+			configDigest = v1.Hash{Algorithm: sha256Algorithm, Hex: hex.EncodeToString(sum[:])}
 			configSize = int64(len(a.meta.RawConfigs[0]))
 		} else if len(docker.Config) > 0 {
 			// Fallback: use file name as digest (not recommended, may be incorrect).
@@ -667,7 +669,7 @@ func (a *imageMetaAdapter) Digest() (v1.Hash, error) {
 		return v1.Hash{}, errors.New("no manifest bytes found for digest")
 	}
 	sum := sha256.Sum256(manifestBytes)
-	return v1.Hash{Algorithm: "sha256", Hex: hex.EncodeToString(sum[:])}, nil
+	return v1.Hash{Algorithm: sha256Algorithm, Hex: hex.EncodeToString(sum[:])}, nil
 }
 
 func (a *imageMetaAdapter) LayerByDiffID(h v1.Hash) (v1.Layer, error) {

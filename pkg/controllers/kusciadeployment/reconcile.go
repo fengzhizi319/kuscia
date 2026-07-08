@@ -21,7 +21,7 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/net/context"
+	"context"
 	"google.golang.org/protobuf/encoding/protojson"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -41,6 +41,9 @@ import (
 const (
 	configTemplateVolumeName = "config-template"
 	kusciaDeploymentName     = "KusciaDeployment"
+	trueStr                  = "true"
+	rollingUpdateMaxRatio    = "25%"
+	hostnameTopologyKey      = "kubernetes.io/hostname"
 )
 
 // ProcessKusciaDeployment processes kuscia deployment resource.
@@ -97,7 +100,7 @@ func (c *Controller) computeExceptGeneratedAnnotations(kd *kusciav1alpha1.Kuscia
 	}
 	if isInitiatorController {
 		annotations[common.InitiatorAnnotationKey] = kd.Spec.Initiator
-		annotations[common.SelfClusterAsInitiatorAnnotationKey] = "true"
+		annotations[common.SelfClusterAsInitiatorAnnotationKey] = trueStr
 		for _, p := range kd.Spec.Parties {
 			partyDomain, getErr := c.domainLister.Get(p.DomainID)
 			if getErr != nil {
@@ -613,8 +616,8 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 		common.LabelKusciaDeploymentName:     partyKitInfo.kd.Name,
 		common.LabelKusciaOwnerNamespace:     common.KusciaCrossDomain,
 		common.LabelKubernetesDeploymentName: partyKitInfo.dkInfo.deploymentName,
-		common.LabelCommunicationRoleServer:  "true",
-		common.LabelCommunicationRoleClient:  "true",
+		common.LabelCommunicationRoleServer:  trueStr,
+		common.LabelCommunicationRoleClient:  trueStr,
 	}
 
 	if partyKitInfo.kd.Labels != nil && partyKitInfo.kd.Labels[common.LabelKusciaDeploymentAppType] != "" {
@@ -637,8 +640,8 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 		}
 	}
 
-	maxSurge := intstr.FromString("25%")
-	maxUnavailable := intstr.FromString("25%")
+	maxSurge := intstr.FromString(rollingUpdateMaxRatio)
+	maxUnavailable := intstr.FromString(rollingUpdateMaxRatio)
 	updateStrategy := &appsv1.DeploymentStrategy{
 		Type: appsv1.RollingUpdateDeploymentStrategyType,
 		RollingUpdate: &appsv1.RollingUpdateDeployment{
@@ -715,7 +718,7 @@ func (c *Controller) generateDeployment(partyKitInfo *PartyKitInfo) (*appsv1.Dep
 			metricPortName := ctr.MetricProbe.Port
 			if metricPath != "" && metricPortName != "" {
 				if portInfo, ok := partyKitInfo.dkInfo.ports[metricPortName]; ok {
-					deployment.Spec.Template.Annotations[common.MetricAnnotationKey] = "true"
+					deployment.Spec.Template.Annotations[common.MetricAnnotationKey] = trueStr
 					deployment.Spec.Template.Annotations[common.MetricPathAnnotationKey] = metricPath
 					deployment.Spec.Template.Annotations[common.MetricPortAnnotationKey] = strconv.Itoa(int(portInfo.Port))
 				} else {
@@ -987,7 +990,7 @@ func buildDefaultPodAntiAffinity(deploymentName string) *corev1.Affinity {
 					Weight: 100,
 					PodAffinityTerm: corev1.PodAffinityTerm{
 						LabelSelector: labelSelector,
-						TopologyKey:   "kubernetes.io/hostname",
+						TopologyKey:   hostnameTopologyKey,
 					},
 				},
 			},

@@ -312,7 +312,7 @@ func TestPopulatePodWithInitContainersUsingEnvWithFieldRef(t *testing.T) {
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
 									APIVersion: "v1",
-									FieldPath:  "spec.nodeName",
+									FieldPath:  specNodeNameFieldPath,
 								},
 							},
 						},
@@ -339,7 +339,7 @@ func TestPopulatePodWithInitContainersUsingEnvWithFieldRef(t *testing.T) {
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
 									APIVersion: "v1",
-									FieldPath:  "spec.serviceAccountName",
+									FieldPath:  specServiceAccountNameFieldPath,
 								},
 							},
 						},
@@ -354,7 +354,7 @@ func TestPopulatePodWithInitContainersUsingEnvWithFieldRef(t *testing.T) {
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
 									APIVersion: "v1",
-									FieldPath:  "spec.nodeName",
+									FieldPath:  specNodeNameFieldPath,
 								},
 							},
 						},
@@ -381,7 +381,7 @@ func TestPopulatePodWithInitContainersUsingEnvWithFieldRef(t *testing.T) {
 							ValueFrom: &corev1.EnvVarSource{
 								FieldRef: &corev1.ObjectFieldSelector{
 									APIVersion: "v1",
-									FieldPath:  "spec.serviceAccountName",
+									FieldPath:  specServiceAccountNameFieldPath,
 								},
 							},
 						},

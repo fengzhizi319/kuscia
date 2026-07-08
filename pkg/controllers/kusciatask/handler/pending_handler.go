@@ -45,6 +45,8 @@ import (
 	proto "github.com/secretflow/kuscia/proto/api/v1alpha1/appconfig"
 )
 
+const trueStr = "true"
+
 type NamedPorts = kusciacommon.NamedPorts
 type PortService = kusciacommon.PortService
 type PodKitInfo = kusciacommon.PodKitInfo
@@ -1024,7 +1026,7 @@ func (h *PendingHandler) submitConfigMap(cm *v1.ConfigMap) error {
 func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo) (*v1.Pod, error) {
 	labels := map[string]string{
 		common.LabelController:              common.ControllerKusciaTask,
-		common.LabelCommunicationRoleServer: "true",
+		common.LabelCommunicationRoleServer: trueStr,
 		common.LabelCommunicationRoleClient: "true",
 		labelKusciaTaskPodIdentity:          podKit.PodIdentity,
 		kusciaapisv1alpha1.TaskResourceUID:  "",
@@ -1105,7 +1107,7 @@ func (h *PendingHandler) generatePod(partyKit *PartyKitInfo, podKit *PodKitInfo)
 
 			if metricPath != "" && metricPortName != "" {
 				if portInfo, ok := podKit.Ports[metricPortName]; ok {
-					pod.Annotations[common.MetricAnnotationKey] = "true"
+					pod.Annotations[common.MetricAnnotationKey] = trueStr
 					pod.Annotations[common.MetricPathAnnotationKey] = metricPath
 					pod.Annotations[common.MetricPortAnnotationKey] = strconv.Itoa(int(portInfo.Port))
 				} else {

@@ -471,19 +471,26 @@ func validateDomainRouteRequest(request RequestWithDstAndSrc) error {
 	return nil
 }
 
+const (
+	protocolHTTP  = "HTTP"
+	protocolHTTPS = "HTTPS"
+	protocolGRPC  = "GRPC"
+	protocolGRPCS = "GRPCS"
+)
+
 func convert2DomainRouteProtocol(protocol string) (drProtocol v1alpha1.DomainRouteProtocolType, isTLS bool, err error) {
 	protocol = strings.ToUpper(protocol)
 	isTLS = false
-	if protocol == "HTTPS" || protocol == "GRPCS" {
+	if protocol == protocolHTTPS || protocol == protocolGRPCS {
 		isTLS = true
 		protocol = strings.TrimRight(protocol, "S")
 	}
 
 	err = nil
 	switch protocol {
-	case "HTTP":
+	case protocolHTTP:
 		drProtocol = v1alpha1.DomainRouteProtocolHTTP
-	case "GRPC":
+	case protocolGRPC:
 		drProtocol = v1alpha1.DomainRouteProtocolGRPC
 	default:
 		err = fmt.Errorf("DomainRoute Port Protocol should be HTTP or HTTPS or GRPC or GRPCS")

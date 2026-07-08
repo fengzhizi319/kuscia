@@ -47,8 +47,8 @@ func TestCreateDomainDataGrant(t *testing.T) {
 	attr := make(map[string]string)
 	attr["rows"] = "100"
 	col := make([]*v1alpha1.DataColumn, 2)
-	col[0] = &v1alpha1.DataColumn{Name: "id", Type: "string"}
-	col[1] = &v1alpha1.DataColumn{Name: "date", Type: "string"}
+	col[0] = &v1alpha1.DataColumn{Name: "id", Type: dataTypeString}
+	col[1] = &v1alpha1.DataColumn{Name: "date", Type: dataTypeString}
 	res := domainDataService.CreateDomainData(context.Background(), &datamesh.CreateDomainDataRequest{
 		Header:       nil,
 		DomaindataId: "",

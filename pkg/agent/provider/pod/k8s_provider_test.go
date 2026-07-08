@@ -184,7 +184,7 @@ func TestK8sProvider_SyncAndKillPod(t *testing.T) {
 	assert.Equal(t, 3, len(newPod.Spec.Volumes))
 	assert.Equal(t, "config-template", newPod.Spec.Volumes[0].Name)
 	assert.Equal(t, "test-secret", newPod.Spec.Volumes[1].Name)
-	assert.Equal(t, "resolv-config", newPod.Spec.Volumes[2].Name)
+	assert.Equal(t, resolvConfigVolumeName, newPod.Spec.Volumes[2].Name)
 	assert.Equal(t, "runc", *newPod.Spec.RuntimeClassName)
 
 	newPodConfig, err := kp.configMapLister.Get("pod01-config-template")

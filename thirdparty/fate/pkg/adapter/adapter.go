@@ -26,6 +26,10 @@ import (
 	"github.com/secretflow/kuscia/pkg/utils/nlog"
 )
 
+const (
+	jobIDField = "job_id"
+)
+
 type FateJobAdapter struct {
 	TaskConfig   string
 	ClusterIP    string
@@ -101,8 +105,8 @@ func requestFateJob(ip string, action string, param []byte) ([]byte, error) {
 
 func (s *FateJobAdapter) CheckJobSucceeded() (bool, error) {
 	param := map[string]string{
-		"job_id": s.JobID,
-		"status": "success",
+		jobIDField: s.JobID,
+		"status":   "success",
 	}
 	paramJSON, _ := json.Marshal(param)
 	respBytes, err := requestFateJob(s.ClusterIP, "query", paramJSON)
@@ -118,8 +122,8 @@ func (s *FateJobAdapter) CheckJobSucceeded() (bool, error) {
 
 func (s *FateJobAdapter) CheckJobRunning() (bool, error) {
 	param := map[string]string{
-		"job_id": s.JobID,
-		"status": "running",
+		jobIDField: s.JobID,
+		"status":   "running",
 	}
 	paramJSON, _ := json.Marshal(param)
 	respBytes, err := requestFateJob(s.ClusterIP, "query", paramJSON)
@@ -162,7 +166,7 @@ func (s *FateJobAdapter) addNoteFateJob() error {
 
 	initiator := taskInputConfig.RuntimeConf.Initiator
 	param := map[string]any{
-		"job_id":   s.JobID,
+		jobIDField: s.JobID,
 		"notes":    s.KusciaTaskID,
 		"role":     initiator.Role,
 		"party_id": initiator.PartyID,
@@ -254,7 +258,7 @@ func (s *FateJobAdapter) HandleTaskConfig(config string) error {
 
 							readerOpParam := map[string]any{
 								"table": map[string]string{
-									"job_id":         jobID,
+									jobIDField:       jobID,
 									"component_name": readerOpName,
 									"data_name":      inputInfoPart[1],
 								},

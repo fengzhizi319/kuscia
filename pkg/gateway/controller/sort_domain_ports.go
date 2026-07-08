@@ -18,12 +18,13 @@ import (
 	"sort"
 
 	kusciaapisv1alpha1 "github.com/secretflow/kuscia/pkg/crd/apis/kuscia/v1alpha1"
+	"github.com/secretflow/kuscia/pkg/gateway/xds"
 )
 
 var (
 	domainPortProtocols = map[string]int{
-		"GRPC": 0,
-		"HTTP": 1,
+		xds.ProtocolGRPC: 0,
+		xds.ProtocolHTTP: 1,
 	}
 )
 

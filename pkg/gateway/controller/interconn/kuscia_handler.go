@@ -61,7 +61,7 @@ func (handler *KusciaHandler) GenerateInternalRoute(dr *kusciaapisv1alpha1.Domai
 		},
 		{
 			Header: &core.HeaderValue{
-				Key:   "Kuscia-Token",
+				Key:   kusciaTokenHeader,
 				Value: token,
 			},
 			AppendAction: core.HeaderValueOption_OVERWRITE_IF_EXISTS_OR_ADD,

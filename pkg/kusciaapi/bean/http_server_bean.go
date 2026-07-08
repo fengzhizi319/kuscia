@@ -57,6 +57,16 @@ import (
 	pberrorcode "github.com/secretflow/kuscia/proto/api/v1alpha1/errorcode"
 )
 
+const (
+	pathCreate           = "create"
+	pathDelete           = "delete"
+	pathQuery            = "query"
+	pathUpdate           = "update"
+	pathBatchQuery       = "batchQuery"
+	pathList             = "list"
+	pathStatusBatchQuery = "status/batchQuery"
+)
+
 type httpServerBean struct {
 	config          *apiconfig.KusciaAPIConfig
 	externalGinBean *beans.GinBean
@@ -184,17 +194,17 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "create",
+					RelativePath: pathCreate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, job.NewCreateJobHandler(jobService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "delete",
+					RelativePath: pathDelete,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, job.NewDeleteJobHandler(jobService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: pathQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, job.NewQueryJobHandler(jobService))},
 				},
 				{
@@ -204,7 +214,7 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "status/batchQuery",
+					RelativePath: pathStatusBatchQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, job.NewBatchQueryJobStatusHandler(jobService))},
 				},
 				{
@@ -240,27 +250,27 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "create",
+					RelativePath: pathCreate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domain.NewCreateDomainHandler(domainService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "delete",
+					RelativePath: pathDelete,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domain.NewDeleteDomainHandler(domainService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "update",
+					RelativePath: pathUpdate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domain.NewUpdateDomainHandler(domainService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: pathQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domain.NewQueryDomainHandler(domainService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "batchQuery",
+					RelativePath: pathBatchQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domain.NewBatchQueryDomainHandler(domainService))},
 				},
 			},
@@ -271,22 +281,22 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "create",
+					RelativePath: pathCreate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domainroute.NewCreateDomainRouteHandler(routeService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "delete",
+					RelativePath: pathDelete,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domainroute.NewDeleteDomainHandler(routeService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: pathQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domainroute.NewQueryDomainRouteHandler(routeService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "status/batchQuery",
+					RelativePath: pathStatusBatchQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domainroute.NewBatchQueryDomainRouteStatusHandler(routeService))},
 				},
 			},
@@ -297,17 +307,17 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "create",
+					RelativePath: pathCreate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindata.NewCreateDomainDataHandler(domainDataService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "update",
+					RelativePath: pathUpdate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindata.NewUpdateDomainDataHandler(domainDataService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "delete",
+					RelativePath: pathDelete,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindata.NewDeleteDomainDataHandler(domainDataService))},
 				},
 				{
@@ -317,17 +327,17 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: pathQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindata.NewQueryDomainDataHandler(domainDataService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "batchQuery",
+					RelativePath: pathBatchQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindata.NewBatchQueryDomainDataHandler(domainDataService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "list",
+					RelativePath: pathList,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindata.NewListDomainDataHandler(domainDataService))},
 				},
 			},
@@ -338,32 +348,32 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "create",
+					RelativePath: pathCreate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewCreateDomainDataSourceHandler(domainDataSourceService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "update",
+					RelativePath: pathUpdate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewUpdateDomainDataSourceHandler(domainDataSourceService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "delete",
+					RelativePath: pathDelete,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewDeleteDomainDataSourceHandler(domainDataSourceService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: pathQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewQueryDomainDataSourceHandler(domainDataSourceService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "batchQuery",
+					RelativePath: pathBatchQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewBatchQueryDomainDataSourceHandler(domainDataSourceService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "list",
+					RelativePath: pathList,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatasource.NewListDomainDataSourceHandler(domainDataSourceService))},
 				},
 			},
@@ -374,27 +384,27 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "create",
+					RelativePath: pathCreate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, serving.NewCreateServingHandler(servingService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "update",
+					RelativePath: pathUpdate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, serving.NewUpdateServingHandler(servingService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "delete",
+					RelativePath: pathDelete,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, serving.NewDeleteServingHandler(servingService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: pathQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, serving.NewQueryServingHandler(servingService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "status/batchQuery",
+					RelativePath: pathStatusBatchQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, serving.NewBatchQueryServingStatusHandler(servingService))},
 				},
 			},
@@ -404,32 +414,32 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "create",
+					RelativePath: pathCreate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewCreateDomainDataGrantHandler(domainDataGrantService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "update",
+					RelativePath: pathUpdate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewUpdateDomainDataGrantHandler(domainDataGrantService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "delete",
+					RelativePath: pathDelete,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewDeleteDomainDataGrantHandler(domainDataGrantService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: pathQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewQueryDomainDataGrantHandler(domainDataGrantService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "batchQuery",
+					RelativePath: pathBatchQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewBatchQueryDomainDataGrantHandler(domainDataGrantService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "list",
+					RelativePath: pathList,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, domaindatagrant.NewListDomainDataGrantHandler(domainDataGrantService))},
 				},
 			},
@@ -449,27 +459,27 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "create",
+					RelativePath: pathCreate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, handlerconfig.NewCreateConfigHandler(configService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: pathQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, handlerconfig.NewQueryConfigHandler(configService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "update",
+					RelativePath: pathUpdate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, handlerconfig.NewUpdateConfigHandler(configService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "delete",
+					RelativePath: pathDelete,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, handlerconfig.NewDeleteConfigHandler(configService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "batchQuery",
+					RelativePath: pathBatchQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, handlerconfig.NewBatchQueryConfigHandler(configService))},
 				},
 			},
@@ -479,32 +489,32 @@ func (s *httpServerBean) registerGroupRoutes(e framework.ConfBeanRegistry, bean 
 			Routes: []*router.Router{
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "create",
+					RelativePath: pathCreate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewCreateAppImageHandler(appImageService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "update",
+					RelativePath: pathUpdate,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewUpdateAppImageHandler(appImageService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "delete",
+					RelativePath: pathDelete,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewDeleteAppImageHandler(appImageService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "query",
+					RelativePath: pathQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewQueryAppImageHandler(appImageService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "list",
+					RelativePath: pathList,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewListAppImageHandler(appImageService))},
 				},
 				{
 					HTTPMethod:   http.MethodPost,
-					RelativePath: "batchQuery",
+					RelativePath: pathBatchQuery,
 					Handlers:     []gin.HandlerFunc{protoDecorator(e, appimage.NewBatchQueryAppImageHandler(appImageService))},
 				},
 			},
