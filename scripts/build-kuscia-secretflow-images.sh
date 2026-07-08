@@ -373,6 +373,15 @@ build_secretflow() {
         exit 1
     fi
 
+    # 若存在多个 wheel（例如多次构建残留），只保留最新的一个，避免 Dockerfile 中
+    # COPY *.whl + pip install /tmp/*.whl 因版本冲突而失败。
+    if [[ "${wheel_count}" -gt 1 ]]; then
+        log_info "Multiple SecretFlow wheels found, keeping only the latest one."
+        local latest_wheel
+        latest_wheel=$(ls -t docker/dev/secretflow-*.whl 2>/dev/null | head -n 1)
+        find docker/dev -maxdepth 1 -name 'secretflow-*.whl' ! -name "$(basename "${latest_wheel}")" -delete
+    fi
+
     # 准备 SecretFlow 镜像构建所需的运行时配置文件与模板：
     #   .nsjail   沙箱配置
     #   .condarc  conda 源配置
