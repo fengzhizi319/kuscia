@@ -57,9 +57,59 @@ var (
 		},
 		[]string{"result"},
 	)
+
+	// JobTotal counts total kuscia jobs by status (Pending/Running/Succeeded/Failed).
+	// JobTotal 按状态统计 KusciaJob 总数（Pending/Running/Succeeded/Failed）。
+	JobTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "kuscia_job_total",
+			Help: "Total number of KusciaJobs by status",
+		},
+		[]string{"status"},
+	)
+
+	// JobDurationSeconds records the end-to-end duration of job execution.
+	// JobDurationSeconds 记录任务端到端执行延迟。
+	JobDurationSeconds = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "kuscia_job_duration_seconds",
+			Help:    "End-to-end duration of KusciaJob execution",
+			Buckets: prometheus.ExponentialBuckets(1, 2, 12), // 1s ~ 4096s
+		},
+		[]string{"app_type"},
+	)
+
+	// ReconcileDurationSeconds records reconcile loop duration per controller.
+	// ReconcileDurationSeconds 记录每个控制器的 reconcile 循环耗时。
+	ReconcileDurationSeconds = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "kuscia_reconcile_duration_seconds",
+			Help:    "Duration of reconcile loop per controller",
+			Buckets: prometheus.ExponentialBuckets(0.001, 2, 15), // 1ms ~ 16s
+		},
+		[]string{"controller"},
+	)
 )
 
 // ClearDeadMetrics clear requeue count of a kuscia job.
 func ClearDeadMetrics(key string) {
 	JobRequeueCount.DeleteLabelValues(key)
+}
+
+// RecordJobStatus increments the job total counter for the given status.
+// RecordJobStatus 增加指定状态的 Job 计数。
+func RecordJobStatus(status string) {
+	JobTotal.WithLabelValues(status).Inc()
+}
+
+// ObserveJobDuration records the duration of a job execution.
+// ObserveJobDuration 记录任务执行耗时。
+func ObserveJobDuration(appType string, seconds float64) {
+	JobDurationSeconds.WithLabelValues(appType).Observe(seconds)
+}
+
+// ObserveReconcileDuration records the duration of a reconcile loop.
+// ObserveReconcileDuration 记录 reconcile 循环耗时。
+func ObserveReconcileDuration(controller string, seconds float64) {
+	ReconcileDurationSeconds.WithLabelValues(controller).Observe(seconds)
 }

@@ -51,8 +51,41 @@ var (
 		},
 		[]string{"result"},
 	)
+
+	// TaskTotal counts total kuscia tasks by status (Pending/Running/Succeeded/Failed).
+	// TaskTotal 按状态统计 KusciaTask 总数。
+	TaskTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "kuscia_task_total",
+			Help: "Total number of KusciaTasks by status",
+		},
+		[]string{"status"},
+	)
+
+	// TaskDurationSeconds records the execution duration of tasks by app type.
+	// TaskDurationSeconds 按应用类型记录任务执行延迟。
+	TaskDurationSeconds = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "kuscia_task_duration_seconds",
+			Help:    "Execution duration of KusciaTask by app type",
+			Buckets: prometheus.ExponentialBuckets(1, 2, 12), // 1s ~ 4096s
+		},
+		[]string{"app_type"},
+	)
 )
 
 func ClearDeadMetrics(key string) {
 	TaskRequeueCount.DeleteLabelValues(key)
+}
+
+// RecordTaskStatus increments the task total counter for the given status.
+// RecordTaskStatus 增加指定状态的 Task 计数。
+func RecordTaskStatus(status string) {
+	TaskTotal.WithLabelValues(status).Inc()
+}
+
+// ObserveTaskDuration records the execution duration of a task.
+// ObserveTaskDuration 记录任务执行耗时。
+func ObserveTaskDuration(appType string, seconds float64) {
+	TaskDurationSeconds.WithLabelValues(appType).Observe(seconds)
 }
