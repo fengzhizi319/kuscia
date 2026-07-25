@@ -371,6 +371,26 @@ function create_domaindata_bob_table() {
   log "create domaindata bob's table done default stored path: '${data_path}'"
 }
 
+# 创建 alice 的隐私组件测试 DomainData（表数据）
+function create_domaindata_alice_privacy_table() {
+  local ctr=$1
+  local domain_id=$2
+  local data_path="/home/kuscia/var/storage/data"
+
+  docker exec -it "${ctr}" scripts/deploy/create_domaindata_alice_privacy_table.sh "${domain_id}"
+  log "create domaindata alice's privacy table done default stored path: '${data_path}'"
+}
+
+# 创建 bob 的隐私组件测试 DomainData（表数据）
+function create_domaindata_bob_privacy_table() {
+  local ctr=$1
+  local domain_id=$2
+  local data_path="/home/kuscia/var/storage/data"
+
+  docker exec -it "${ctr}" scripts/deploy/create_domaindata_bob_privacy_table.sh "${domain_id}"
+  log "create domaindata bob's privacy table done default stored path: '${data_path}'"
+}
+
 # 探测 DataMesh HTTP 服务是否就绪（8070 端口，mTLS 认证）
 function probe_datamesh() {
   local domain_ctr=$1
@@ -439,6 +459,8 @@ function start_lite() {
     probe_gateway_crd "${master_ctr}" "${domain_id}" "${domain_ctr}" 60
     log "Lite domain '${domain_id}' started successfully docker container name:'${domain_ctr}'"
     docker run -it --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}.csv" >"${data_path}/${domain_id}.csv"
+    # copy privacy component test data from image
+    docker run -it --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}_privacy.csv" >"${data_path}/${domain_id}_privacy.csv" 2>/dev/null || true
   fi
 }
 
@@ -577,6 +599,9 @@ function run_centralized() {
   # create demo data
   create_domaindata_alice_table "${master_ctr}" "${alice_domain}"
   create_domaindata_bob_table "${master_ctr}" "${bob_domain}"
+  # create privacy component test data
+  create_domaindata_alice_privacy_table "${master_ctr}" "${alice_domain}"
+  create_domaindata_bob_privacy_table "${master_ctr}" "${bob_domain}"
   create_domaindatagrant_alice2bob "${alice_ctr}"
   create_domaindatagrant_bob2alice "${bob_ctr}"
   # create secretflow app image
@@ -658,6 +683,9 @@ function run_hybrid_centerX2() {
   # create demo data
   create_domaindata_alice_table "${alice_master_ctr}" "${alice_domain}"
   create_domaindata_bob_table "${bob_master_ctr}" "${bob_domain}"
+  # create privacy component test data
+  create_domaindata_alice_privacy_table "${alice_master_ctr}" "${alice_domain}"
+  create_domaindata_bob_privacy_table "${bob_master_ctr}" "${bob_domain}"
   create_domaindatagrant_alice2bob "${alice_ctr}"
   create_domaindatagrant_bob2alice "${bob_ctr}"
   # create secretflow app image
@@ -719,6 +747,9 @@ function run_hybrid_centerXp2p() {
   # create demo data
   create_domaindata_alice_table "${alice_master_ctr}" "${alice_domain}"
   create_domaindata_bob_table "${bob_master_ctr}" "${bob_domain}"
+  # create privacy component test data
+  create_domaindata_alice_privacy_table "${alice_master_ctr}" "${alice_domain}"
+  create_domaindata_bob_privacy_table "${bob_master_ctr}" "${bob_domain}"
   create_domaindatagrant_alice2bob "${alice_ctr}"
   create_domaindatagrant_bob2alice "${bob_ctr}"
   # create secretflow app image
@@ -765,6 +796,8 @@ function start_autonomy() {
     probe_gateway_crd "${domain_ctr}" "${domain_id}" "${domain_ctr}" 60
     log "Autonomy domain '${domain_id}' started successfully docker container name: '${domain_ctr}'"
     docker run -it --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}".csv >"${data_path}/${domain_id}.csv"
+    # copy privacy component test data from image
+    docker run -it --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}_privacy.csv" >"${data_path}/${domain_id}_privacy.csv" 2>/dev/null || true
   fi
 }
 
@@ -817,6 +850,9 @@ function run_p2p() {
   # create demo data
   create_domaindata_alice_table "${alice_ctr}" "${alice_domain}"
   create_domaindata_bob_table "${bob_ctr}" "${bob_domain}"
+  # create privacy component test data
+  create_domaindata_alice_privacy_table "${alice_ctr}" "${alice_domain}"
+  create_domaindata_bob_privacy_table "${bob_ctr}" "${bob_domain}"
   create_domaindatagrant_alice2bob "${alice_ctr}"
   create_domaindatagrant_bob2alice "${bob_ctr}"
   log "Kuscia p2p cluster started successfully"

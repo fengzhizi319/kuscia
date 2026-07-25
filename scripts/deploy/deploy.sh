@@ -527,6 +527,9 @@ function create_domaindata_table() {
   docker exec -it "${ctr}" scripts/deploy/create_domaindata_alice_table.sh "${DOMAIN_ID}"
   # 在容器内执行 Bob 示例数据创建脚本，传入 DOMAIN_ID。
   docker exec -it "${ctr}" scripts/deploy/create_domaindata_bob_table.sh "${DOMAIN_ID}"
+  # 在容器内执行隐私组件测试数据创建脚本。
+  docker exec -it "${ctr}" scripts/deploy/create_domaindata_alice_privacy_table.sh "${DOMAIN_ID}"
+  docker exec -it "${ctr}" scripts/deploy/create_domaindata_bob_privacy_table.sh "${DOMAIN_ID}"
   log "Create domain data table done"
 }
 
