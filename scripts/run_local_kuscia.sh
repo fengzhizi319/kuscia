@@ -69,7 +69,6 @@ fi
 # Stop mode
 if [[ "$MODE" == "--stop" ]]; then
   if [[ -f "$PID_FILE" ]]; then
-    local local_pid
     local_pid="$(cat "$PID_FILE")"
     if kill -0 "$local_pid" >/dev/null 2>&1; then
       log_info "Stopping Kuscia (pid: $local_pid)..."
@@ -116,10 +115,103 @@ log_info "Domain ID: ${DOMAIN_ID}"
 # Create directories
 mkdir -p "${KUSCIA_HOME}/bin"
 mkdir -p "${KUSCIA_HOME}/etc/conf"
-mkdir -p "${KUSCIA_HOME}/var/logs"
+mkdir -p "${KUSCIA_HOME}/var/logs/envoy"
+mkdir -p "${KUSCIA_HOME}/var/images"
 mkdir -p "${KUSCIA_HOME}/var/storage"
+mkdir -p "${KUSCIA_HOME}/var/stdout"
 mkdir -p "${KUSCIA_HOME}/var/certs"
-mkdir -p "${KUSCIA_HOME}/crds"
+mkdir -p "${KUSCIA_HOME}/crds/v1alpha1"
+mkdir -p "${KUSCIA_HOME}/pause"
+
+# Prepare runtime binaries/configs from an official Kuscia image or a running container.
+# The local build only produces the kuscia binary; it does not bundle containerd, runc,
+# envoy, node_exporter, coredns corefile, etc. We copy those from a reference Kuscia
+# distribution (Docker image/container) so that local development can work out-of-the-box.
+prepare_runtime_assets() {
+  if ! command -v docker >/dev/null 2>&1; then
+    log_warn "docker not found; cannot provision Kuscia runtime assets. Local Kuscia may fail to start."
+    return 0
+  fi
+
+  local src_container="${KUSCIA_RUNTIME_SOURCE_CONTAINER:-}"
+  local cleanup_container=false
+
+  if [[ -z "$src_container" ]]; then
+    src_container="$(docker ps --filter name=kuscia-master --format '{{.Names}}' | head -n1)"
+  fi
+
+  if [[ -z "$src_container" ]]; then
+    local image="${KUSCIA_RUNTIME_SOURCE_IMAGE:-secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia:0.13.0b0}"
+    if ! docker image inspect "$image" >/dev/null 2>&1; then
+      log_warn "Kuscia image $image not found locally; attempting to pull..."
+      docker pull "$image" >/dev/null 2>&1 || log_warn "failed to pull $image; continuing anyway"
+    fi
+    if docker image inspect "$image" >/dev/null 2>&1; then
+      src_container="$(docker create "$image" /bin/true)"
+      cleanup_container=true
+    else
+      log_warn "No Kuscia Docker image available to copy runtime assets from."
+      return 0
+    fi
+  fi
+
+  log_info "Provisioning Kuscia runtime assets from ${src_container}..."
+  docker cp "${src_container}:/home/kuscia/bin/." "${KUSCIA_HOME}/bin/"
+  docker cp "${src_container}:/home/kuscia/etc/conf/." "${KUSCIA_HOME}/etc/conf/"
+  docker cp "${src_container}:/home/kuscia/pause/." "${KUSCIA_HOME}/pause/"
+
+  if [[ "$cleanup_container" == true ]]; then
+    docker rm "$src_container" >/dev/null 2>&1 || true
+  fi
+
+  log_info "Runtime assets ready under ${KUSCIA_HOME}"
+}
+
+prepare_runtime_assets
+
+# The reference Kuscia assets are built for the Docker path /home/kuscia.
+# When running locally with a custom KUSCIA_HOME, rewrite absolute paths in
+# static configuration files so that binaries/sockets/configs are found.
+patch_runtime_paths() {
+  if [[ -z "${KUSCIA_HOME:-}" ]]; then
+    return 0
+  fi
+
+  log_info "Patching absolute /home/kuscia paths to ${KUSCIA_HOME}..."
+  find "${KUSCIA_HOME}/etc/conf" -type f -exec \
+    sed -i "s|/home/kuscia|${KUSCIA_HOME}|g" {} +
+
+  # CoreDNS must bind to the host IP (the same IP written into /etc/resolv.conf)
+  # instead of "0.0.0.0" so that it does not collide with WSL/system DNS on :53.
+  local host_ip
+  host_ip="$(ip route get 1.1.1.1 2>/dev/null | awk '/src/ {print $7; exit}')"
+  if [[ -z "$host_ip" ]]; then
+    host_ip="127.0.0.1"
+  fi
+
+  local corefile="${KUSCIA_HOME}/etc/conf/corefile"
+  if [[ -f "$corefile" ]]; then
+    cat > "$corefile" <<EOF
+.:53 {
+    bind ${host_ip}
+    kuscia {
+        fallthrough
+    }
+    forward . ${KUSCIA_HOME}/var/tmp/resolv.conf
+}
+EOF
+  fi
+}
+
+patch_runtime_paths
+
+# Remove stale generated credentials/data from previous runs so that the
+# freshly generated domain key stays consistent with CA/domain certificates.
+# This avoids "provided PrivateKey doesn't match parent's PublicKey" errors
+# when Kuscia reuses existing cert files generated for a different domain key.
+log_info "Cleaning up stale runtime-generated credentials..."
+rm -rf "${KUSCIA_HOME}/var/certs" "${KUSCIA_HOME}/var/k3s" "${KUSCIA_HOME}/var/storage" "${KUSCIA_HOME}/var/tmp"
+mkdir -p "${KUSCIA_HOME}/var/certs" "${KUSCIA_HOME}/var/k3s" "${KUSCIA_HOME}/var/storage" "${KUSCIA_HOME}/var/tmp"
 
 # Build Kuscia if not exists
 KUSCIA_BINARY="${ROOT_DIR}/build/apps/kuscia/kuscia"
@@ -132,7 +224,7 @@ fi
 cp "$KUSCIA_BINARY" "${KUSCIA_HOME}/bin/"
 
 # Copy CRDs
-cp "${ROOT_DIR}/crds/v1alpha1"/*.yaml "${KUSCIA_HOME}/crds/"
+cp "${ROOT_DIR}/crds/v1alpha1"/*.yaml "${KUSCIA_HOME}/crds/v1alpha1/"
 
 # Generate domain key
 log_info "Generating domain private key..."
@@ -161,8 +253,10 @@ runtime: runp
 EOF
 fi
 
-# Start Kuscia
+# Start Kuscia. Change into KUSCIA_HOME so that components which use relative
+# paths (e.g. Envoy's admin log) resolve against the correct root directory.
 log_info "Starting Kuscia..."
+cd "${KUSCIA_HOME}"
 nohup "${KUSCIA_HOME}/bin/kuscia" start -c "$CONFIG_FILE" > "${KUSCIA_HOME}/var/logs/kuscia_stdout.log" 2>&1 &
 echo $! > "$PID_FILE"
 

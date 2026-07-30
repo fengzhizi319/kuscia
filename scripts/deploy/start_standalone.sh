@@ -38,6 +38,9 @@
 
 set -e
 
+# 当前脚本所在目录，用于将本地辅助脚本拷贝到 Kuscia 容器中执行
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # 如果未显式指定 ROOT，则使用当前工作目录作为配置与数据挂载根目录
 [[ ${ROOT} == "" ]] && ROOT=${PWD}
 
@@ -196,16 +199,16 @@ function do_http_probe() {
   local endpoint=$2
   local max_retry=$3
   local enable_mtls=$4
-  local cert_config
+  local cert_config=()
   if [[ "$enable_mtls" == "true" ]]; then
-    cert_config="--cacert ${CTR_CERT_ROOT}/ca.crt --cert ${CTR_CERT_ROOT}/ca.crt --key ${CTR_CERT_ROOT}/ca.key"
+    cert_config=(--cacert "${CTR_CERT_ROOT}/ca.crt" --cert "${CTR_CERT_ROOT}/ca.crt" --key "${CTR_CERT_ROOT}/ca.key")
   fi
 
   local retry=0
   while [[ "$retry" -lt "$max_retry" ]]; do
     local status_code
-    status_code=$(docker exec -it "${ctr}" curl -k --write-out '%{http_code}' --silent --output /dev/null "${endpoint}" "${cert_config}")
-    if [[ "${status_code}" -eq 200 || "${status_code}" -eq 404 || "${status_code}" -eq 401 ]]; then
+    status_code=$(docker exec -i "${ctr}" curl -k --write-out '%{http_code}' --silent --output /dev/null "${cert_config[@]}" "${endpoint}" 2>/dev/null || true)
+    if [[ "${status_code}" =~ ^[0-9]+$ && ( "${status_code}" -eq 200 || "${status_code}" -eq 404 || "${status_code}" -eq 401 ) ]]; then
       return 0
     fi
     sleep 1
@@ -235,9 +238,9 @@ function probe_gateway_crd() {
 
   local retry=0
   while [ $retry -lt "$max_retry" ]; do
-    local line_num
-    line_num=$(docker exec -it "${master}" kubectl get gateways -n "${domain}" | grep -c -i "${gw_name}" | xargs)
-    if [[ "${line_num}" == "1" ]]; then
+    local output
+    output=$(docker exec -i "${master}" kubectl get gateways -n "${domain}" 2>&1 || true)
+    if echo "$output" | grep -q -i "${gw_name}"; then
       return
     fi
     sleep 1
@@ -254,10 +257,19 @@ function generate_env_flag() {
   local env_file=${ROOT}/env.list
   if [ -e "${env_file}" ]; then
     env_flag="--env-file ${env_file}"
-  else
-    env_flag="--env REGISTRY_ENDPOINT=${SF_IMAGE_REGISTRY}"
   fi
   echo "${env_flag}"
+}
+
+# 根据当前协议返回 master 网关地址（Lite/Autonomy 注册时使用）。
+# 当 api_protocol 为 NOTLS 时使用 http，否则使用 https。
+function get_master_endpoint() {
+  local master_ctr=$1
+  if [[ "${api_protocol}" == "NOTLS" ]]; then
+    echo "http://${master_ctr}:1080"
+  else
+    echo "https://${master_ctr}:1080"
+  fi
 }
 
 # =============================================================================
@@ -321,7 +333,7 @@ function copy_volume_file_to_container() {
 # 在指定容器中创建 SecretFlow 应用镜像，供后续任务调度使用
 function create_secretflow_app_image() {
   local ctr=$1
-  docker exec -it "${ctr}" scripts/deploy/create_sf_app_image.sh "${SF_IMAGE_NAME}" "${SF_IMAGE_TAG}"
+  docker exec -i "${ctr}" scripts/deploy/create_sf_app_image.sh "${SF_IMAGE_NAME}" "${SF_IMAGE_TAG}"
   log "create secretflow app image done"
 }
 
@@ -329,10 +341,10 @@ function create_secretflow_app_image() {
 function create_domaindatagrant_alice2bob() {
   local ctr=$1
   probe_datamesh "${ctr}"
-  docker exec -it "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' \
+  docker exec -i "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' \
     --cacert "${CTR_CERT_ROOT}/ca.crt" --cert "${CTR_CERT_ROOT}/ca.crt" --key "${CTR_CERT_ROOT}/ca.key"
   echo
-  docker exec -it "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-dp-table","grant_domain":"bob"}' \
+  docker exec -i "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-dp-table","grant_domain":"bob"}' \
     --cacert "${CTR_CERT_ROOT}/ca.crt" --cert "${CTR_CERT_ROOT}/ca.crt" --key "${CTR_CERT_ROOT}/ca.key"
   echo
 }
@@ -344,7 +356,7 @@ function create_domaindata_alice_table() {
   local data_path="/home/kuscia/var/storage/data"
 
   # create domain data alice table
-  docker exec -it "${ctr}" scripts/deploy/create_domaindata_alice_table.sh "${domain_id}"
+  docker exec -i "${ctr}" scripts/deploy/create_domaindata_alice_table.sh "${domain_id}"
   log "create domaindata alice's table done default stored path: '${data_path}'"
 }
 
@@ -352,10 +364,10 @@ function create_domaindata_alice_table() {
 function create_domaindatagrant_bob2alice() {
   local ctr=$1
   probe_datamesh "${ctr}"
-  docker exec -it "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' \
+  docker exec -i "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' \
     --cacert "${CTR_CERT_ROOT}/ca.crt" --cert "${CTR_CERT_ROOT}/ca.crt" --key "${CTR_CERT_ROOT}/ca.key"
   echo
-  docker exec -it "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-dp-table","grant_domain":"alice"}' \
+  docker exec -i "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-dp-table","grant_domain":"alice"}' \
     --cacert "${CTR_CERT_ROOT}/ca.crt" --cert "${CTR_CERT_ROOT}/ca.crt" --key "${CTR_CERT_ROOT}/ca.key"
   echo
 }
@@ -367,8 +379,18 @@ function create_domaindata_bob_table() {
   local data_path="/home/kuscia/var/storage/data"
 
   # create domain data bob table
-  docker exec -it "${ctr}" scripts/deploy/create_domaindata_bob_table.sh "${domain_id}"
+  docker exec -i "${ctr}" scripts/deploy/create_domaindata_bob_table.sh "${domain_id}"
   log "create domaindata bob's table done default stored path: '${data_path}'"
+}
+
+# 将本地隐私组件测试脚本及模板拷贝到容器内（Kuscia 官方镜像未自带）
+function copy_privacy_scripts_to_container() {
+  local ctr=$1
+  local script_name=$2
+  docker exec -i "${ctr}" mkdir -p /home/kuscia/scripts/deploy /home/kuscia/scripts/templates
+  docker cp "${SCRIPT_DIR}/${script_name}" "${ctr}:/home/kuscia/scripts/deploy/${script_name}"
+  docker cp "${SCRIPT_DIR}/../templates/domaindata_alice_privacy_table.yaml" "${ctr}:/home/kuscia/scripts/templates/domaindata_alice_privacy_table.yaml"
+  docker cp "${SCRIPT_DIR}/../templates/domaindata_bob_privacy_table.yaml" "${ctr}:/home/kuscia/scripts/templates/domaindata_bob_privacy_table.yaml"
 }
 
 # 创建 alice 的隐私组件测试 DomainData（表数据）
@@ -376,8 +398,10 @@ function create_domaindata_alice_privacy_table() {
   local ctr=$1
   local domain_id=$2
   local data_path="/home/kuscia/var/storage/data"
+  local script_name="create_domaindata_alice_privacy_table.sh"
 
-  docker exec -it "${ctr}" scripts/deploy/create_domaindata_alice_privacy_table.sh "${domain_id}"
+  copy_privacy_scripts_to_container "${ctr}" "${script_name}"
+  docker exec -i "${ctr}" bash /home/kuscia/scripts/deploy/${script_name} "${domain_id}"
   log "create domaindata alice's privacy table done default stored path: '${data_path}'"
 }
 
@@ -386,8 +410,10 @@ function create_domaindata_bob_privacy_table() {
   local ctr=$1
   local domain_id=$2
   local data_path="/home/kuscia/var/storage/data"
+  local script_name="create_domaindata_bob_privacy_table.sh"
 
-  docker exec -it "${ctr}" scripts/deploy/create_domaindata_bob_privacy_table.sh "${domain_id}"
+  copy_privacy_scripts_to_container "${ctr}" "${script_name}"
+  docker exec -i "${ctr}" bash /home/kuscia/scripts/deploy/${script_name} "${domain_id}"
   log "create domaindata bob's privacy table done default stored path: '${data_path}'"
 }
 
@@ -427,15 +453,15 @@ function start_lite() {
     log "Starting container '$domain_ctr' ..."
     local conf_dir=${ROOT}/${domain_ctr}
     env_flag=$(generate_env_flag)
-    local mount_volume_param="-v /tmp:/tmp"
+    local mount_volume_param=(-v /tmp:/tmp)
     if [ "$volume_path" != "" ]; then
-      mount_volume_param="-v /tmp:/tmp  -v ${data_path}:/home/kuscia/var/storage/data"
+      mount_volume_param+=(-v "${data_path}:/home/kuscia/var/storage/data")
     fi
 
     # 初始化 lite 配置文件：通过 add_domain_lite.sh 在 master 上注册 lite 域名并获取 token
     pre_check "${data_path}"
-    csr_token=$(docker exec -it "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" "${master_domain}" | tr -d '\r\n')
-    docker run -it --rm "${IMAGE}" kuscia init --mode Lite --domain "${domain_id}" --master-endpoint "${master_endpoint}" --lite-deploy-token "${csr_token}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
+    csr_token=$(docker exec -i "${master_ctr}" scripts/deploy/add_domain_lite.sh "${domain_id}" "${master_domain}" | tr -d '\r\n')
+    docker run -i --rm "${IMAGE}" kuscia init --mode lite --domain "${domain_id}" --master-endpoint "${master_endpoint}" --lite-deploy-token "${csr_token}" -p "${api_protocol}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
     wrap_kuscia_config_file "${kuscia_config_file}"
 
     createVolume "${domain_ctr}-containerd"
@@ -446,21 +472,21 @@ function start_lite() {
     #   80   为集群内部服务端口；
     #   8082 为 KusciaAPI HTTP 端口；
     #   8083 为 KusciaAPI gRPC 端口。
-    docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${LITE_MEMORY_LIMIT}" "${env_flag}" \
+    docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${LITE_MEMORY_LIMIT}" ${env_flag} \
       -v "${domain_ctr}-containerd:${CTR_ROOT}/containerd" \
       -e NAMESPACE="${domain_id}" \
-      "${mount_volume_param}" \
+      "${mount_volume_param[@]}" \
       -p "${externalPort}":1080 \
       -p "${internalPort}":80 \
       -p "${httpPort}":8082 \
       -p "${grpcPort}":8083 \
       -v "${kuscia_config_file}":/home/kuscia/etc/conf/kuscia.yaml \
       "${IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
-    probe_gateway_crd "${master_ctr}" "${domain_id}" "${domain_ctr}" 60
+    probe_k3s "${master_ctr}"
     log "Lite domain '${domain_id}' started successfully docker container name:'${domain_ctr}'"
-    docker run -it --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}.csv" >"${data_path}/${domain_id}.csv"
+    docker run -i --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}.csv" >"${data_path}/${domain_id}.csv"
     # copy privacy component test data from image
-    docker run -it --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}_privacy.csv" >"${data_path}/${domain_id}_privacy.csv" 2>/dev/null || true
+    docker run -i --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}_privacy.csv" >"${data_path}/${domain_id}_privacy.csv" 2>/dev/null || true
   fi
 }
 
@@ -482,10 +508,10 @@ function start_master() {
     # 初始化 master 配置文件
     mkdir -p "${conf_dir}"
     kuscia_config_file="${conf_dir}/kuscia.yaml"
-    docker run -it --rm "${IMAGE}" kuscia init --mode Master --domain "${master_domain}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
+    docker run -i --rm "${IMAGE}" kuscia init --mode master --domain "${master_domain}" -p "${api_protocol}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
 
     # 启动 kuscia master 容器
-    docker run -dit --name="${master_ctr}" --hostname="${master_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${MASTER_MEMORY_LIMIT}" "${env_flag}" \
+    docker run -dit --name="${master_ctr}" --hostname="${master_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${MASTER_MEMORY_LIMIT}" ${env_flag} \
       -e NAMESPACE="${master_domain}" \
       -p "${port}":1080 \
       -p "${httpPort}":8082 \
@@ -510,7 +536,7 @@ function create_cluster_domain_route() {
   local dest_ctr=${CTR_PREFIX}-lite-${dest_domain}
   log "Starting create cluster domain route from '${src_domain}' to '${dest_domain}'"
 
-  docker exec -it "${master_ctr}" scripts/deploy/create_cluster_domain_route.sh "${src_domain}" "${dest_domain}" "http://${dest_ctr}:1080"
+  docker exec -i "${master_ctr}" scripts/deploy/create_cluster_domain_route.sh "${src_domain}" "${dest_domain}" "http://${dest_ctr}:1080"
   log "Cluster domain route from '${src_domain}' to '${dest_domain}' created successfully dest_endpoint: '${dest_ctr}':1080"
 }
 
@@ -537,7 +563,7 @@ function check_sf_image() {
     sf_image=$SECRETFLOW_IMAGE
   fi
 
-  if docker exec -it "${domain_ctr}" crictl inspecti "${sf_image}" >/dev/null 2>&1; then
+  if docker exec -i "${domain_ctr}" crictl inspecti "${sf_image}" >/dev/null 2>&1; then
     log "Image '${sf_image}' already exists in domain '${domain_id}'"
     return
   fi
@@ -566,7 +592,7 @@ function check_sf_image() {
   if [ ! -e "${image_tar}" ]; then
     docker save "${sf_image}" -o "${image_tar}"
   fi
-  docker exec -it "${domain_ctr}" ctr -a="${CTR_ROOT}/containerd/run/containerd.sock" -n=k8s.io images import "${image_tar}"
+  docker exec -i "${domain_ctr}" ctr -a="${CTR_ROOT}/containerd/run/containerd.sock" -n=k8s.io images import "${image_tar}"
   log "Successfully imported image '${sf_image}' to container '${domain_ctr}' ..."
 }
 
@@ -587,8 +613,8 @@ function run_centralized() {
 
   start_master "${master_ctr}" "${master_domain}" 18080 18082 18083
 
-  start_lite "${master_ctr}" "${master_domain}" "${alice_domain}" "https://${master_ctr}:1080" 28080 28081 28082 28083 "${ROOT}/${alice_ctr}"
-  start_lite "${master_ctr}" "${master_domain}" "${bob_domain}" "https://${master_ctr}:1080" 38080 38081 38082 38083 "${ROOT}/${bob_ctr}"
+  start_lite "${master_ctr}" "${master_domain}" "${alice_domain}" "$(get_master_endpoint "${master_ctr}")" 28080 28081 28082 28083 "${ROOT}/${alice_ctr}"
+  start_lite "${master_ctr}" "${master_domain}" "${bob_domain}" "$(get_master_endpoint "${master_ctr}")" 38080 38081 38082 38083 "${ROOT}/${bob_ctr}"
 
   create_cluster_domain_route "${master_ctr}" "${alice_domain}" "${bob_domain}"
   create_cluster_domain_route "${master_ctr}" "${bob_domain}" "${alice_domain}"
@@ -630,8 +656,8 @@ function run_hybrid_centerX2() {
   start_master "${alice_master_ctr}" "${alice_master_domain}" 8080 8082 8083
   start_master "${bob_master_ctr}" "${bob_master_domain}" 18080 18082 18083
 
-  start_lite "${alice_master_ctr}" "${alice_master_domain}" "${alice_domain}" "https://${alice_master_ctr}:1080" 28080 28081 28082 28083 "${ROOT}/${alice_ctr}"
-  start_lite "${bob_master_ctr}" "${bob_master_domain}" "${bob_domain}" "https://${bob_master_ctr}:1080" 38080 38081 38082 38083 "${ROOT}/${bob_ctr}"
+  start_lite "${alice_master_ctr}" "${alice_master_domain}" "${alice_domain}" "$(get_master_endpoint "${alice_master_ctr}")" 28080 28081 28082 28083 "${ROOT}/${alice_ctr}"
+  start_lite "${bob_master_ctr}" "${bob_master_domain}" "${bob_domain}" "$(get_master_endpoint "${bob_master_ctr}")" 38080 38081 38082 38083 "${ROOT}/${bob_ctr}"
 
   # 建立两个 master 之间的 P2P 互联（互相信任、互加域、创建路由）
   build_interconn "${bob_master_ctr}" "${alice_master_ctr}" "${alice_master_domain}" "${bob_master_domain}" "${p2p_protocol}"
@@ -642,39 +668,39 @@ function run_hybrid_centerX2() {
   copy_between_containers "${bob_ctr}:${CTR_CERT_ROOT}/domain.crt" "${alice_master_ctr}:${CTR_CERT_ROOT}/${bob_domain}.domain.crt"
 
   # 在对方 Master 上将对方 Lite 添加为 p2p 域
-  docker exec -it "${alice_master_ctr}" scripts/deploy/add_domain.sh "${bob_domain}" p2p "${p2p_protocol}" "${bob_master_domain}"
-  docker exec -it "${bob_master_ctr}" scripts/deploy/add_domain.sh "${alice_domain}" p2p "${p2p_protocol}" "${alice_master_domain}"
+  docker exec -i "${alice_master_ctr}" scripts/deploy/add_domain.sh "${bob_domain}" p2p "${p2p_protocol}" "${bob_master_domain}"
+  docker exec -i "${bob_master_ctr}" scripts/deploy/add_domain.sh "${alice_domain}" p2p "${p2p_protocol}" "${alice_master_domain}"
 
   if [[ $transit == false ]]; then
     # alice-bob@alice-master
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
     # bob-alice@bob-master
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
     # alice-bob@bob-master
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
     # bob-alice@alice-master
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
   else
     # alice to bob =
     # bob-master to bob +
     # alice-master to bob transit by bob-master +
     # alice to bob transit by alice-master
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_master_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
+    docker exec -i "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_master_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
     # cdr declaration for handshake
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
+    docker exec -i "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
+    docker exec -i "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
     # bob to alice =
     # alice-master to alice +
     # bob-master to alice transit by alice-master +
     # bob to alice transit by bob-master
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_master_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_master_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
+    docker exec -i "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
     # cdr declaration for handshake
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}" -x "${bob_master_domain}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_master_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
   fi
 
   check_sf_image "${alice_domain}" "${alice_ctr}" "${alice_ctr}"
@@ -711,7 +737,7 @@ function run_hybrid_centerXp2p() {
   local p2p_protocol="kuscia"
 
   start_master "$alice_master_ctr" "$alice_master_domain" 8080 8082 8083
-  start_lite "${alice_master_ctr}" "${alice_master_domain}" "${alice_domain}" "https://${alice_master_ctr}:1080" 18080 18081 18082 18083 "${ROOT}/${alice_ctr}"
+  start_lite "${alice_master_ctr}" "${alice_master_domain}" "${alice_domain}" "$(get_master_endpoint "${alice_master_ctr}")" 18080 18081 18082 18083 "${ROOT}/${alice_ctr}"
   start_autonomy "${bob_domain}" 12081 12082 12083 "${p2p_protocol}"
 
   # 建立 alice-master 与 bob-autonomy 之间的 P2P 互联
@@ -719,26 +745,26 @@ function run_hybrid_centerXp2p() {
   build_interconn "${alice_master_ctr}" "${bob_master_ctr}" "${bob_master_domain}" "${alice_master_domain}" "${p2p_protocol}"
 
   copy_between_containers "${alice_ctr}:${CTR_CERT_ROOT}/domain.crt" "${bob_master_ctr}:${CTR_CERT_ROOT}/${alice_domain}.domain.crt"
-  docker exec -it "${bob_master_ctr}" scripts/deploy/add_domain.sh "${alice_domain}" p2p "${p2p_protocol}" "${alice_master_domain}"
+  docker exec -i "${bob_master_ctr}" scripts/deploy/add_domain.sh "${alice_domain}" p2p "${p2p_protocol}" "${alice_master_domain}"
 
   if [[ $transit == false ]]; then
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "https://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "https://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "http://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
   else
     # alice to bob =
     # alice-master to bob + (generated already by build interconn)
     # alice to bob transit by alice-master
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "https://${bob_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "https://${bob_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
     # bob to alice =
     # alice-master to alice +
     # bob to alice transit by alice-master
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_master_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${alice_master_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}" -x "${alice_master_domain}"
     # cdr declaration for handshake
-    docker exec -it "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "https://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
-    docker exec -it "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${bob_master_ctr}" scripts/deploy/join_to_host.sh "${alice_domain}" "${bob_domain}" "https://${bob_ctr}:1080" -i false -p "${p2p_protocol}"
+    docker exec -i "${alice_master_ctr}" scripts/deploy/join_to_host.sh "${bob_domain}" "${alice_domain}" "http://${alice_ctr}:1080" -i false -p "${p2p_protocol}"
   fi
 
   check_sf_image "${alice_domain}" "${alice_ctr}" "${alice_ctr}"
@@ -777,13 +803,13 @@ function start_autonomy() {
 
     # 初始化 autonomy 配置文件
     pre_check "${data_path}"
-    docker run -it --rm "${IMAGE}" kuscia init --mode autonomy --domain "${domain_id}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
+    docker run -i --rm "${IMAGE}" kuscia init --mode autonomy --domain "${domain_id}" -p "${api_protocol}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
     wrap_kuscia_config_file "${kuscia_config_file}" "${p2p_protocol}" "${domain_id}"
 
     createVolume "${domain_ctr}-containerd"
 
     # 启动 autonomy 容器，映射内部 80 与 KusciaAPI 8082/8083 端口
-    docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${AUTONOMY_MEMORY_LIMIT}" "${env_flag}" \
+    docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${AUTONOMY_MEMORY_LIMIT}" ${env_flag} \
       --env NAMESPACE="${domain_id}" \
       -v "${domain_ctr}-containerd":${CTR_ROOT}/containerd \
       -p "${internalPort}":80 \
@@ -795,9 +821,9 @@ function start_autonomy() {
       "${IMAGE}" bin/kuscia start -c etc/conf/kuscia.yaml
     probe_gateway_crd "${domain_ctr}" "${domain_id}" "${domain_ctr}" 60
     log "Autonomy domain '${domain_id}' started successfully docker container name: '${domain_ctr}'"
-    docker run -it --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}".csv >"${data_path}/${domain_id}.csv"
+    docker run -i --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}".csv >"${data_path}/${domain_id}.csv"
     # copy privacy component test data from image
-    docker run -it --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}_privacy.csv" >"${data_path}/${domain_id}_privacy.csv" 2>/dev/null || true
+    docker run -i --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}_privacy.csv" >"${data_path}/${domain_id}_privacy.csv" 2>/dev/null || true
   fi
 }
 
@@ -819,9 +845,9 @@ function build_interconn() {
 
   log "Starting build internet connect from '${member_domain}' to '${host_domain}'"
   copy_between_containers "${member_ctr}:${CTR_CERT_ROOT}/domain.crt" "${host_ctr}:${CTR_CERT_ROOT}/${member_domain}.domain.crt"
-  docker exec -it "${host_ctr}" scripts/deploy/add_domain.sh "${member_domain}" p2p "${interconn_protocol}" "${master_domain}"
+  docker exec -i "${host_ctr}" scripts/deploy/add_domain.sh "${member_domain}" p2p "${interconn_protocol}" "${master_domain}"
 
-  docker exec -it "${member_ctr}" scripts/deploy/join_to_host.sh "${member_domain}" "${host_domain}" "https://${host_ctr}:1080" -p "${interconn_protocol}"
+  docker exec -i "${member_ctr}" scripts/deploy/join_to_host.sh "${member_domain}" "${host_domain}" "https://${host_ctr}:1080" -p "${interconn_protocol}"
   log "Build internet connect from '${member_domain}' to '${host_domain}' successfully protocol: '${interconn_protocol}' dest host: '${host_ctr}':1080"
 }
 
@@ -926,7 +952,8 @@ NETWORK_MODE:
 
 Common Options:
     -h                  show this help text
-    -p                  interconnection protocol, must be 'kuscia' or 'bfia', default is 'kuscia'. In current quickstart script, center mode just support 'bfia' protocol."
+    -p                  interconnection protocol, must be 'kuscia' or 'bfia', default is 'kuscia'. In current quickstart script, center mode just support 'bfia' protocol.
+    -P                  KusciaAPI / gateway protocol, must be 'NOTLS', 'TLS' or 'MTLS', default is 'TLS'."
 }
 
 mode=
@@ -938,8 +965,9 @@ center | centralized | p2p | cxc | cxp)
 esac
 
 interconn_protocol=
+api_protocol=${KUSCIA_API_PROTOCOL:-TLS}
 transit=false
-while getopts 'p:th' option; do
+while getopts 'p:P:th' option; do
   case "$option" in
   p)
     interconn_protocol=$OPTARG
@@ -947,6 +975,9 @@ while getopts 'p:th' option; do
     printf "illegal value for -%s\n" "$option" >&2
     usage
     exit
+    ;;
+  P)
+    api_protocol=$OPTARG
     ;;
   t)
     transit=true

@@ -16,6 +16,7 @@
 package common
 
 import (
+	"os"
 	"path"
 	"time"
 
@@ -285,6 +286,9 @@ const (
 var DefaultKusciaHomePath = defaultKusciaHomePathFn
 
 func defaultKusciaHomePathFn() string {
+	if v := os.Getenv("KUSCIA_HOME"); v != "" {
+		return v
+	}
 	return defaultKusciaHomePath
 }
 
