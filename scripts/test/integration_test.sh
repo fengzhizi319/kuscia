@@ -15,4 +15,12 @@
 # limitations under the License.
 #
 
-# Moved to tests/scripts/integration_test.sh
+# Compatibility shim. The integration suites live in tests/suite and are
+# driven by tests/integration_test.sh; this wrapper keeps the historical
+# entry point working.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+
+exec bash "${SCRIPT_DIR}/run_integration_tests.sh" "$@"

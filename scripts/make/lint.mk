@@ -90,6 +90,7 @@ lint-shell-check:
 	shellcheck --version
 	shellcheck -e ${SHELLCHECK_SKIP} ./hack/**/*.sh
 	shellcheck -e ${SHELLCHECK_SKIP} ./scripts/**/*.sh
+	shellcheck -e ${SHELLCHECK_SKIP} ./scripts/test/unit/*.sh
 
 
 ##@ Lint

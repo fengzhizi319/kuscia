@@ -29,6 +29,7 @@ _run:
 		-f scripts/make/image.mk \
 		-f scripts/make/golang.mk \
 		-f scripts/make/lint.mk \
+		-f scripts/make/test.mk \
 		-f scripts/make/fate.mk \
 		$(MAKECMDGOALS)
 

@@ -53,3 +53,5 @@ jobs:
           make shell-check
           make yaml-check
           make codespell-check
+      - name: Run shell script unit tests
+        run: make test-scripts
