@@ -1,0 +1,68 @@
+# SecretFlow-Serving AppImage（模型发布 / 在线预测）。
+# 由 scripts/deploy/create_sf_app_image.sh <IMAGE_NAME> <IMAGE_TAG> serving 注册，
+# AppImage 名称取环境变量 SF_NAME（Privahub graph.yaml serving_image 默认 sf-serving-image）。
+# 与 secretpad scripts/templates/sf-serving.yaml 一致，适用于 serving-anolis8:0.8.x。
+apiVersion: kuscia.secretflow/v1alpha1
+kind: AppImage
+metadata:
+  name: {{.SF_NAME}}
+spec:
+  configTemplates:
+    serving-config.conf: |
+      {
+        "serving_id": "{{.SERVING_ID}}",
+        "input_config": "{{.INPUT_CONFIG}}",
+        "cluster_def": "{{.CLUSTER_DEFINE}}",
+        "allocated_ports": "{{.ALLOCATED_PORTS}}",
+        "oss_meta": "{{.MODEL_OSS_META}}"
+      }
+  deployTemplates:
+    - name: secretflow
+      replicas: 1
+      spec:
+        containers:
+          - command:
+              - sh
+              - -c
+              - ./secretflow_serving --flagfile=conf/gflags.conf --config_mode=kuscia --serving_config_file=/etc/kuscia/serving-config.conf
+            configVolumeMounts:
+              - mountPath: /etc/kuscia/serving-config.conf
+                subPath: serving-config.conf
+            name: secretflow
+            ports:
+              - name: service
+                port: 53508
+                protocol: HTTP
+                scope: Domain
+              - name: communication
+                port: 53509
+                protocol: HTTP
+                scope: Cluster
+              - name: internal
+                port: 53510
+                protocol: HTTP
+                scope: Domain
+              - name: brpc-builtin
+                port: 53511
+                protocol: HTTP
+                scope: Domain
+            readinessProbe:
+              httpGet:
+                path: /health
+                port: brpc-builtin
+            livenessProbe:
+              httpGet:
+                path: /health
+                port: brpc-builtin
+            startupProbe:
+              failureThreshold: 30
+              httpGet:
+                path: /health
+                port: brpc-builtin
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 1
+            workingDir: /root/sf_serving
+  image:
+    name: {{.SF_IMAGE_NAME}}
+    tag: {{.SF_IMAGE_TAG}}

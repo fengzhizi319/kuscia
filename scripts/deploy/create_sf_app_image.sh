@@ -157,9 +157,13 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 #
 # 注意：sed 使用 "!" 作为分隔符，而不是默认的 "/"，
 # 这样可以避免镜像名称中包含的 "/" 与 sed 分隔符冲突。
+#   {{.SF_NAME}}       -> AppImage 名称（环境变量 SF_NAME，默认 secretflow-image；
+#                         模板自 2025-06 起使用该占位符，未替换会导致 kubectl 解析 YAML 失败）
+SF_NAME=${SF_NAME:-secretflow-image}
 APP_IMAGE_TEMPLATE=$(sed "s!{{.SF_IMAGE_NAME}}!'${SF_IMAGE_NAME}'!g;
   s!{{.SF_IMAGE_TAG}}!'${SF_IMAGE_TAG}'!g;
-  s!{{.SF_IMAGE_ID}}!'${SF_IMAGE_ID}'!g" \
+  s!{{.SF_IMAGE_ID}}!'${SF_IMAGE_ID}'!g;
+  s!{{.SF_NAME}}!${SF_NAME}!g" \
   < "${ROOT}/scripts/templates/app_image.${APP_TYPE}.yaml")
 
 # ==================== 应用配置到 Kubernetes 集群 ====================

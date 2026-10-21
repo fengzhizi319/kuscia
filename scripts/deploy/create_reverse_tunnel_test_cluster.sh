@@ -46,6 +46,9 @@
 #   - KUSCIA_IMAGE环境变量已设置（Kuscia镜像名称）
 #   - IMAGE环境变量已设置（可选，默认使用KUSCIA_IMAGE）
 
+KUSCIA_IMAGE=${KUSCIA_IMAGE:?please export KUSCIA_IMAGE first}
+IMAGE=${IMAGE:-${KUSCIA_IMAGE}}
+
 # ==================== 辅助函数：获取Docker容器列表 ====================
 
 # 根据前缀名称查找正在运行的Docker容器ID

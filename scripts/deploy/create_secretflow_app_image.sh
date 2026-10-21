@@ -69,6 +69,10 @@ if [[ "${SF_IMAGE_NAME}" == *":"* ]]; then
   # ${SF_IMAGE_NAME##*:} 删除最后一个 : 及其前面的内容
   # 例如: "secretflow/secretflow-anolis8:1.0.0" -> "1.0.0"
   IMAGE_TAG=${SF_IMAGE_NAME##*:}
+else
+  echo "invalid image name: ${SF_IMAGE_NAME}, expected format repo:tag"
+  echo "usage: ${usage}"
+  exit 1
 fi
 
 # ==================== 识别应用类型 ====================
@@ -107,9 +111,12 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 # {{.SF_IMAGE_ID}}   -> 镜像ID（加单引号，当前可能为空或未定义）
 #
 # 注意：使用 ! 作为sed分隔符而不是 /，避免与镜像地址中的 / 冲突
+# {{.SF_NAME}} 为 AppImage 资源名，可通过环境变量 SF_NAME 覆盖。
+SF_NAME=${SF_NAME:-secretflow-image}
 APP_IMAGE_TEMPLATE=$(sed "s!{{.SF_IMAGE_NAME}}!'${IMAGE_REPO}'!g;
   s!{{.SF_IMAGE_TAG}}!'${IMAGE_TAG}'!g;
-  s!{{.SF_IMAGE_ID}}!'${SF_IMAGE_ID}'!g" \
+  s!{{.SF_IMAGE_ID}}!'${SF_IMAGE_ID}'!g;
+  s!{{.SF_NAME}}!${SF_NAME}!g" \
   < "${ROOT}/scripts/templates/app_image.${APP_TYPE}.yaml")
 
 # ==================== 应用配置到Kubernetes集群 ====================

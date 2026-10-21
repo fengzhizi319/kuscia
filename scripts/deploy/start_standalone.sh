@@ -66,7 +66,7 @@ if [ "$SECRETFLOW_IMAGE" != "" ]; then
 fi
 
 # 容器名称前缀，默认基于当前用户名，例如 charles-kuscia-master
-CTR_PREFIX=${USER}-kuscia
+CTR_PREFIX=${KUSCIA_CTR_PREFIX:-${USER}-kuscia}
 # Kuscia 容器内固定工作目录
 CTR_ROOT=/home/kuscia
 # Kuscia 容器内证书固定路径
@@ -250,15 +250,16 @@ function probe_gateway_crd() {
   exit 1
 }
 
-# 构造 Kuscia 容器启动时的环境变量注入参数。
-# 如果宿主机存在 env.list 文件，则整体注入；否则只注入 SecretFlow 镜像仓库地址。
+# 构造 Kuscia 容器启动时的环境变量注入参数，结果写入 ENV_FLAG_ARGS。
+# 如果宿主机存在 env.list 文件，则整体注入；否则不追加任何参数。
+# 使用数组而不是字符串，避免 --env-file 与路径被 shell 拆分或需要关闭引号检查。
+ENV_FLAG_ARGS=()
 function generate_env_flag() {
-  local env_flag
   local env_file=${ROOT}/env.list
+  ENV_FLAG_ARGS=()
   if [ -e "${env_file}" ]; then
-    env_flag="--env-file ${env_file}"
+    ENV_FLAG_ARGS=(--env-file "${env_file}")
   fi
-  echo "${env_flag}"
 }
 
 # 根据当前协议返回 master 网关地址（Lite/Autonomy 注册时使用）。
@@ -333,20 +334,46 @@ function copy_volume_file_to_container() {
 # 在指定容器中创建 SecretFlow 应用镜像，供后续任务调度使用
 function create_secretflow_app_image() {
   local ctr=$1
+  # 使用本仓库的注册脚本与模板（镜像内旧版本脚本不替换 {{.SF_NAME}} 占位符）
+  docker cp "${SCRIPT_DIR}/create_sf_app_image.sh" "${ctr}:${CTR_ROOT}/scripts/deploy/create_sf_app_image.sh"
+  docker cp "${SCRIPT_DIR}/../templates/app_image.secretflow.yaml" "${ctr}:${CTR_ROOT}/scripts/templates/app_image.secretflow.yaml"
   docker exec -i "${ctr}" scripts/deploy/create_sf_app_image.sh "${SF_IMAGE_NAME}" "${SF_IMAGE_TAG}"
   log "create secretflow app image done"
 }
 
-# 由 alice 向 bob 授权示例数据表与差分隐私示例表的 DomainDataGrant
+# datamesh_post CTR PATH JSON —— 在节点容器内调用 DataMesh HTTP 接口（8070，mTLS）
+function datamesh_post() {
+  local ctr=$1 path=$2 body=$3
+  docker exec -i "${ctr}" curl -sS "https://127.0.0.1:8070/api/v1/datamesh/${path}" -X POST \
+    -H 'content-type: application/json' -d "${body}" \
+    --cacert "${CTR_CERT_ROOT}/ca.crt" --cert "${CTR_CERT_ROOT}/ca.crt" --key "${CTR_CERT_ROOT}/ca.key"
+}
+
+# create_domaindatagrant CTR AUTHOR DOMAINDATA_ID GRANT_DOMAIN
+#   DomainData 不存在时跳过（例如 alice-dp-table / bob-dp-table 依赖 default-dp-data-source，
+#   默认部署不会创建），避免打印 "domaindata ... not exists" 错误。
+function create_domaindatagrant() {
+  local ctr=$1 author=$2 domaindata_id=$3 grant_domain=$4 resp
+  resp=$(datamesh_post "${ctr}" domaindata/query "{\"domaindata_id\":\"${domaindata_id}\"}" 2>/dev/null || true)
+  if [[ "${resp}" != *'"code":0'* ]]; then
+    log "skip domaindatagrant ${domaindata_id} -> ${grant_domain}: domaindata not found in ${author}"
+    return 0
+  fi
+  resp=$(datamesh_post "${ctr}" domaindatagrant/create \
+    "{\"author\":\"${author}\",\"domaindata_id\":\"${domaindata_id}\",\"grant_domain\":\"${grant_domain}\"}" 2>&1 || true)
+  if [[ "${resp}" == *'"code":0'* ]]; then
+    log "create domaindatagrant ${domaindata_id} -> ${grant_domain} done"
+  else
+    log "create domaindatagrant ${domaindata_id} -> ${grant_domain} failed: ${resp}"
+  fi
+}
+
+# 由 alice 向 bob 授权示例数据表与差分隐私示例表的 DomainDataGrant（不存在的表自动跳过）
 function create_domaindatagrant_alice2bob() {
   local ctr=$1
   probe_datamesh "${ctr}"
-  docker exec -i "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-table","grant_domain":"bob"}' \
-    --cacert "${CTR_CERT_ROOT}/ca.crt" --cert "${CTR_CERT_ROOT}/ca.crt" --key "${CTR_CERT_ROOT}/ca.key"
-  echo
-  docker exec -i "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"alice","domaindata_id":"alice-dp-table","grant_domain":"bob"}' \
-    --cacert "${CTR_CERT_ROOT}/ca.crt" --cert "${CTR_CERT_ROOT}/ca.crt" --key "${CTR_CERT_ROOT}/ca.key"
-  echo
+  create_domaindatagrant "${ctr}" alice alice-table bob
+  create_domaindatagrant "${ctr}" alice alice-dp-table bob
 }
 
 # 创建 alice 的示例 DomainData（表数据），默认存储在 /home/kuscia/var/storage/data
@@ -360,16 +387,12 @@ function create_domaindata_alice_table() {
   log "create domaindata alice's table done default stored path: '${data_path}'"
 }
 
-# 由 bob 向 alice 授权示例数据表与差分隐私示例表的 DomainDataGrant
+# 由 bob 向 alice 授权示例数据表与差分隐私示例表的 DomainDataGrant（不存在的表自动跳过）
 function create_domaindatagrant_bob2alice() {
   local ctr=$1
   probe_datamesh "${ctr}"
-  docker exec -i "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-table","grant_domain":"alice"}' \
-    --cacert "${CTR_CERT_ROOT}/ca.crt" --cert "${CTR_CERT_ROOT}/ca.crt" --key "${CTR_CERT_ROOT}/ca.key"
-  echo
-  docker exec -i "${ctr}" curl https://127.0.0.1:8070/api/v1/datamesh/domaindatagrant/create -X POST -H 'content-type: application/json' -d '{"author":"bob","domaindata_id":"bob-dp-table","grant_domain":"alice"}' \
-    --cacert "${CTR_CERT_ROOT}/ca.crt" --cert "${CTR_CERT_ROOT}/ca.crt" --key "${CTR_CERT_ROOT}/ca.key"
-  echo
+  create_domaindatagrant "${ctr}" bob bob-table alice
+  create_domaindatagrant "${ctr}" bob bob-dp-table alice
 }
 
 # 创建 bob 的示例 DomainData（表数据）
@@ -381,6 +404,20 @@ function create_domaindata_bob_table() {
   # create domain data bob table
   docker exec -i "${ctr}" scripts/deploy/create_domaindata_bob_table.sh "${domain_id}"
   log "create domaindata bob's table done default stored path: '${data_path}'"
+}
+
+# 拷贝隐私组件测试数据 <domain>_privacy.csv 到节点数据目录：优先取镜像内置文件，
+# 镜像未内置（官方镜像 / 旧版本地镜像）时回退到本仓库 tests/data/ 下的同名文件，
+# 避免生成 0 字节文件导致 <domain>-privacy-table 无法使用。
+function copy_privacy_test_data() {
+  local domain_id=$1
+  local data_path=$2
+  local dst="${data_path}/${domain_id}_privacy.csv"
+  local repo_file="${SCRIPT_DIR}/../../tests/data/${domain_id}_privacy.csv"
+  docker run -i --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}_privacy.csv" >"${dst}" 2>/dev/null || true
+  if [[ ! -s "${dst}" && -f "${repo_file}" ]]; then
+    cp "${repo_file}" "${dst}"
+  fi
 }
 
 # 将本地隐私组件测试脚本及模板拷贝到容器内（Kuscia 官方镜像未自带）
@@ -452,7 +489,7 @@ function start_lite() {
   if need_start_docker_container "${domain_ctr}"; then
     log "Starting container '$domain_ctr' ..."
     local conf_dir=${ROOT}/${domain_ctr}
-    env_flag=$(generate_env_flag)
+    generate_env_flag
     local mount_volume_param=(-v /tmp:/tmp)
     if [ "$volume_path" != "" ]; then
       mount_volume_param+=(-v "${data_path}:/home/kuscia/var/storage/data")
@@ -472,7 +509,7 @@ function start_lite() {
     #   80   为集群内部服务端口；
     #   8082 为 KusciaAPI HTTP 端口；
     #   8083 为 KusciaAPI gRPC 端口。
-    docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${LITE_MEMORY_LIMIT}" ${env_flag} \
+    docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${LITE_MEMORY_LIMIT}" "${ENV_FLAG_ARGS[@]}" \
       -v "${domain_ctr}-containerd:${CTR_ROOT}/containerd" \
       -e NAMESPACE="${domain_id}" \
       "${mount_volume_param[@]}" \
@@ -486,7 +523,7 @@ function start_lite() {
     log "Lite domain '${domain_id}' started successfully docker container name:'${domain_ctr}'"
     docker run -i --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}.csv" >"${data_path}/${domain_id}.csv"
     # copy privacy component test data from image
-    docker run -i --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}_privacy.csv" >"${data_path}/${domain_id}_privacy.csv" 2>/dev/null || true
+    copy_privacy_test_data "${domain_id}" "${data_path}"
   fi
 }
 
@@ -503,7 +540,7 @@ function start_master() {
     local certs_volume="${master_ctr}-certs"
     local conf_dir="${ROOT}/${master_ctr}"
     local kuscia_config_file="${conf_dir}/kuscia.yaml"
-    env_flag=$(generate_env_flag)
+    generate_env_flag
 
     # 初始化 master 配置文件
     mkdir -p "${conf_dir}"
@@ -511,7 +548,7 @@ function start_master() {
     docker run -i --rm "${IMAGE}" kuscia init --mode master --domain "${master_domain}" -p "${api_protocol}" >"${kuscia_config_file}" 2>&1 || cat "${kuscia_config_file}"
 
     # 启动 kuscia master 容器
-    docker run -dit --name="${master_ctr}" --hostname="${master_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${MASTER_MEMORY_LIMIT}" ${env_flag} \
+    docker run -dit --name="${master_ctr}" --hostname="${master_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${MASTER_MEMORY_LIMIT}" "${ENV_FLAG_ARGS[@]}" \
       -e NAMESPACE="${master_domain}" \
       -p "${port}":1080 \
       -p "${httpPort}":8082 \
@@ -611,10 +648,21 @@ function run_centralized() {
   local alice_ctr=${CTR_PREFIX}-lite-${alice_domain}
   local bob_ctr=${CTR_PREFIX}-lite-${bob_domain}
 
-  start_master "${master_ctr}" "${master_domain}" 18080 18082 18083
+  # 宿主机端口映射（可通过环境变量覆盖，默认值与历史版本一致）：
+  #   master: KUSCIA_GATEWAY_HOST_PORT(18080)->1080 KUSCIA_API_HTTP_HOST_PORT(18082)->8082
+  #           KUSCIA_API_GRPC_HOST_PORT(18083)->8083
+  #   alice/bob lite: KUSCIA_ALICE_HOST_PORT_BASE(28080) / KUSCIA_BOB_HOST_PORT_BASE(38080)，
+  #           依次映射 BASE+0->1080 BASE+1->80 BASE+2->8082 BASE+3->8083
+  local gw_port=${KUSCIA_GATEWAY_HOST_PORT:-18080}
+  local api_http_port=${KUSCIA_API_HTTP_HOST_PORT:-18082}
+  local api_grpc_port=${KUSCIA_API_GRPC_HOST_PORT:-18083}
+  local alice_base=${KUSCIA_ALICE_HOST_PORT_BASE:-28080}
+  local bob_base=${KUSCIA_BOB_HOST_PORT_BASE:-38080}
 
-  start_lite "${master_ctr}" "${master_domain}" "${alice_domain}" "$(get_master_endpoint "${master_ctr}")" 28080 28081 28082 28083 "${ROOT}/${alice_ctr}"
-  start_lite "${master_ctr}" "${master_domain}" "${bob_domain}" "$(get_master_endpoint "${master_ctr}")" 38080 38081 38082 38083 "${ROOT}/${bob_ctr}"
+  start_master "${master_ctr}" "${master_domain}" "${gw_port}" "${api_http_port}" "${api_grpc_port}"
+
+  start_lite "${master_ctr}" "${master_domain}" "${alice_domain}" "$(get_master_endpoint "${master_ctr}")" "${alice_base}" $((alice_base + 1)) $((alice_base + 2)) $((alice_base + 3)) "${ROOT}/${alice_ctr}"
+  start_lite "${master_ctr}" "${master_domain}" "${bob_domain}" "$(get_master_endpoint "${master_ctr}")" "${bob_base}" $((bob_base + 1)) $((bob_base + 2)) $((bob_base + 3)) "${ROOT}/${bob_ctr}"
 
   create_cluster_domain_route "${master_ctr}" "${alice_domain}" "${bob_domain}"
   create_cluster_domain_route "${master_ctr}" "${bob_domain}" "${alice_domain}"
@@ -799,7 +847,7 @@ function start_autonomy() {
   local data_path=${conf_dir}/data
   if need_start_docker_container "${domain_ctr}"; then
     log "Starting container '${domain_ctr}' ..."
-    env_flag=$(generate_env_flag "${domain_id}")
+    generate_env_flag "${domain_id}"
 
     # 初始化 autonomy 配置文件
     pre_check "${data_path}"
@@ -809,7 +857,7 @@ function start_autonomy() {
     createVolume "${domain_ctr}-containerd"
 
     # 启动 autonomy 容器，映射内部 80 与 KusciaAPI 8082/8083 端口
-    docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${AUTONOMY_MEMORY_LIMIT}" ${env_flag} \
+    docker run -dit --privileged --name="${domain_ctr}" --hostname="${domain_ctr}" --restart=always --network="${NETWORK_NAME}" -m "${AUTONOMY_MEMORY_LIMIT}" "${ENV_FLAG_ARGS[@]}" \
       --env NAMESPACE="${domain_id}" \
       -v "${domain_ctr}-containerd":${CTR_ROOT}/containerd \
       -p "${internalPort}":80 \
@@ -823,7 +871,7 @@ function start_autonomy() {
     log "Autonomy domain '${domain_id}' started successfully docker container name: '${domain_ctr}'"
     docker run -i --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}".csv >"${data_path}/${domain_id}.csv"
     # copy privacy component test data from image
-    docker run -i --rm "${IMAGE}" cat /home/kuscia/var/storage/data/"${domain_id}_privacy.csv" >"${data_path}/${domain_id}_privacy.csv" 2>/dev/null || true
+    copy_privacy_test_data "${domain_id}" "${data_path}"
   fi
 }
 
