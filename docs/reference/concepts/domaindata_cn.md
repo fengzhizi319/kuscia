@@ -155,8 +155,7 @@ spec:
     Error from server (NotFound): domaindatas.kuscia.secretflow "alice-table" not found
     ```
 
-{#data-mesh}
-
+(data-mesh)=
 ## 在 Domain 侧管理 DomainData
 
 如 上文所述，DomainData 属于节点内资源，每一个 DomainData 都有自己所属的 Domain，且仅能被自己所属的 Domain 访问。
@@ -176,8 +175,7 @@ Kuscia API 提供 HTTP 和 GRPC 两种访问方法，端口分别为 8082 和 80
     }' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
     ```
 
-{#refer}
-
+(refer)=
 ## 参考
 
 下面以 `alice-table` 模版为例，介绍 DomainData 所包含的完整字段。

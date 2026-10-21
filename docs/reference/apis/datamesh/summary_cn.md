@@ -21,8 +21,7 @@ Data Mesh API 提供 HTTP 和 GRPC 两种访问方法。
 
 响应总是携带一个 status 字段，类型为 [Status](#status) ， 如 [CreateDomainDataResponse](domaindata_cn.md#响应createdomaindataresponse) ， 该字段描述了响应的状态信息。
 
-{#request-header}
-
+(request-header)=
 #### RequestHeader
 
 RequestHeader 可以携带自定义的信息。
@@ -31,8 +30,7 @@ RequestHeader 可以携带自定义的信息。
 |----------------|---------------------|----|---------|
 | custom_headers | map<string, string> | 可选 | 自定义的键值对 |
 
-{#status}
-
+(datamesh-status)=
 #### Status
 
 Status 携带请求响应的状态信息。
@@ -45,8 +43,7 @@ Status 携带请求响应的状态信息。
 | message | string                                                                        | 必填 | 错误信息   |
 | details | [google.protobuf.Any](https://protobuf.dev/programming-guides/proto3/#json)[] | 可选 | 错误详细描述 |
 
-{#data-mesh-api}
-
+(data-mesh-api)=
 ## 如何使用 Data Mesh API
 
 Data Mesh API 用于在 Domain 侧管理 DomainData，提供了 HTTP 和 GRPC 两种访问方法，在请求形式上和 Kuscia API 均相同。

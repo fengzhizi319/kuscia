@@ -1,6 +1,42 @@
-# Error Code 
+# Error Code
 
-在 Kuscia API 请求返回结果中，关于错误码的映射说明 
+在 Kuscia API 请求返回结果中，关于错误码的映射说明。
+
+## 错误响应结构
+
+KusciaAPI 的错误码位于响应的 `status.code` 字段，`status.message` 为可读描述：
+
+```json
+{
+  "status": {
+    "code": 11305,
+    "message": "domain not found",
+    "details": []
+  }
+}
+```
+
+- `code = 0` 表示成功；
+- 非 0 时先按本文错误码定位类别，再结合 `message`、服务日志和请求参数排查；
+- gRPC 调用时，错误码可能同时体现在 gRPC status 中，排查方式一致。
+
+## 错误码分类
+
+| 号段 | 类别 | 常见排查方向 |
+| --- | --- | --- |
+| 111xx | 通用错误、权限、Master/Lite 能力 | 请求参数、Token、节点角色与连接状态 |
+| 112xx | Job / Task 操作 | 任务状态、审批状态、KusciaJob 是否存在 |
+| 113xx | Domain 节点操作 | 节点 ID、是否已注册、Master 连接 |
+| 114xx | DomainRoute 路由 | 路由是否已创建、是否重复、对端可达性 |
+| 115xx | DomainData 数据对象 | 数据 ID、数据源、授权状态 |
+| 116xx | Serving | Serving ID、AppImage、副本状态 |
+| 117xx | DomainDataGrant 授权 | 授权 ID、数据对象与节点是否存在 |
+| 118xx | DomainDataSource 数据源 | 数据源 ID、加密信息、连接配置 |
+| 119xx | 配置管理 | 配置 ID、Namespace、内容格式 |
+| 131xx | AppImage | 镜像名称/版本、注册状态 |
+| 132xx | 日志与实例查询 | TaskID、Pod/容器、副本索引 |
+
+## 完整错误码
 
 | 错误码 | 描述 | 解决方案 |
 | ----- | ----------- | ----------- |
@@ -77,3 +113,28 @@
 | 13107 | 查询应用镜像列表失败 | 查询应用镜像列表失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因 |
 | 13200 | 查询日志失败 | 查询日志失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因 |
 | 13201 | 查询实例节点失败 | 查询实例节点失败：接口 API 请求异常，具体原因可通过报错信息与日志确认具体原因 |
+
+## 排查流程
+
+1. **看 `code`**：先按号段判断是参数、权限、节点、任务还是资源对象问题。
+2. **看 `message`**：通常会包含具体对象 ID 或失败原因。
+3. **看日志**：
+
+   ```bash
+   # Docker
+   docker exec -it ${USER}-kuscia-master tail -n 200 /home/kuscia/var/logs/kuscia.log
+
+   # K8s
+   kubectl logs -n kuscia-master deployment/kuscia-master --tail=200
+   ```
+
+4. **核对请求**：确认 Token、证书、`domain_id`、`task_id` 等字段与集群中的实际对象一致。
+5. **复现与验证**：使用相同参数重试，或先用查询类接口确认对象存在。
+
+## 相关文档
+
+- [KusciaAPI 概览](summary_cn.md)
+- [Health](health_cn.md)
+- [Log](log_cn.md)
+- [部署失败排查](../../troubleshoot/deployment/deploy_failed.md)
+- [任务失败排查](../../troubleshoot/runtask/run_job_failed.md)

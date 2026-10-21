@@ -5,8 +5,7 @@
 
 基于 KusciaDeployment，您可以方便地管理类似联合预测这样的常驻服务。当前支持自定义应用输入配置、应用副本数量、应用运行资源大小、应用镜像以及应用更新策略等功能。
 
-{#kuscia-deployment-state}
-
+(kuscia-deployment-state)=
 ## 状态说明
 
 下图为 KusciaDeployment(KD) 的状态流转图。
@@ -325,7 +324,7 @@ KusciaDeployment `spec` 的子字段详细介绍如下：
   - `parties[].template`：表示参与方应用的模版信息。若配置了该模版，则使用该模版中配置的信息替换从 `parties[].appImageRef` 获取的对应模版信息。
     - `template.replicas`：表示应用的期望副本数。
     - `template.strategy`：表示应用的更新策略。当前支持 `Recreate` 和 `RollingUpdate` 两种策略，详细解释请参考 [Strategy](https://kubernetes.io/zh-cn/docs/concepts/workloads/controllers/deployment/#strategy)
-    - `template.spec`：表示应用容器配置信息。所支持的子字段请参考 AppImage 描述中的 [deployTemplates[].spec](./appimage_cn.md/#appimage-ref)
+    - `template.spec`：表示应用容器配置信息。所支持的子字段请参考 AppImage 描述中的 [deployTemplates[].spec](./appimage_cn.md#参考)
 
 KusciaDeployment `status` 的子字段详细介绍如下：
 

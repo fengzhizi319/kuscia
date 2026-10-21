@@ -553,5 +553,5 @@ export KUSCIA_CTR_PREFIX="${USER}-kuscia"
 
 - SecretPad 项目：`/home/charles/code/secretpad/README.zh-CN.md`
 - SecretPad 本地运行完整指南：`/home/charles/code/secretpad/docs/development/local_run_guide.md`
-- [Kuscia 快速开始](./quickstart_cn.md)
+- [Kuscia 快速开始](../getting_started/quickstart_cn.md)
 - [DataMesh API 概览](../reference/apis/datamesh/summary_cn.md)

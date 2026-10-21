@@ -962,7 +962,7 @@ docker exec -it ${USER}-kuscia-autonomy-alice bash
 
 - [Kuscia 快速入门](../getting_started/quickstart_cn.md)
 - [如何本地启动 Kuscia](../getting_started/如何本地启动Kuscia.md)
-- [Docker 部署指南](../deployment/Docker_deployment_kuscia/)
+- [Docker 部署指南](../deployment/Docker_deployment_kuscia/index.rst)
 - [Kuscia 配置详解](../deployment/kuscia_config_cn.md)
 - [监控与诊断](../deployment/kuscia_engine_monitor.md)
 

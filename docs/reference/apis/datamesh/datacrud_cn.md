@@ -1,6 +1,24 @@
 # DataMesh 数据读写
 
-Kuscia DataMesh 提供了基于 gRRC 的数据读写操作，实现了 Arrow Flight 提供的标准的数据服务接口，您可以通过初始化一个 Flight Client 来发起数据的请求。
+Kuscia DataMesh 提供了基于 gRPC 的数据读写操作，实现了 Arrow Flight 提供的标准的数据服务接口，您可以通过初始化一个 Flight Client 来发起数据的请求。
+
+## 基本概念
+
+| 组件 | 作用 |
+| --- | --- |
+| DataMesh | Kuscia 内的数据服务，负责解析 DomainData、定位实际存储 |
+| DataProxy | 当数据源不能被任务直连时，由 DataProxy 代理读写 |
+| Arrow Flight | 数据传输协议，支持 `GetFlightInfo`、`DoGet`、`DoPut`、`DoAction` |
+| Ticket / Descriptor | Flight 的服务端句柄与请求描述，由 DataMesh 生成和解析 |
+
+一次典型的读取流程：
+
+1. 客户端连接 DataMesh gRPC 端口（默认 `8071`，mTLS）；
+2. 使用 `CommandDomainDataQuery` 构造 `FlightDescriptor`，调用 `GetFlightInfo`；
+3. 从返回的 `Endpoint` 中取得实际数据端点与 `Ticket`；
+4. 连接该端点并调用 `DoGet`，通过 `flight.NewRecordReader` 读取 Arrow 数据。
+
+写入流程类似，使用 `CommandDomainDataUpdate` 与 `DoPut`，并根据目标数据源选择 CSV / 二进制选项。
 
 ## 如何通过Arrow Flight访问DataMesh
 
@@ -8,13 +26,106 @@ FlightServiceClient 是 Apache Arrow Flight 框架中客户端的主要接口，
 
 要使用 FlightServiceClient，您需要先建立一个与 Flight 服务端的 gRPC 连接，然后通过这个连接创建一个 FlightServiceClient 实例。
 
+### 建立连接
+
+```go
+func createFlightClient(endpoint string, tlsConfig *tls.Config) (flight.Client, error) {
+    // endpoint 可能带有 grpc+tcp:// 前缀，需要去掉
+    if parts := strings.Split(endpoint, "//"); len(parts) == 2 {
+        endpoint = parts[1]
+    }
+
+    dialOpts := []grpc.DialOption{
+        grpc.WithKeepaliveParams(keepalive.ClientParameters{
+            Time:                time.Minute,
+            Timeout:             30 * time.Second,
+            PermitWithoutStream: true,
+        }),
+    }
+    if tlsConfig != nil {
+        dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
+    } else {
+        dialOpts = append(dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+    }
+
+    conn, err := grpc.Dial(endpoint, dialOpts...)
+    if err != nil {
+        return nil, err
+    }
+    return flight.NewClientFromConn(conn, nil), nil
+}
+```
+
+> 生产环境应启用 mTLS，并使用 Kuscia 签发的客户端证书；示例中的 `insecure` 仅用于本地调试。
+
 ### 查询数据
 
 ![Alt text](../../../imgs/flight_do_get.png)
 
+关键步骤：
+
+```go
+// 1. 构造查询命令
+cmd := &datamesh.CommandDomainDataQuery{DomaindataId: domainDataID}
+desc, err := utils.DescForCommand(cmd)
+if err != nil {
+    return err
+}
+
+// 2. 获取 FlightInfo
+info, err := meshClient.GetFlightInfo(ctx, desc)
+if err != nil {
+    return err
+}
+
+// 3. 连接实际数据端点并读取
+dpClient, err := createFlightClient(info.Endpoint[0].Location[0].Uri, tlsConfig)
+if err != nil {
+    return err
+}
+defer dpClient.Close()
+
+stream, err := dpClient.DoGet(ctx, info.Endpoint[0].Ticket)
+if err != nil {
+    return err
+}
+reader, err := flight.NewRecordReader(stream)
+if err != nil {
+    return err
+}
+defer reader.Release()
+
+for {
+    record, err := reader.Read()
+    if err == io.EOF {
+        break
+    }
+    if err != nil {
+        return err
+    }
+    // 处理 Arrow Record
+    record.Release()
+}
+```
+
 ### 上传数据
 
 ![Alt text](../../../imgs/flight_do_put.png)
+
+关键步骤：
+
+```go
+cmd := &datamesh.CommandDomainDataUpdate{
+    DomaindataId: domainDataID,
+    FileWriteOptions: &datamesh.FileWriteOptions{
+        Options: &datamesh.FileWriteOptions_CsvOptions{
+            CsvOptions: &datamesh.CSVWriteOptions{FieldDelimiter: ","},
+        },
+    },
+}
+desc, err := utils.DescForCommand(cmd)
+// GetFlightInfo -> 连接 Endpoint -> DoPut -> Write Arrow Records
+```
 
 ## DataMesh 支持的数据服务
 
@@ -64,3 +175,22 @@ type FlightServiceClient interface {
 - 写入数据时，若表不存在，将创建表（表结构按照 DomainData 的信息来创建）；若任务配置输出信息中包含分区信息，将创建分区表，并创建分区（分区字段类型断言为字符串类型）。
 - 写入数据时，若表已存在，任务输出的分区不存在时，将按照任务配置中输出的分区信息创建分区，需保证分区信息正确并可正常创建，若创建失败，将导致失败报错。
 - 写入数据时将采用覆盖写（普通表将覆盖整个表，分区表将覆盖分区）。
+
+## 常见问题
+
+| 现象 | 可能原因 | 处理 |
+| --- | --- | --- |
+| `GetFlightInfo` 返回 not found | DomainData 不存在或未授权 | 检查 DomainData ID、DomainDataGrant 与当前身份 |
+| 连接 Endpoint 失败 | 返回的是 DataProxy 地址，客户端无法直达 | 确认网络与证书；必要时通过 DataProxy 所在节点访问 |
+| TLS 握手失败 | 未使用 Kuscia CA / 客户端证书 | 配置 `ca.crt`、`client.crt`、`client.key` |
+| `DoGet` 读到空数据 | DomainData 路径错误或文件为空 | 检查 DomainData 的 `relative_uri` 与实际文件 |
+| 写入后数据被覆盖 | DataMesh 默认覆盖写 | 使用独立输出路径/表，或先备份目标数据 |
+| 分区创建失败 | 分区字段类型或值不匹配 | 检查输出分区配置与目标表结构 |
+
+## 相关文档
+
+- [DataMesh 概览](./summary_cn.md)
+- [DomainData 参考](../../concepts/domaindata_cn.md)
+- [DomainDataGrant 参考](../../concepts/domaindatagrant_cn.md)
+- [Kuscia 数据代理](../../../数据代理.md)
+- [DataMesh 数据读写示例代码](https://github.com/secretflow/kuscia/tree/main/cmd/example/datamesh)

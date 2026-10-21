@@ -144,8 +144,7 @@ spec:
     Error from server (NotFound): domaindatas.kuscia.secretflow "alice-table" not found
     ```
 
-{#data-mesh}
-
+(domain-data-grant-data-mesh)=
 ## 在 Domain 侧管理 DomainDataGrant
 
 如 上文所述，DomainDataGrant 属于节点内资源，每一个 DomainDataGrant 都有自己所属的 Domain，且仅能被自己所属的 Domain 访问。
@@ -165,8 +164,7 @@ Kuscia API 提供 HTTP 和 GRPC 两种访问方法，端口分为 8082 和 8083 
     }' --cacert /home/kuscia/var/certs/ca.crt --cert /home/kuscia/var/certs/ca.crt --key /home/kuscia/var/certs/ca.key
     ```
 
-{#refer}
-
+(domain-data-grant-refer)=
 ## 参考
 
 下面以 `alice-bob` 模版为例，介绍 DomainData 所包含的完整字段。

@@ -68,6 +68,7 @@ Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 [Kusci
 
 如果您想依赖指定的 Kuscia-Envoy 镜像构建 Kuscia 镜像，您可以通过 `make image KUSCIA_ENVOY_IMAGE=${KUSCIA_ENVOY_IMAGE}` 来指定依赖镜像的名称。
 
+(kuscia-secretflow-image)=
 ### 构建 Kuscia-Secretflow Image
 
 在 kuscia/build/dockerfile 目录下：

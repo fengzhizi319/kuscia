@@ -91,15 +91,14 @@ datastoreEndpoint: ""
 enableWorkloadApprove: false
 ```
 
-{#configuration-detail}
-
+(configuration-detail)=
 ### 配置项详解
 
-- `mode`: 当前 Kuscia 节点部署模式 支持 Lite、Master、Autonomy（不区分大小写）, 不同部署模式详情请参考[这里](../reference/architecture_cn)
-- `domainID`: 当前 Kuscia 实例的 [节点 ID](../reference/concepts/domain_cn)， 需要符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。 `default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。生产环境使用时建议将 domainID 设置为全局唯一，建议使用：公司名称-部门名称-节点名称，如: domainID: mycompany-secretflow-trainlite
+- `mode`: 当前 Kuscia 节点部署模式 支持 Lite、Master、Autonomy（不区分大小写）, 不同部署模式详情请参考[这里](../reference/architecture_cn.md)
+- `domainID`: 当前 Kuscia 实例的 [节点 ID](../reference/concepts/domain_cn.md)， 需要符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。 `default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。生产环境使用时建议将 domainID 设置为全局唯一，建议使用：公司名称-部门名称-节点名称，如: domainID: mycompany-secretflow-trainlite
 - `domainKeyData`: 节点私钥配置, 用于节点间的通信认证（通过 2 方的证书来生成通讯的身份令牌），节点应用的证书签发（为了加强通讯安全性，Kuscia 会给每一个任务引擎分配 MTLS 证书，不论引擎访问其他模块（包括外部），还是其他模块访问引擎，都走 MTLS 通讯，以免内部攻破引擎。）。可以通过命令 `docker run -it --rm secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/kuscia scripts/deploy/generate_rsa_key.sh` 生成
 - `logLevel`: 日志级别 INFO、DEBUG、WARN，默认 INFO
-- `liteDeployToken`: 节点首次连接到 Master 时使用的是由 Master 颁发的一次性 Token 进行身份验证[获取 Token](./Docker_deployment_kuscia/deploy_master_lite_cn.md#lite-alice)，该 Token 在节点成功部署后立即失效。在多机部署中，请保持该 Token 不变即可；若节点私钥遗失，必须在 Master 上删除相应节点的公钥并重新获取 Token 部署。详情请参考[私钥丢失如何重新部署](../troubleshoot/deployment/private_key_loss.md)
+- `liteDeployToken`: 节点首次连接到 Master 时使用的是由 Master 颁发的一次性 Token 进行身份验证[获取 Token](./Docker_deployment_kuscia/deploy_master_lite_cn.md#部署-lite-节点-alice)，该 Token 在节点成功部署后立即失效。在多机部署中，请保持该 Token 不变即可；若节点私钥遗失，必须在 Master 上删除相应节点的公钥并重新获取 Token 部署。详情请参考[私钥丢失如何重新部署](../troubleshoot/deployment/private_key_loss.md)
 - `masterEndpoint`: 节点连接 Master 的地址，比如 <https://172.18.0.2:1080>
 - `runtime`: 节点运行时 runc、runk、runp，运行时详解请参考[这里](../reference/architecture_cn.md#agent)
 - `runk`: 当 runtime 为 runk 时配置
@@ -137,14 +136,14 @@ enableWorkloadApprove: false
   - `maxFileSizeMB`: 单个日志文件的轮转阈值，当一次轮转检查发生时，如果文件大小大于该值，将会进行轮转。该值应大于 0。
   - `maxAgeDays`: 日志文件的最大保留天数。对非应用日志，直接删除超保留期限的日志文件。对应用日志，如果日志文件均超过该天数，且对应 Pod 处于结束状态。该 Pod 对应日志文件及其目录将会被删除。该值应大于 0。
 
-{#configuration-example}
-
+(configuration-example)=
 ### 配置示例
 
 - [Lite 节点配置示例](https://github.com/secretflow/kuscia/tree/main/scripts/templates/kuscia-lite.yaml)
 - [Master 节点配置示例](https://github.com/secretflow/kuscia/tree/main/scripts/templates/kuscia-master.yaml)
 - [Autonomy 节点配置示例](https://github.com/secretflow/kuscia/tree/main/scripts/templates/kuscia-autonomy.yaml)
 
+(quick-config)=
 ### 快速生成配置文件
 
 Kuscia 为您提供了快速生成 kuscia.yaml 文件的小工具，参数及示例如下：
@@ -199,6 +198,7 @@ export KUSCIA_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretflow/k
 docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --master-endpoint "https://1.1.1.1:18080" --lite-deploy-token "abcdefg" > lite_alice.yaml 2>&1 || cat lite_alice.yaml
 ```
 
+(modify-config)=
 ## 修改默认配置文件
 
 如果使用 [kuscia.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/kuscia.sh) 脚本部署的 Kuscia，kuscia.yaml 文件路径默认是在以下位置（其他部署模式可以借鉴）。
@@ -212,6 +212,7 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode lite --domain "alice" --m
 宿主机路径下修改 kuscia.yaml 配置后，重启容器 `docker restart ${container_name}` 生效。
 > Tips：如果要修改 Protocol 字段，请确保对该字段有充足的理解，否则会导致 KusciaAPI 调用失败或者和其他节点的通讯异常。详情参考 [Protocol 通信协议](../troubleshoot/concept/protocol_describe.md)。
 
+(specify-config)=
 ## 指定配置文件
 
 如果使用 [kuscia.sh](https://github.com/secretflow/kuscia/blob/main/scripts/deploy/kuscia.sh) 脚本部署的 Kuscia，可以指定配置文件，示例：

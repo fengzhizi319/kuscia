@@ -15,8 +15,7 @@
 
 ## 接口详情
 
-{#create-config}
-
+(create-config)=
 ### 注册配置
 
 #### HTTP路径
@@ -28,7 +27,7 @@
 | 字段           | 类型                                           | 选填 | 描述      |
 |--------------|----------------------------------------------|----|---------|
 | header       | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| data         | [ConfigData](#ConfigData)[]                                 |    |         |
+| data         | [ConfigData](#configdata)[]                                 |    |         |
 | data[].key   | string                                       | 必填 | 配置的键    |
 | data[].value | string                                       | 选填 | 配置的值    |
 
@@ -77,8 +76,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/create' \
 }
 ```
 
-{#query-config}
-
+(query-config)=
 ### 查询配置
 
 #### HTTP路径
@@ -132,8 +130,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/query' \
 }
 ```
 
-{#update-config}
-
+(update-config)=
 ### 更新配置
 
 #### HTTP路径
@@ -145,7 +142,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/query' \
 | 字段             | 类型                                           | 选填 | 描述   |
 |----------------|----------------------------------------------|----|------|
 | header         | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
-| data           | [ConfigData](#ConfigData)[]                    |    |      |
+| data           | [ConfigData](#configdata)[]                    |    |      |
 | data[].key     | string                                       | 必填 | 配置的键 |
 | data[].value   | string                                       | 选填 | 配置的值 |
 
@@ -190,8 +187,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/update' \
 }
 ```
 
-{#delete-config}
-
+(delete-config)=
 ### 删除配置
 
 #### HTTP路径
@@ -241,8 +237,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/delete' \
 }
 ```
 
-{#batch-query-config}
-
+(batch-query-config)=
 ### 批量查询配置
 
 #### HTTP路径
@@ -261,7 +256,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/delete' \
 | 字段            | 类型                             | 描述   |
 |---------------|--------------------------------|------|
 | status        | [Status](summary_cn.md#status) | 状态信息 |
-| data          | [ConfigData](#ConfigData)[]           |      |
+| data          | [ConfigData](#configdata)[]           |      |
 | data[].key    | string                         | 配置的键 |
 | data[].value  | string                         | 配置的值 |
 
@@ -307,8 +302,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/config/batchQuery' \
 
 ## 公共
 
-{#ConfigData}
-
+(configdata)=
 ### ConfigData
 
 | 字段                    | 类型                                          | 描述         | 可选填 |

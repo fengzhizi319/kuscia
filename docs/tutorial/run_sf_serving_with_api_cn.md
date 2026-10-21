@@ -8,8 +8,7 @@
 
 本示例在**中心化组网模式**下完成。在点对点组网模式下，证书的配置会有所不同。
 
-{#cert-and-token}
-
+(sf-serving-cert-and-token)=
 ## 确认证书和 Token
 
 Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HTTPS 配置。
@@ -121,12 +120,11 @@ Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HT
 
     恭喜，这说明 Alice 和 Bob 两方的联合预测已经成功创建。
 
-    如果遇到 HTTP 错误（即 HTTP Code 不为 200），请参考 [HTTP Error Code 处理](#http-error-code)。
+    如果遇到 HTTP 错误（即 HTTP Code 不为 200），请参考 [HTTP Error Code 处理](#sf-serving-http-error-code)。
 
     此外，在 Kuscia 中，使用 KusciaDeployment 资源对 Serving 类型的常驻服务进行管理。详细介绍可参考 [KusciaDeployment](../reference/concepts/kusciadeployment_cn.md)。
 
-{#query-sf-serving-status}
-
+(query-sf-serving-status)=
 ## 查询 SecretFlow Serving 状态
 
 1. 登陆到 kuscia-master 节点容器中
@@ -439,29 +437,27 @@ Kuscia API 使用双向 HTTPS，所以需要配置您的客户端库的双向 HT
     cat /home/kuscia/var/stdout/pods/alice_serving-glm-test-1-75d449f848-4gth9_2bd2f45f-51d8-4a18-afa2-ed7105bd47b5/secretflow/0.log
     ```
 
-{#http-client-error}
-
+(sf-serving-http-client-error)=
 ### HTTP 客户端错误处理
 
 #### curl: (56)
 
 curl: (56) OpenSSL SSL_read: error:14094412:SSL routines:ssl3_read_bytes:sslv3 alert bad certificate, errno 0
 
-未配置 SSL 证书和私钥。请[确认证书和 Token](#cert-and-token).
+未配置 SSL 证书和私钥。请[确认证书和 Token](#sf-serving-cert-and-token).
 
 #### curl: (58)
 
 curl: (58) unable to set XXX file
 
-SSL 私钥、 SSL 证书或 CA 证书文件路径错误。请[确认证书和 Token](#cert-and-token).
+SSL 私钥、 SSL 证书或 CA 证书文件路径错误。请[确认证书和 Token](#sf-serving-cert-and-token).
 
-{#http-error-code}
-
+(sf-serving-http-error-code)=
 ### HTTP Error Code 处理
 
 #### 401 Unauthorized
 
-身份认证失败。请检查是否在 Headers 中配置了正确的 Token 。 Token 内容详见[确认证书和 Token](#cert-and-token).
+身份认证失败。请检查是否在 Headers 中配置了正确的 Token 。 Token 内容详见[确认证书和 Token](#sf-serving-cert-and-token).
 
 #### 404 Page Not Found
 

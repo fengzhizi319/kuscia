@@ -9,3 +9,4 @@
     private_key_loss
     kuscia_mysql_kine
     create_fsnotify_failed
+    FATE_deploy_failed

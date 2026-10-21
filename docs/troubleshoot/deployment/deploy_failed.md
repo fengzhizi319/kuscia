@@ -70,5 +70,3 @@ cat /home/kuscia/var/logs/kuscia.log | grep -i error
 # View k3s error logs
 cat /home/kuscia/var/logs/k3s.log | grep -i error
 ```
-
-{#jon-run-failed}

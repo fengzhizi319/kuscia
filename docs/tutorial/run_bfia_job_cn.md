@@ -92,8 +92,7 @@ docker cp {your_alice_data} ${USER}-kuscia-autonomy-alice:/home/kuscia/var/stora
 - 通过配置 KusciaJob 提交作业
 - 通过银联 BFIA 协议创建作业 API 接口提交作业
 
-{#configure-bfia-kuscia-job}
-
+(configure-bfia-kuscia-job)=
 ### 通过配置 KusciaJob 提交作业
 
 数据准备好之后，我们将 alice 作为任务发起方，进入 alice 节点容器中，然后配置和运行作业。
@@ -236,8 +235,7 @@ curl -X POST 'http://127.0.0.1:8084/v1/interconn/schedule/job/create' \
 
 提交作业接口请求参数内容结构请参考 [提交 ECDH PSI 作业接口请求内容示例](#bfia-create-job-req-body)。
 
-{#get-kuscia-job-phase}
-
+(get-kuscia-job-phase)=
 ## 查看 KusciaJob 运行状态
 
 在提交完 KusciaJob 作业后，我们可以在 alice 容器中通过下面的命令查看 Alice 方的 KusciaJob 的运行情况。
@@ -381,8 +379,7 @@ kubectl delete kj job-ic-ecdh -n cross-domain
 
 ## 参考
 
-{#ic-ecdh-task-input-config}
-
+(ic-ecdh-task-input-config)=
 ### ECDH PSI 算子对应的 TaskInputConfig 结构示例
 
 ```json
@@ -449,8 +446,7 @@ kubectl delete kj job-ic-ecdh -n cross-domain
 - `initiator` 描述了任务发起方的信息。
 - `task_params` 描述了任务算子依赖的参数。
 
-{#bfia-create-job-req-body}
-
+(bfia-create-job-req-body)=
 ### 提交 ECDH PSI 作业接口请求内容示例
 
 ```json

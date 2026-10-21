@@ -116,8 +116,7 @@ Envoy 将发送给 Master 和合作节点的请求转发给对端的 Envoy（若
 
 Kuscia 支持两种组网模式：中心化组网模式和点对点组网模式。
 
-{#centralized}
-
+(centralized)=
 ### 中心化组网模式
 
 中心化组网模式下，多个节点共享控制平面，控制平面负责管理多个节点的资源和任务调度。这种模式下节点占用资源较少，称为 Lite 节点。
@@ -125,8 +124,7 @@ Kuscia 支持两种组网模式：中心化组网模式和点对点组网模式�
 
 ![Centralized Network Mode](../imgs/centralized_network_mode.png)
 
-{#peer-to-peer}
-
+(peer-to-peer)=
 ### 点对点组网模式
 
 在点对点（P2P: Peer-to-Peer）组网模式下，节点拥有独立的控制平面，节点实例和控制平面在同一个子网中，这种类型的节点被称为 Autonomy 节点。

@@ -100,8 +100,7 @@ Kuscia 在 `text/template` 语法之外，为了方便配置文件更加简单�
 | `{{{.VariableName.Field1[.VariableName.Field2].SubField2}}}` | 选择指定数组索引的元素（索引来自于 VariableName 中的某个字段）                       | 参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 `{{{.TASK_CLUSTER_DEFINE.parties[.TASK_CLUSTER_DEFINE.selfPartyIdx].services[0].endpoints[0]}}}`                     |
 | `{{{.VariableName.Field1[<key>=<value>].SubField2}}}`        | 筛选符合指定条件的数组元素（如果有多个满足条件，只选择第一个）                              | 参考上文中的 `TASK_CLUSTER_DEFINE`， 可以使用 `{{{.TASK_CLUSTER_DEFINE.parties[name=alice].role}}}` 来查找 `TASK_CLUSTER_DEFINE.parties`所有元素中，满足 `name` 值为 `alice` 的元素 |
 
-{#kuscia-cm}
-
+(kuscia-cm)=
 ### 使用 Kuscia 配置系统管理应用配置
 
 在 Kuscia 中，可以使用 Kuscia 的配置系统管理应用的配置。具体配置管理操作，可参考 [KusciaAPI 的配置管理接口](../reference/apis/config_cn.md)。

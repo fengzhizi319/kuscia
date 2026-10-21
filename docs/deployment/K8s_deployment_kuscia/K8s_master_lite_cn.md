@@ -14,7 +14,7 @@
 
 ### 前置准备
 
-部署 master 需提前准备好 MySQL 数据库表并且符合 [Kuscia 配置](../kuscia_config_cn.md#id3)中的规范，数据库帐号密码等信息配置在步骤三 ConfigMap 中。
+部署 master 需提前准备好 MySQL 数据库表并且符合 [Kuscia 配置](../kuscia_config_cn.md#配置项详解)中的规范，数据库帐号密码等信息配置在步骤三 ConfigMap 中。
 
 ### 步骤一：创建 Namespace
 
@@ -36,6 +36,7 @@ kubectl create ns kuscia-master
 kubectl create -f service.yaml
 ```
 
+(configmap)=
 ### 步骤三：创建 ConfigMap
 
 ConfigMap 是用来配置 Kuscia 的配置文件，详细的配置文件介绍参考 [Kuscia 配置](../kuscia_config_cn.md)

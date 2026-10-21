@@ -30,8 +30,7 @@ cat /home/kuscia/var/storage/data/alice.csv
 
 Bob 节点同理。
 
-{#prepare-your-own-data}
-
+(prepare-your-own-data)=
 ### 准备您自己的数据
 
 您也可以使用您自己的数据文件，还是以 Alice 节点为例：
@@ -42,13 +41,12 @@ Bob 节点同理。
 docker cp {your_alice_data} ${USER}-kuscia-lite-alice:/home/kuscia/var/storage/data/
 ```
 
-2. 使用 [KusciaAPI](../reference/apis/summary_cn) 创建 [DomainData](../reference/apis/domaindata_cn)，得到 `domaindata_id` 。
-3. SecretFlow 引擎任务需要获得合作方数据的 schema 信息，使用 [KusciaAPI](../reference/apis/summary_cn) 创建 [DomainDataGrant](../reference/apis/domaindatagrant_cn) 进行数据授权，将 alice 数据 schema 信息授权给 bob 。
+2. 使用 [KusciaAPI](../reference/apis/summary_cn.md) 创建 [DomainData](../reference/apis/domaindata_cn.md)，得到 `domaindata_id` 。
+3. SecretFlow 引擎任务需要获得合作方数据的 schema 信息，使用 [KusciaAPI](../reference/apis/summary_cn.md) 创建 [DomainDataGrant](../reference/apis/domaindatagrant_cn.md) 进行数据授权，将 alice 数据 schema 信息授权给 bob 。
 
 Bob 节点准备数据重复上述 1、2、3 操作。
 
-{#configure-kuscia-job}
-
+(configure-kuscia-job)=
 ## 配置 KusciaJob
 
 需要在 kuscia-master 节点容器中配置和运行 Job，首先，让我们先进入 kuscia-master 节点容器：

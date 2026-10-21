@@ -14,7 +14,7 @@
 
 ### 前置准备
 
-部署 Autonomy 需提前准备好 MySQL 数据库表并且符合 [Kuscia 配置](../kuscia_config_cn.md#id3)中的规范，数据库帐号密码等信息配置在步骤三 ConfigMap 中。
+部署 Autonomy 需提前准备好 MySQL 数据库表并且符合 [Kuscia 配置](../kuscia_config_cn.md#配置项详解)中的规范，数据库帐号密码等信息配置在步骤三 ConfigMap 中。
 
 ### 步骤一：创建 Namespace
 
@@ -83,7 +83,7 @@ Alice 和 Bob 授权之前可以先检测下相互之间的通信是否正常
 
 建议使用 curl -kvvv http://kuscia-autonomy-bob.autonomy-bob.svc.cluster.local:1080;（此处以 HTTP 为例，HTTPS 可以删除 ConfigMap 里的 Protocol: NOTLS 字段，重启 Pod 生效。[LoadBalancer](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#loadbalancer) 或者 [NodePort](https://kubernetes.io/zh-cn/docs/concepts/services-networking/service/#type-nodeport) 方式可以用 curl -kvvv http://ip:port）检查一下是否访问能通，正常情况下返回的 HTTP 错误码是 401，内容是节点ID和版本信息
 
-示例参考[这里](../K8s_deployment_kuscia/K8s_master_lite_cn.md#id6)
+示例参考[这里](../K8s_deployment_kuscia/K8s_master_lite_cn.md#步骤三创建-configmap)
 
 <span style="color:red;">注意：如果 Alice/Bob 的入口网络存在网关时，为了确保节点之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)</span>
 

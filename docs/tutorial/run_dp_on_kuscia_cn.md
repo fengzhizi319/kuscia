@@ -1,6 +1,6 @@
 # 如何使用 Kuscia API 部署 DataProxy
 
-本教程将以 [Kuscia API Serving](../reference/apis/serving_cn) 作为参考，介绍如何使用 Kuscia API 部署 DataProxy。
+本教程将以 [Kuscia API Serving](../reference/apis/serving_cn.md) 作为参考，介绍如何使用 Kuscia API 部署 DataProxy。
 
 ## 准备节点
 
@@ -9,8 +9,7 @@
 
 本示例在**点对点组网模式**下完成。在中心化组网模式下，证书的配置会有所不同。
 
-{#cert-and-token}
-
+(dp-cert-and-token)=
 ## 获取 KusciaAPI 证书和 Token
 
 如果 KusciaAPI 启用了 MTLS 协议，则需要提前准备好 MTLS 证书和 Token。协议参考[这里](../troubleshoot/concept/protocol_describe.md)。

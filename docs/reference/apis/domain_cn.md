@@ -16,8 +16,7 @@
 
 ## 接口详情
 
-{#create-domain}
-
+(create-domain)=
 ### 创建节点
 
 #### HTTP 路径
@@ -87,8 +86,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/create' \
 }
 ```
 
-{#update-domain}
-
+(update-domain)=
 ### 更新节点
 
 #### HTTP 路径
@@ -158,8 +156,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/update' \
 }
 ```
 
-{#delete-domain}
-
+(delete-domain)=
 ### 删除节点
 
 #### HTTP 路径
@@ -221,8 +218,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/delete' \
 }
 ```
 
-{#query-domain}
-
+(query-domain)=
 ### 查询节点
 
 #### HTTP 路径
@@ -308,8 +304,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/query' \
 }
 ```
 
-{#batch-query-domain}
-
+(batch-query-domain)=
 ### 批量查询节点状态
 
 #### HTTP 路径
@@ -388,8 +383,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 
 ## 公共
 
-{#domain-entity}
-
+(domain-entity)=
 ### Domain
 
 | 字段                    | 类型                                          | 描述                                                           |
@@ -400,8 +394,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 | node_statuses         | [NodeStatus](#node-status)[]                | 真实物理节点状态                                                     |
 | deploy_token_statuses | [DeployTokenStatus](#deploy-token-status)[] | 部署令牌状态                                                       |
 
-{#node-status}
-
+(node-status)=
 ### NodeStatus
 
 | 字段 | 类型 | 描述 |
@@ -412,8 +405,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 | last_heartbeat_time | string | 最后心跳时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
 | last_transition_time | string | 最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
 
-{#deploy-token-status}
-
+(deploy-token-status)=
 ### DeployTokenStatus
 
 | 字段                   | 类型     | 描述                                           |
@@ -422,8 +414,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domain/batchQuery' \
 | state                | string | 部署令牌状态 used, unused                           |
 | last_transition_time | string | 最后更新时间，RFC3339 格式（e.g. 2006-01-02T15:04:05Z） |
 
-{#auth-center}
-
+(auth-center)=
 ### AuthCenter[已废弃]
 
 该字段目前已废弃，用户无需再关心。所有的Kuscia节点之间的握手（master-lite，master-master），都将默认使用Token，并以`RSA-GEN`方式，安全性更高。

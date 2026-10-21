@@ -186,8 +186,7 @@ spec:
     Error from server (NotFound): appimages.kuscia.secretflow "secretflow-image" not found
     ```
 
-{#appimage-ref}
-
+(appimage-ref)=
 ## 参考
 
 下面以 `app-template` 模版为例，介绍 AppImage 所包含的完整字段。
@@ -341,7 +340,7 @@ AppImage `spec` 的子字段详细介绍如下：
   - `deployTemplates[].networkPolicy`：表示应用的网络访问策略。该示例表示：当前角色为 `server` 的应用允许角色为 `client` 的应用访问名称为 `global` 的端口。
     - `deployTemplates[].networkPolicy.ingresses[].from.roles`：表示允许访问当前应用的角色。该示例表示：当前角色为 `server` 的应用允许角色为 `client` 的应用访问。
     - `deployTemplates[].networkPolicy.ingresses[].ports[].port`：表示允许访问当前应用的端口。该示例表示：当前角色为 `server` 的应用允许所允许被访问的端口名称为 `global`。
-    - `deployTemplates[].spec.containers`：表示应用容器配置信息。该字段复用了 [K8s Pod containers](https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/workload-resources/pod-v1/#Container) 部分字段以及扩展了一些自定义字段。主要包含以下子字段：
+    - `deployTemplates[].spec.containers`：表示应用容器配置信息。该字段复用了 [K8s Pod containers](https://kubernetes.io/zh-cn/docs/reference/kubernetes-api/workload-resources/pod-v1/#container) 部分字段以及扩展了一些自定义字段。主要包含以下子字段：
       - `deployTemplates[].spec.containers[].command`：表示应用的启动命令。
       - `deployTemplates[].spec.containers[].args`：表示应用的启动参数。
       - `deployTemplates[].spec.containers[].configVolumeMounts`：表示应用启动的挂载配置。当前仅支持挂载一个配置文件。当前示例中，将 `.spec.configTemplates` 中定义的配置文件 `task-config.conf` 挂载到容器中的位置为 `/work/kuscia/task-config.conf`。

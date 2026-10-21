@@ -20,8 +20,7 @@
 
 ## 接口详情
 
-{#create-job}
-
+(create-job)=
 ### 创建 Job
 
 #### HTTP 路径
@@ -124,8 +123,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/create' \
 
 :::
 
-{#query-job}
-
+(query-job)=
 ### 查询 Job
 
 #### HTTP 路径
@@ -359,8 +357,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/query' \
 }
 ```
 
-{#batch-query-job-status}
-
+(batch-query-job-status)=
 ### 批量查询 Job 状态
 
 #### HTTP 路径
@@ -530,8 +527,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/status/batchQuery' \
 }
 ```
 
-{#delete-job}
-
+(delete-job)=
 ### 删除 Job
 
 #### HTTP 路径
@@ -586,8 +582,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/delete' \
 }
 ```
 
-{#stop-job}
-
+(stop-job)=
 ### 停止 Job
 
 #### HTTP 路径
@@ -643,8 +638,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 }
 ```
 
-{#watch-job}
-
+(watch-job)=
 ### 监控 Job
 
 #### HTTP 路径
@@ -665,11 +659,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 | 类型     | [EventType](#event-type) | 事件类型   |
 | object | [JobStatus](#job-status) | Job 状态 |
 
-{#approval-job}
-
+(approval-job)=
 ### 审批 Job
 
-只有在 P2P 组网模式下且[开启 Job 审批](../concepts/kusciajob_cn.md#enable-approval)的情况下才需要调用此接口进行 job 审批。
+只有在 P2P 组网模式下且[开启 Job 审批](../concepts/kusciajob_cn.md#开启-job-审批)的情况下才需要调用此接口进行 job 审批。
 
 #### HTTP 路径
 
@@ -692,8 +685,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/stop' \
 | data        | ApprovalJobResponseData        |       |
 | data.job_id | string                         | JobID |
 
-{#suspend-job}
-
+(suspend-job)=
 ### 暂停 Job
 
 #### HTTP 路径
@@ -749,8 +741,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/suspend' \
 }
 ```
 
-{#restart-job}
-
+(restart-job)=
 ### 重跑 Job
 
 #### HTTP 路径
@@ -806,8 +797,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/restart' \
 }
 ```
 
-{#cancel-job}
-
+(cancel-job)=
 ### 取消 Job
 
 #### HTTP 路径
@@ -865,8 +855,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 
 ## 公共
 
-{#job-status}
-
+(job-status)=
 ### JobStatus
 
 | 字段     | 类型                                    | 描述       |
@@ -874,8 +863,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | job_id | string                                | JobID    |
 | status | [JobStatusDetail](#job-status-detail) | Job 状态详情 |
 
-{#job-status-detail}
-
+(job-status-detail)=
 ### JobStatusDetail
 
 | 字段          | 类型                           | 描述                       |
@@ -887,19 +875,17 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | end_time    | string                       | 结束时间                     |
 | tasks       | [TaskStatus](#task-status)[] | 任务列表                     |
 
-{#party}
-
+(party)=
 ### Party
 
 | 字段 | 类型 | 选填 | 描述 |
 | ----------- | -------- | ---- | ---------- |
 | domain_id | string | 必填 | DomainID |
-| role | string | 可选 | 参与方角色，该字段由引擎自定义，对应到 [appImage](../concepts/appimage_cn.md#appimage-ref) 的部署模版中；更多参考 [KusciaJob](../concepts/kusciajob_cn.md#create-kuscia-job) |
+| role | string | 可选 | 参与方角色，该字段由引擎自定义，对应到 [appImage](../concepts/appimage_cn.md#参考) 的部署模版中；更多参考 [KusciaJob](../concepts/kusciajob_cn.md#创建-kusciajob) |
 | resources | JobResource | 可选 | 参与方资源配置 |
 | bandwidth_limits | [BandwidthLimit](#bandwidth-limit)[] | 可选 | 节点请求其他节点的带宽限制配置 |
 
-{#JobResource}
-
+(jobresource)=
 ### JobResource
 
 | 字段                  | 类型   | 选填 | 描述              |
@@ -908,8 +894,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | memory              | string | 可选 | 参与方可用内存资源上限     |
 | kuscia.io/bandwidth | string | 可选 | 参与方可用网络带宽下限     |
 
-{#party-status}
-
+(party-status)=
 ### PartyStatus
 
 | 字段        | 类型                                        | 描述                          |
@@ -919,8 +904,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | err_msg   | string                                    | 错误信息                        |
 | endpoints | [JobPartyEndpoint](#job-party-endpoint)[] | 应用对外暴露的访问地址信息               |
 
-{#task}
-
+(task)=
 ### Task
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -935,8 +919,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | schedule_config | [ScheduleConfig](#schedule-config) | 可选 | 任务调度配置 |
 | tolerable | bool | 可选 | 标识 Task 是否可容忍失败（默认为 false），若 tolerable=true 即使此 task 失败也不会导致 Job 失败。若 tolerable=false 则此 task 失败会判定整个 Job 失败。 |
 
-{#schedule-config}
-
+(schedule-config)=
 ### ScheduleConfig
 
 | 字段                                      | 类型     | 选填   | 描述                                                                                                 |
@@ -945,8 +928,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | resource_reserved_seconds               | int32  | 可选   | 任务预留资源时间，默认值: 30，当任务参与方在扣减完资源(cpu/memory)后，会占用 30 秒，如果在 30 秒内，存在部分参与方没有成功扣减资源，那么已扣减资源的参与方将会释放扣减的资源 |
 | resource_reallocation_interval_seconds  | int32  | 可选   | 任务重新扣减资源的时间间隔，默认值: 30，当已扣减资源的参与方在释放完扣减的资源后，下次重新扣减资源的时间间隔                                           |
 
-{#task-config}
-
+(task-config)=
 ### TaskConfig
 
 | 字段                | 类型                | 描述           |
@@ -959,8 +941,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | task_input_config | string            | 任务配置         |
 | priority          | string            | 优先级，值越大优先级越高 |
 
-{#task-status}
-
+(task-status)=
 ### TaskStatus
 
 | 字段          | 类型                             | 描述                      |
@@ -974,8 +955,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | end_time    | string                         | 结束事件                    |
 | parties     | [PartyStatus](#party-status)[] | 参与方                     |
 
-{#event-type}
-
+(event-type)=
 ### EventType
 
 | Name     | Number | 描述   |
@@ -986,8 +966,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | ERROR    | 3      | 错误事件 |
 | HEARTBEAT | 4      | 心跳事件 |
 
-{#approve-result}
-
+(approve-result)=
 ### ApproveResult
 
 | Name     | Number | 描述   |
@@ -996,11 +975,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/job/cancel' \
 | APPROVE_RESULT_ACCEPT     | 1  | 审批通过 |
 | APPROVE_RESULT_REJECT     | 2  | 审批拒绝 |
 
-{#state}
-
+(state)=
 ### State
 
-KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state)。
+KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#状态说明)。
 
 | Name               | Number | 描述    |
 |-----------         |--------|-------|
@@ -1015,8 +993,7 @@ KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state
 | Suspended          | 8      | Job 被暂停，可通过 Restart 接口重跑   |
 | Initialized        | 9      | Job 初始状态  |
 
-{#job-party-endpoint}
-
+(job-party-endpoint)=
 ### JobPartyEndpoint
 
 | 字段        | 类型     | 描述                                                                                                  |
@@ -1025,8 +1002,7 @@ KusciaJob 状态详细介绍见[文档](../concepts/kusciajob_cn.md#kuscia-state
 | scope     | string | 应用服务使用范围，详细解释请参考[AppImage](../concepts/appimage_cn.md) `deployTemplates.spec.containers.ports.scope` |
 | endpoint  | string | 应用服务访问地址                                                                                            |
 
-{#bandwidth-limit}
-
+(bandwidth-limit)=
 ### BandwidthLimit
 
 | 字段        | 类型                | 选填 | 描述                                                                                                                                                       |

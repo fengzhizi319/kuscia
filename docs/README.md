@@ -3,8 +3,8 @@
 本文档是 `kuscia/docs` 目录的导航与内容索引，说明文档的种类划分、每篇文档的具体内容、推荐阅读路径，以及文档构建与维护方式。
 
 - **文档框架**：Sphinx 8 + MyST-Parser，配置见 [`conf.py`](./conf.py)，依赖见 [`requirements.txt`](./requirements.txt)。
-- **源语言**：简体中文（`zh_CN`），英文翻译位于 [`locales/en/LC_MESSAGES/`](./locales/en/LC_MESSAGES/)。
-- **文档贡献**：构建、预览、翻译流程见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
+- **源语言**：简体中文（`zh_CN`），英文翻译位于 `locales/en/LC_MESSAGES/`。
+- **文档贡献**：构建、预览、翻译流程见 `CONTRIBUTING.md`（位于本目录，因 `conf.py` 的 `exclude_patterns` 配置不进入 Sphinx 输出）。
 - **版本日志**：见 [`change_log.rst`](./change_log.rst)，实际内容引入 `../changelog/v1.2.0_CHANGELOG.md`。
 
 ---
@@ -81,7 +81,7 @@
 | --- | --- | --- |
 | [快速开始](./getting_started/quickstart_cn.md) | 介绍中心化（center）、点对点（p2p）、中心化互联（cxc）、中心化-P2P 混合（cxp）四种 Docker 组网方式；给出环境要求、一键启动命令、两方 PSI 示例作业和状态查询方法。 | 首次接触 Kuscia 的用户 |
 | [了解 KusciaJob](./getting_started/run_secretflow_cn.md) | 在已部署集群上准备数据和 KusciaJob YAML，提交作业、查看运行状态、删除作业；说明 KusciaJob 与 KusciaTask 的关系。 | 已跑通快速开始的用户 |
-| [如何本地启动 Kuscia](./getting_started/如何本地启动Kuscia.md)（未纳入导航） | 面向本地 Linux 的完整启动手册：目录与概述、Docker 和 Go 的前置安装、部署模式简介、Docker 模式快速启动（推荐点对点）。 | 本地开发与测试人员 |
+| [如何本地启动 Kuscia](./getting_started/如何本地启动Kuscia.md) | 面向本地 Linux 的完整启动手册：目录与概述、Docker 和 Go 的前置安装、部署模式简介、Docker 模式快速启动（推荐点对点）。 | 本地开发与测试人员 |
 
 ---
 
@@ -93,10 +93,10 @@
 | --- | --- |
 | [概述](./reference/overview.md) | 从隐私计算落地问题出发介绍 Kuscia 定位；PoC 验证、生产部署、引擎接入三类使用场景；Kuscia 从手动拉起到 Coordinator 再到 Kuscia 编排的演进；产品层/框架层/引擎层分层；为什么需要 Kuscia。 |
 | [架构](./reference/architecture_cn.md) | 控制平面组件（K3s、Kuscia Controllers、Kuscia Storage、Envoy、互联互通适配器）与节点组件（Lite/Autonomy 中的 Agent、NetworkMesh、DataMesh）；中心化与 P2P 组网、部署模式、作业编排与任务调度概览。 |
-| [Kuscia 隐私计算调度架构与数据流详解](./reference/kuscia_scheduling_architecture_cn.md)（未纳入导航） | 从 SecretPad 请求到 KusciaAPI、Job Service、KusciaJob CR、Job Controller、Task Controller、Pod、Ray、SecretFlow 的完整模块架构、数据结构、数据流时序图和关键配置项。 |
-| [DomainData 详细说明](./reference/domaindata_specification.md)（未纳入导航） | DomainData 的数据结构、YAML 示例、存储机制（CRD/etcd、大 value 存储、压缩与备份恢复）、API 接口、DomainDataGrant 授权与跨域同步、典型使用场景。 |
-| [scripts/deploy 目录脚本功能详解](./reference/scripts_deploy_guide.md)（未纳入导航） | `scripts/deploy` 下部署启动类脚本（`kuscia.sh`、`deploy.sh` 等）与资源配置类脚本的功能、参数、模式选择和执行示例。 |
-| [设置 K3S API 白名单](./reference/api_whitelist_config_cn.md)（未纳入导航） | K3s API 白名单的用途，以及两种配置方式与示例。 |
+| [Kuscia 隐私计算调度架构与数据流详解](./reference/kuscia_scheduling_architecture_cn.md) | 从 SecretPad 请求到 KusciaAPI、Job Service、KusciaJob CR、Job Controller、Task Controller、Pod、Ray、SecretFlow 的完整模块架构、数据结构、数据流时序图和关键配置项。 |
+| [DomainData 详细说明](./reference/domaindata_specification.md) | DomainData 的数据结构、YAML 示例、存储机制（CRD/etcd、大 value 存储、压缩与备份恢复）、API 接口、DomainDataGrant 授权与跨域同步、典型使用场景。 |
+| [scripts/deploy 目录脚本功能详解](./reference/scripts_deploy_guide.md) | `scripts/deploy` 下部署启动类脚本（`kuscia.sh`、`deploy.sh` 等）与资源配置类脚本的功能、参数、模式选择和执行示例。 |
+| [设置 K3S API 白名单](./reference/api_whitelist_config_cn.md) | K3s API 白名单的用途，以及两种配置方式与示例。 |
 
 ### 4.2 核心概念（`reference/concepts/`）
 
@@ -173,7 +173,7 @@
 | [部署点对点集群](./deployment/K8s_deployment_kuscia/K8s_p2p_cn.md) | 在 K8s 上部署 Autonomy 节点、交换证书、建立路由、验证并运行任务。 |
 | [非 root 用户部署节点](./deployment/K8s_deployment_kuscia/k8s_deploy_kuscia_with_rootless.md) | K8s 环境下非 root 部署方式及所需变更。 |
 
-### 5.4 本地联合部署（未纳入导航）
+### 5.4 本地联合部署
 
 | 文档 | 具体内容 |
 | --- | --- |
@@ -204,13 +204,13 @@
 | [使用 Kuscia API 部署 DataProxy](./tutorial/run_dp_on_kuscia_cn.md) | 获取证书和 Token，在 K8s 模式与 Docker 模式下部署 DataProxy。 |
 | [在 Kuscia 上运行 SCQL 联合分析任务](./tutorial/run_scql_on_kuscia_cn.md) | 准备节点、证书 Token 和数据，部署 SCQL，并使用 SCQL 发起联合分析查询。 |
 | [运行互联互通银联 BFIA 协议作业](./tutorial/run_bfia_job_cn.md) | 准备环境、提交 BFIA 协议作业、查看 KusciaJob 状态与 ECDH PSI 算子结果。 |
-| [运行 FATE 作业](./tutorial/run_fate_cn.md)（未纳入导航） | 准备节点与 FATE 集群，构建 FATE 部署镜像和 AppImage，验证 FATE 服务并查看部署日志。 |
+| [运行 FATE 作业](./tutorial/run_fate_cn.md) | 准备节点与 FATE 集群，构建 FATE 部署镜像和 AppImage，验证 FATE 服务并查看部署日志。 |
 | [升级引擎镜像](./tutorial/upgrade_engine.md) | 在 Kuscia 中导入并升级引擎镜像。 |
 | [使用自定义镜像仓库](./tutorial/custom_registry.md) | 配置自定义镜像仓库，镜像仓库与 AppImage 的搭配使用，以及镜像拉取失败排查。 |
 | [给自定义应用渲染配置文件](./tutorial/config_render.md) | 自定义应用的配置示例与配置文件渲染机制。 |
 | [配置 Path Rewrite](./tutorial/kuscia_gateway_with_path.md) | 多机部署下配置 Path Rewrite，以及通过 KusciaAPI 配置的方法。 |
 | [自定义 Service 路由](./tutorial/user_defined_service_route.md) | 为 Kuscia 中的 Service 自定义路由的示例与访问方法。 |
-| [安全加固方案](./tutorial/security_plan_cn.md)（未纳入导航） | 使用 NsJail 进程安全沙箱与 Kata 安全容器运行 SecretFlow 任务，降低未知代码执行风险。 |
+| [安全加固方案](./tutorial/security_plan_cn.md) | 使用 NsJail 进程安全沙箱与 Kata 安全容器运行 SecretFlow 任务，降低未知代码执行风险。 |
 
 ---
 
@@ -221,11 +221,11 @@
 | [构建命令](./development/build_kuscia_cn.md) | 开发环境搭建与 Kuscia 构建命令。 |
 | [Cobra 命令执行逻辑说明](./development/cobra_execution_explanation.md) | `Execute()`、`ExecuteC()`、`execute()` 的调用链，Run 钩子执行顺序，以及对阅读 Kuscia CLI 代码的建议。 |
 | [注册自定义算法镜像](./development/register_custom_image.md) | 准备工具脚本、准备 AppImage、加载镜像到节点、注册镜像并使用自定义镜像运行作业。 |
-| [Kubernetes CRD 代码生成完全指南](./development/code_generation_guide.md)（未纳入导航） | Kubernetes 与 CRD 基础、CRD YAML 与客户端代码生成、应用 CRD、验证注册与资源操作。 |
-| [Kuscia 中 Kubernetes 配置与运行模式详解](./development/kuscia_kubernetes_architecture.md)（未纳入导航） | K8s 与 K3s 的区别、runc/runk/runp 三种运行模式、嵌入式 K3s 架构、K8s 配置适用性、命名空间隔离、网络与服务发现、容器运行时、场景对比、镜像体系与 FAQ。 |
-| [如何扩展其他数据源](./development/add_datamesh_io.md)（未纳入导航） | DataMesh IO 扩展流程、业务要求、添加步骤与注意事项。 |
-| [golangci-lint 修复汇总](./development/lint-fixes-summary.md)（未纳入导航） | `govet inline`、`goconst` 等 lint 问题的修复方式、验证结果与注意事项。 |
-| [Kuscia Makefile 子模块详解](./development/Makefile%20子模块详解.md)（未纳入导航） | 顶层 Makefile 的转发机制，`common.mk`、`docs.mk`、`image.mk`、`golang.mk`、`lint.mk`、`fate.mk` 的职责，变量覆盖规则与常用命令。 |
+| [Kubernetes CRD 代码生成完全指南](./development/code_generation_guide.md) | Kubernetes 与 CRD 基础、CRD YAML 与客户端代码生成、应用 CRD、验证注册与资源操作。 |
+| [Kuscia 中 Kubernetes 配置与运行模式详解](./development/kuscia_kubernetes_architecture.md) | K8s 与 K3s 的区别、runc/runk/runp 三种运行模式、嵌入式 K3s 架构、K8s 配置适用性、命名空间隔离、网络与服务发现、容器运行时、场景对比、镜像体系与 FAQ。 |
+| [如何扩展其他数据源](./development/add_datamesh_io.md) | DataMesh IO 扩展流程、业务要求、添加步骤与注意事项。 |
+| [golangci-lint 修复汇总](./development/lint-fixes-summary.md) | `govet inline`、`goconst` 等 lint 问题的修复方式、验证结果与注意事项。 |
+| [Kuscia Makefile 子模块详解](./development/Makefile%20子模块详解.md) | 顶层 Makefile 的转发机制，`common.mk`、`docs.mk`、`image.mk`、`golang.mk`、`lint.mk`、`fate.mk` 的职责，变量覆盖规则与常用命令。 |
 
 ---
 
@@ -247,7 +247,7 @@
 | [Kine 表问题导致启动失败](./troubleshoot/deployment/kuscia_mysql_kine.md) | Kine 表不存在等数据库问题导致 Kuscia 启动失败的排查。 |
 | [Create fsnotify failed](./troubleshoot/deployment/create_fsnotify_failed.md) | 启动时报 `Create fsnotify failed` 的问题描述与解决方案。 |
 | [WSL 注意事项](./troubleshoot/deployment/wsl_start_docker.md) | 在 WSL 中启动 Docker 的注意事项。 |
-| [FATE 部署失败](./troubleshoot/deployment/FATE_deploy_failed.md)（未纳入导航） | FATE 部署时 Pod 镜像拉取失败的排查。 |
+| [FATE 部署失败](./troubleshoot/deployment/FATE_deploy_failed.md) | FATE 部署时 Pod 镜像拉取失败的排查。 |
 
 ### 8.3 网络连接（`troubleshoot/network/`）
 
@@ -280,7 +280,7 @@
 
 ## 9. 深度解析长文（`docs/` 根目录）
 
-这 6 篇文档篇幅较长，聚焦源码级流程与跨组件协作，适合在熟悉基础概念后深入阅读。它们目前未加入 Sphinx toctree，但已在 [`index.md`](./index.md) 的「深入解析」章节中提供入口。
+这 6 篇文档篇幅较长，聚焦源码级流程与跨组件协作，适合在熟悉基础概念后深入阅读。它们通过 [`deep_dive/index.rst`](./deep_dive/index.rst) 挂载，并在 [`index.md`](./index.md) 的「深入解析」章节中提供入口。
 
 | 文档 | 篇幅与结构 | 具体内容 |
 | --- | --- | --- |
@@ -297,7 +297,7 @@
 
 | 文档 | 具体内容 |
 | --- | --- |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | 文档贡献指南（中英文）：Python 虚拟环境准备、`secretflow-doctools` 构建与本地预览、`update-translations` 翻译同步、文件清理与问题反馈。该文件通过 `conf.py` 的 `exclude_patterns` 排除，不进入 Sphinx 输出。 |
+| `CONTRIBUTING.md` | 文档贡献指南（中英文）：Python 虚拟环境准备、`secretflow-doctools` 构建与本地预览、`update-translations` 翻译同步、文件清理与问题反馈。该文件通过 `conf.py` 的 `exclude_patterns` 排除，不进入 Sphinx 输出。 |
 | [change_log.rst](./change_log.rst) | 版本更新日志入口，引入 `../changelog/v1.2.0_CHANGELOG.md`。 |
 | [update_po.sh](./update_po.sh) | 使用 `sphinx-build -b gettext` 与 `sphinx-intl update` 重新生成 `locales/` 下英文 `.po` 文件的辅助脚本。 |
 
@@ -305,31 +305,40 @@
 
 ## 11. Sphinx 导航现状
 
-### 11.1 已纳入 toctree 的文档
+### 11.1 导航结构
 
-- 入门：`quickstart_cn`、`run_secretflow_cn`。
-- 参考：`overview`、`architecture_cn`、全部 `concepts/` 文档、全部 `apis/` 文档、`apis/datamesh/` 文档。
-- 部署：`kuscia_deployment_instructions`、`deploy_check`、Docker 6 篇、K8s 3 篇、`deploy_with_runp_cn`、`operation_cn`、`networkrequirements`、`diagnose_tool`、`logdescription`、`kuscia_monitor`、`kuscia_engine_monitor`、`kuscia_config_cn`、`kuscia_ports_cn`。
-- 指南：`run_sf_job_with_api_cn`、`run_sf_serving_with_api_cn`、`run_dp_on_kuscia_cn`、`run_scql_on_kuscia_cn`、`run_bfia_job_cn`、`upgrade_engine`、`custom_registry`、`config_render`、`kuscia_gateway_with_path`、`user_defined_service_route`。
-- 开发：`build_kuscia_cn`、`cobra_execution_explanation`、`register_custom_image`。
-- 排障：`concept/` 2 篇、`deployment/` 5 篇、`network/` 2 篇、`runtask/` 2 篇、`parameter_tuning/` 8 篇。
+文档站点以 [`index.md`](./index.md) 为根，通过隐藏 toctree 挂载各分类索引；分类内部再由各自的 `index.rst` 组织：
 
-### 11.2 未纳入 toctree 的文档
+```text
+index.md（首页）
+├── README.md                  # 本文件：文档总览
+├── getting_started/index      # 入门教程
+├── reference/index            # 参考手册（concepts / apis / datamesh）
+├── deployment/index           # 部署与运维
+├── tutorial/index             # 操作指南
+├── development/index          # 开发文档
+├── troubleshoot/index         # 故障排查
+├── deep_dive/index            # 深度解析长文
+└── change_log                 # 版本更新日志
+```
 
-- 根目录 6 篇深度长文：`设计文档.md`、`任务调度.md`、`组网模式.md`、`数据代理.md`、`通信与数据注册流程.md`、`联邦逻辑回归全流程.md`。
-- 入门：`getting_started/如何本地启动Kuscia.md`。
-- 参考：`reference/api_whitelist_config_cn.md`、`reference/domaindata_specification.md`、`reference/kuscia_scheduling_architecture_cn.md`、`reference/scripts_deploy_guide.md`。
-- 部署：`deployment/local_deploy_kuscia_datamesh.md`、`deployment/local_deploy_secretpad_kuscia_datamesh.md`。
-- 指南：`tutorial/run_fate_cn.md`、`tutorial/security_plan_cn.md`。
-- 开发：`development/add_datamesh_io.md`、`development/code_generation_guide.md`、`development/kuscia_kubernetes_architecture.md`、`development/lint-fixes-summary.md`、`development/Makefile 子模块详解.md`。
-- 排障：`troubleshoot/deployment/FATE_deploy_failed.md`。
+### 11.2 已纳入 toctree 的文档
 
-### 11.3 已知的导航问题
+- 入门：`quickstart_cn`、`run_secretflow_cn`、`如何本地启动Kuscia`。
+- 参考：`overview`、`architecture_cn`、`kuscia_scheduling_architecture_cn`、`domaindata_specification`、`api_whitelist_config_cn`、`scripts_deploy_guide`、全部 `concepts/` 文档、全部 `apis/` 文档、`apis/datamesh/` 文档。
+- 部署：`kuscia_deployment_instructions`、`deploy_check`、Docker 6 篇、K8s 3 篇、`deploy_with_runp_cn`、`local_deploy_kuscia_datamesh`、`local_deploy_secretpad_kuscia_datamesh`、`operation_cn`、`networkrequirements`、`diagnose_tool`、`logdescription`、`kuscia_monitor`、`kuscia_engine_monitor`、`kuscia_config_cn`、`kuscia_ports_cn`。
+- 指南：`run_sf_job_with_api_cn`、`run_sf_serving_with_api_cn`、`run_dp_on_kuscia_cn`、`run_scql_on_kuscia_cn`、`run_bfia_job_cn`、`run_fate_cn`、`upgrade_engine`、`custom_registry`、`config_render`、`kuscia_gateway_with_path`、`user_defined_service_route`、`security_plan_cn`。
+- 开发：`build_kuscia_cn`、`cobra_execution_explanation`、`register_custom_image`、`add_datamesh_io`、`code_generation_guide`、`kuscia_kubernetes_architecture`、`Makefile 子模块详解`、`lint-fixes-summary`。
+- 排障：`concept/` 2 篇、`deployment/` 6 篇、`network/` 2 篇、`runtask/` 2 篇、`parameter_tuning/` 8 篇。
+- 深度解析：`设计文档`、`任务调度`、`组网模式`、`数据代理`、`通信与数据注册流程`、`联邦逻辑回归全流程`，统一由 [`deep_dive/index.rst`](./deep_dive/index.rst) 挂载。
 
-1. [`tutorial/index.rst`](./tutorial/index.rst) 末尾有一个空的 `:name: 安全` toctree，`security_plan_cn` 尚未挂载。
-2. [`troubleshoot/deployment/index.rst`](./troubleshoot/deployment/index.rst) 未收录 `FATE_deploy_failed.md`。
-3. `development/Makefile 子模块详解.md` 文件名包含空格，在生成 URL 时需使用 `%20` 转义。
-4. 根目录深度长文未进入 toctree，仅通过 `index.md` 的普通链接访问。
+### 11.3 文档编写约定与注意事项
+
+1. **锚点写法**：MyST 中目标锚点使用 `(label)=`（如 `(configtemplate)=`），不要写成 `{#label}` 或 `#(label)=`；后者不会生成有效锚点。
+2. **跨文档链接**：Sphinx 的 MyST 交叉引用仅对**标题 slug** 做跨文档解析，链接其他文档的章节时请使用归一化后的标题 slug（如 `other.md#配置项详解`），不要依赖显式 label。
+3. **相对路径**：按当前文件所在目录计算层级；`troubleshoot/` 与 `tutorial/` 同为一级目录，互相引用使用 `../` 而非 `../../`。
+4. **文件名空格**：`development/Makefile 子模块详解.md` 的链接需使用 `%20` 转义。
+5. **构建校验**：提交前执行 `secretflow-doctools build --lang zh_CN --lang en` 或下方的 `sphinx-build -b dummy`，目标为 **0 warning**。
 
 ---
 
@@ -372,8 +381,9 @@ bash update_po.sh
 
 ### 12.4 文档维护建议
 
-- 优先修复第 11.3 节列出的 toctree 问题，保证文档站点导航完整。
-- 对于根目录 6 篇深度长文，可考虑建立 `deep_dive/index.rst` 统一挂载，避免长期游离在导航之外。
 - 修改 API proto 或 CRD 字段时，同步更新 `reference/apis/` 与 `reference/concepts/` 中对应文档。
 - 部署脚本参数变化时，同步更新 `deployment/kuscia_ports_cn.md`、`deployment/kuscia_config_cn.md` 与 `reference/scripts_deploy_guide.md`。
 - 新增排障案例时，按「概念 / 部署 / 网络 / 任务 / 参数调优」归类，并在对应 `index.rst` 中登记。
+- 新增长文时，放入 `docs/` 根目录并登记到 `deep_dive/index.rst`，同时在 `index.md` 的「深入解析」章节添加入口。
+- 调整文档目录结构后，同步更新本文件的分类表、第 11 节导航结构与相关相对链接。
+- 每次合并前运行一次 `sphinx-build -b dummy -E -a`，确认无 `myst.xref_missing`、重复标签或 toctree 告警。

@@ -34,7 +34,7 @@ export SECRETFLOW_IMAGE=secretflow-registry.cn-hangzhou.cr.aliyuncs.com/secretfl
 docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/scripts/deploy/kuscia.sh > kuscia.sh && chmod u+x kuscia.sh
 ```
 
-生成 master 节点的配置文件，kuscia init 参数请参考 [Kuscia 配置文件](../kuscia_config_cn.md#id3)：
+生成 master 节点的配置文件，kuscia init 参数请参考 [Kuscia 配置文件](../kuscia_config_cn.md#快速生成配置文件)：
 
 ```bash
 # The --domain parameter passes the master node ID, DomainID must be globally unique and conform to the RFC 1123 label name specification. For details, refer to: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names. In a production environment, it is recommended to use the format: company-name-department-name-node-name, e.g., mycompany-secretflow-master
@@ -58,7 +58,7 @@ docker run -it --rm ${KUSCIA_IMAGE} kuscia init --mode master --domain "mycompan
 - 节点 ID 需要全局唯一并且符合 RFC 1123 标签名规则要求，详情请参考[这里](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。`default`、`kube-system` 、`kube-public` 、`kube-node-lease` 、`master` 以及 `cross-domain` 为 Kuscia 预定义的节点 ID，不能被使用。
 - 目前 kuscia.sh 脚本仅支持导入 Secretflow 镜像，scql、serving 以及其他自定义镜像请移步至[注册自定义算法镜像](../../development/register_custom_image.md)
 - 如果 master 的入口网络存在网关时，为了确保节点与 master 之间通信正常，需要网关符合一些要求，详情请参考[这里](../networkrequirements.md)。
-- master 节点默认使用 SQLite 作为存储，如果生产部署，需要配置链接到 MySQL 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#id3)
+- master 节点默认使用 SQLite 作为存储，如果生产部署，需要配置链接到 MySQL 数据库的连接串，具体配置可以参考[这里](../kuscia_config_cn.md#快速生成配置文件)
 - 需要对合作方暴露的 Kuscia 端口，可参考 [Kuscia 端口介绍](../kuscia_ports_cn.md)
 - 非 root 用户部署请参考[这里](./docker_deploy_kuscia_with_rootless.md)
 - 升级引擎镜像请参考[指南](../../tutorial/upgrade_engine.md)
@@ -123,7 +123,7 @@ alias km="docker exec -it ${USER}-kuscia-master"
 
 您可以选择在任一台机器上部署 lite 节点（下文以 alice、bob 为例）。
 
-#### 部署 lite 节点 Alice
+### 部署 lite 节点 Alice
 
 在部署 Alice 节点之前，我们需要在 master 注册 Alice 节点，并获取到部署时需要用到的 Token 并存入环境变量。
 

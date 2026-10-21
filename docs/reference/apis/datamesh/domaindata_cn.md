@@ -14,16 +14,14 @@ DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 
 
 ## 接口详情
 
-{#datamesh-create-domain-data}
-
+(datamesh-create-domain-data)=
 ### 创建数据对象
 
 #### HTTP路径
 
 /api/v1/datamesh/domaindata/create
 
-{#datamesh-create-domain-data-request}
-
+(datamesh-create-domain-data-request)=
 #### 请求（CreateDomainDataRequest）
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -39,8 +37,7 @@ DomainData 表示被 Kuscia 管理的数据，Data Mesh API 提供了从 Domain 
 | columns | [DataColumn](#datamesh-data-column) array | 必填 | 列信息 |
 | vendor | string | 可选 | 来源，用于查询接口筛选数据对象，参考 [ListDomainDataRequestData](#datamesh-list-domain-data-request-data) 和 [DomainData 概念](../../concepts/domaindata_cn.md) |
 
-{#datamesh-create-domain-data-response}
-
+(datamesh-create-domain-data-response)=
 #### 响应（CreateDomainDataResponse）
 
 | 字段                 | 类型                             | 选填 | 描述     |
@@ -98,8 +95,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/create \
 }
 ```
 
-{#datamesh-update-domain-data}
-
+(datamesh-update-domain-data)=
 ### 更新数据对象
 
 #### HTTP路径
@@ -173,8 +169,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/update \
 }
 ```
 
-{#datamesh-query-domain-data}
-
+(datamesh-query-domain-data)=
 ### 查询数据对象
 
 #### HTTP路径
@@ -252,8 +247,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
 
 ## 公共
 
-{#datamesh-list-domain-data-request-data}
-
+(datamesh-list-domain-data-request-data)=
 ### ListDomainDataRequestData
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -262,8 +256,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
 | domaindata_type | string | 可选 | 类型 |
 | domaindata_vendor | string | 可选 | 来源 |
 
-{#datamesh-domain-data-entity}
-
+(datamesh-domain-data-entity)=
 ### DomainData
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -279,8 +272,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
 | columns | [DataColumn](#datamesh-data-column)[] | 必填 | 列信息 |
 | vendor | string | 可选 | 来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#datamesh-list-domain-data-request-data) 和 [DomainData 概念](../../concepts/domaindata_cn.md) |
 
-{#datamesh-partition}
-
+(datamesh-partition)=
 ### Partition
 
 | 字段     | 类型                           | 选填 | 描述  |
@@ -288,8 +280,7 @@ curl https://127.0.0.1:8070/api/v1/datamesh/domaindata/query \
 | type   | string                       | 必填 | 类型  |
 | fields | [DataColumn](#datamesh-data-column)[] | 必填 | 列信息 |
 
-{#datamesh-data-column}
-
+(datamesh-data-column)=
 ### DataColumn
 
 | 字段 | 类型 | 选填 | 描述 |

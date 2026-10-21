@@ -9,12 +9,10 @@
     run_dp_on_kuscia_cn
     run_scql_on_kuscia_cn
     run_bfia_job_cn
+    run_fate_cn
     upgrade_engine.md
     custom_registry
     config_render
     kuscia_gateway_with_path
     user_defined_service_route
-
-.. toctree::
-    :maxdepth: 1
-    :name: 安全
+    security_plan_cn

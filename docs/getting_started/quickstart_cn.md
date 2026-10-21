@@ -80,8 +80,7 @@ docker exec -it ${USER}-kuscia-master scripts/user/create_example_job.sh
 docker exec -it ${USER}-kuscia-master kubectl get kj -n cross-domain
 ```
 
-{#p2p-network-mode}
-
+(p2p-network-mode)=
 ### 点对点组网模式
 
 ```bash
@@ -154,8 +153,7 @@ id1,age,education,default,balance,housing,loan,day,duration,campaign,pdays,previ
 
 ## 停止/卸载体验集群
 
-{#stop}
-
+(stop)=
 ### 停止体验集群
 
 如果您需要停止并卸载体验集群，可以直接运行[卸载脚本](#uninstall)。
@@ -181,8 +179,7 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 ./stop.sh all
 ```
 
-{#uninstall}
-
+(uninstall)=
 ### 卸载体验集群
 
 获取 Kuscia 卸载脚本，脚本会下载到当前目录：

@@ -15,8 +15,7 @@
 
 ## 接口详情
 
-{#create-serving}
-
+(create-serving)=
 ### 创建 Serving
 
 #### HTTP路径
@@ -108,8 +107,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/create' \
 }
 ```
 
-{#query-serving}
-
+(query-serving)=
 ### 查询 Serving
 
 #### HTTP路径
@@ -284,8 +282,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/query' \
 }
 ```
 
-{#update-serving}
-
+(update-serving)=
 ### 更新 Serving
 
 #### HTTP路径
@@ -363,8 +360,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/update' \
 }
 ```
 
-{#delete-serving}
-
+(delete-serving)=
 ### 删除 Serving
 
 #### HTTP路径
@@ -414,8 +410,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/delete' \
 }
 ```
 
-{#batch-query-serving-status}
-
+(batch-query-serving-status)=
 ### 批量查询 Serving 状态
 
 #### HTTP路径
@@ -552,8 +547,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 
 ## 公共
 
-{#serving-status}
-
+(serving-status)=
 ### ServingStatus
 
 | 字段            | 类型                                             | 描述                 |
@@ -561,13 +555,12 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | serving_id    | string                                         | ServingID          |
 | status        | [ServingStatusDetail](#serving-status-detail)  | 状态信息               |
 
-{#serving-status-detail}
-
+(serving-status-detail)=
 ### ServingStatusDetail
 
 | 字段              | 类型                                              | 描述                      |
 | ------------------- |-------------------------------------------------|-------------------------|
-| state             | string                                          | 状态信息，参考 [State](#state) |
+| state             | string                                          | 状态信息，参考 [State](#serving-state) |
 | reason            | string                                          | 处于该状态的原因，一般用于描述失败的状态    |
 | message           | string                                          | 处于该状态的详细信息，一般用于描述失败的状态  |
 | total_parties     | int32                                           | 参与方总数                   |
@@ -575,15 +568,14 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | create_time       | string                                          | 创建时间                    |
 | party_statuses    | [PartyServingStatus](#party-serving-status)[]   | 参与方状态                   |
 
-{#party-serving-status}
-
+(party-serving-status)=
 ### PartyServingStatus
 
 | 字段                   | 类型                                                | 描述                                                                          |
 |----------------------|---------------------------------------------------|-----------------------------------------------------------------------------|
 | domain_id            | string                                            | 节点 DomainID                                                                 |
 | role                 | string                                            | 角色，详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 `deployTemplates.role` |
-| state                | string                                            | 状态，参考 [State](#state)                                                       |
+| state                | string                                            | 状态，参考 [State](#serving-state)                                                       |
 | replicas             | int32                                             | 应用副本总数                                                                      |
 | available_replicas   | int32                                             | 应用可用副本数                                                                     |
 | unavailable_replicas | int32                                             | 应用不可用副本数                                                                    |
@@ -591,8 +583,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | create_time          | string                                            | 创建时间，时间格式为 RFC3339。示例: "2024-01-17T10:18:02Z"                               |
 | endpoints            | [ServingPartyEndpoint](#serving-party-endpoint)[] | 应用对外暴露的访问地址信息                                                               |
 
-{#serving-party-endpoint}
-
+(serving-party-endpoint)=
 ### ServingPartyEndpoint
 
 | 字段          | 类型   | 描述                                                                                                        |
@@ -601,8 +592,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | scope       | string | 应用服务使用范围, 详细解释请参考 [AppImage](../concepts/appimage_cn.md) 中的 `deployTemplates.spec.containers.ports.scope` |
 | endpoint    | string | 应用服务暴露的访问地址                                                                                               |
 
-{#serving-party}
-
+(serving-party)=
 ### ServingParty
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -615,8 +605,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | resources | [Resource](#resource)[] | 可选 | 应用运行资源。若不设时，那么不会限制应用运行过程中使用的资源大小 |
 | service_name_prefix | string | 可选 | 自定义应用服务名称前缀。长度不超过 48 个字符，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names)。 <br/> - 若配置，则应用服务名称拼接规则为 `{service_name_prefix}-{port_name}`，port_name 对应 [AppImage](../concepts/appimage_cn.md) 中的 `deployTemplates.spec.containers.ports.name` </br> - 若不配置，Kuscia 随机生成应用服务名称 |
 
-{#update-strategy}
-
+(update-strategy)=
 ### UpdateStrategy
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -625,8 +614,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | max_surge | string | 可选 | 用来指定可以创建的超出应用总副本数的应用数量。默认为总副本数的"25%"。max_unavailable为0，则此值不能为0 |
 | max_unavailable | string | 可选 | 用来指定升级过程中不可用的应用副本个数上限。默认为总副本数的"25%"。max_surge为0，则此值不能为0 |
 
-{#resource}
-
+(resource)=
 ### Resource
 
 | 字段           | 类型   | 选填 | 描述                                                                                                                            |
@@ -637,8 +625,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/serving/status/batchQuery' \
 | min_memory     | string | 可选 | 最小memory数量。单位："Mi"，"Gi"；例如："100Mi"：表示100兆字节                                                                                   |
 | max_memory     | string | 可选 | 最大memory数量。单位："Mi"，"Gi"；例如："100Mi"：表示100兆字节                                                                                   |
 
-{#state}
-
+(serving-state)=
 ### State
 
 | Name             | Number | 描述                     |

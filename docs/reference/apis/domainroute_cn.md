@@ -15,8 +15,7 @@ Autonomy 节点之间的路由规则。请参考 [DomainRoute](../concepts/domai
 
 ## 接口详情
 
-{#create-domain-route}
-
+(create-domain-route)=
 ### 创建节点路由
 
 #### HTTP 路径
@@ -30,7 +29,7 @@ Autonomy 节点之间的路由规则。请参考 [DomainRoute](../concepts/domai
 | header              | [RequestHeader](summary_cn.md#requestheader) | 可选  | 请求头                                                                                    |
 | authentication_type | string                                       | 必填  | 认证类型：\[Token，MTLS，None]，参考 [DomainRoute 概念](../concepts/domainroute_cn.md)                 |
 | destination         | string                                       | 必填  | 目标节点ID                                                                                       |
-| endpoint            | [RouteEndpoint](#route-endpoint)             | 可选  | 目标节点的地址（请填写域名，端口和协议不需要填写）；如果是[路由转发模式](../concepts/domainroute_cn.md#domain-route-advance)则不需要填该字段  |
+| endpoint            | [RouteEndpoint](#route-endpoint)             | 可选  | 目标节点的地址（请填写域名，端口和协议不需要填写）；如果是[路由转发模式](../concepts/domainroute_cn.md#domainroute-进阶)则不需要填该字段  |
 | source              | string                                       | 必填  | 源节点ID |
 | token_config        | [TokenConfig](#token-config)                 | 可选  | Token 相关配置；authenticationType 为`Token`，需要配置该字段。 |
 | mtls_config         | [MtlsConfig](#mtls-config)                   | 可选  | MTLS 相关配置，authenticationType 为`MTLS`时，需要配置该字段。  |
@@ -104,8 +103,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/create' \
 }
 ```
 
-{#delete-domain-route}
-
+(delete-domain-route)=
 ### 删除节点路由
 
 #### HTTP 路径
@@ -169,8 +167,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/delete' \
 }
 ```
 
-{#query-domain-route}
-
+(query-domain-route)=
 ### 查询节点路由
 
 #### HTTP 路径
@@ -273,8 +270,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/query' \
 }
 ```
 
-{#batch-query-domain-route-status}
-
+(batch-query-domain-route-status)=
 ### 批量查询节点路由状态
 
 #### HTTP 路径
@@ -372,8 +368,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 
 ## 公共
 
-{#domain-route-key}
-
+(domain-route-key)=
 ### DomainRouteKey
 
 | 字段          | 类型     | 选填 | 描述      |
@@ -381,8 +376,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 | source      | string | 必填 | 源节点 ID  |
 | destination | string | 必填 | 目标节点 ID |
 
-{#domain-route-status}
-
+(domain-route-status)=
 ### DomainRouteStatus
 
 | 字段          | 类型                           | 描述      |
@@ -392,8 +386,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 | source      | string                       | 源节点 ID  |
 | status      | [RouteStatus](#route-status) | 状态      |
 
-{#endpoint-port}
-
+(endpoint-port)=
 ### EndpointPort
 
 | 字段         | 类型    | 选填 | 描述                    |
@@ -403,8 +396,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 | isTLS       | bool   | 可选 | 是否开启 TLS，默认为 false |
 | path_prefix | string | 可选 | 如果非空，网关会对发送的请求进行 path rewrite，在请求的path 前加上 path_prefix 的值      |
 
-{#route-endpoint}
-
+(route-endpoint)=
 ### RouteEndpoint
 
 | 字段    | 类型                               | 选填 | 描述   |
@@ -412,8 +404,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 | host  | string                           | 必填 | 目标主机 |
 | ports | [EndpointPort](#endpoint-port)[] | 必填 | 目标端口 |
 
-{#route-status}
-
+(route-status)=
 ### RouteStatus
 
 | 字段     | 类型     | 描述                       |
@@ -421,8 +412,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 | status | string | 是否成功：\[Succeeded,Failed] |
 | reason | string | 原因                       |
 
-{#mtls-config}
-
+(mtls-config)=
 ### MTLSConfig
 
 详细参考 [DomainRoute 概念](../concepts/domainroute_cn.md) 。
@@ -433,8 +423,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 | source_client_private_key | string | 必填 | 来源客户端的私钥，BASE64 编码格式 |
 | source_client_cert | string | 必填 | 来源客户端的证书，BASE64 编码格式 |
 
-{#token-config}
-
+(token-config)=
 ### TokenConfig
 
 详细参考 [DomainRoute 概念](../concepts/domainroute_cn.md) 。
@@ -444,8 +433,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 | rolling_update_period  | int64  |选填 | 滚动更新间隔，单位：秒，默认值为 0                                                   |
 | token_gen_method       | string | 必填 | 签名方式：`RSA-GEN`，表示双方各生成一半，拼成一个 32 长度的通信 Token，并且用对方的公钥加密，双方都会用自己的私钥验证 Token 有效性  |
 
-{#transit}
-
+(transit)=
 ### Transit
 
 详细参考 [DomainRoute 概念](../concepts/domainroute_cn.md) 。
@@ -455,8 +443,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/route/status/batchQuery' \
 | transit_method | string                            | 必填 | 路由转发类型：\[THIRD-DOMAIN，REVERSE-TUNNEL]。THIRD-DOMAIN 表示经由第三方节点转发，REVERSE-TUNNEL 表示经由反向隧道转发 |
 | domain         | [Transit_Domain](#transit_domain) | 可选 | transit_method 为 THIRD-DOMAIN 时需要填写，否则不需要填写       |
 
-{#transit_domain}
-
+(transit_domain)=
 #### Transit_Domain
 
 | 字段      | 类型   | 选填 | 描述            |

@@ -171,7 +171,7 @@ docker pull nginx:latest
 
 ## Nginx 代理参数配置示例
 
-- Nginx 代理参数配置示例,详情请参考[这里](../networkrequirements.md#nginx)。
+- Nginx 代理参数配置示例,详情请参考[这里](../networkrequirements.md#nginx-代理参数配置示例)。
 
 ### 启动并挂载配置
 

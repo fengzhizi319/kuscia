@@ -9,8 +9,7 @@
 
 本示例在**点对点组网模式**下完成。在中心化组网模式下，证书的配置会有所不同。
 
-{#cert-and-token}
-
+(scql-cert-and-token)=
 ## 获取 KusciaAPI 证书和 Token
 
 在下面[准备数据](./run_scql_on_kuscia_cn.md#alice-准备测试数据)步骤中需要使用到 KusciaAPI，如果 KusciaAPI 启用了 MTLS 协议，则需要提前准备好 MTLS 证书和 Token。协议参考[这里](../troubleshoot/concept/protocol_describe.md)。
@@ -82,7 +81,7 @@
     ```
 
     :::{tip}
-    K8S RunK 模式部署 Kuscia 时，此处需要使用 [OSS 数据源](../reference/apis/domaindatasource_cn.md#id5)，并将 /home/kuscia/var/storage/data/scql-alice.csv 示例数据放入 OSS 中。
+    K8S RunK 模式部署 Kuscia 时，此处需要使用 [OSS 数据源](../reference/apis/domaindatasource_cn.md#创建对象存储服务数据源示例)，并将 /home/kuscia/var/storage/data/scql-alice.csv 示例数据放入 OSS 中。
     :::
 
 3. 创建 DomainData
@@ -160,7 +159,7 @@
     ```
 
     :::{tip}
-    K8S RunK 模式部署 Kuscia 时，此处需要使用 [OSS 数据源](../reference/apis/domaindatasource_cn.md#id5)，并将 /home/kuscia/var/storage/data/scql-bob.csv 示例数据放入 OSS 中。
+    K8S RunK 模式部署 Kuscia 时，此处需要使用 [OSS 数据源](../reference/apis/domaindatasource_cn.md#创建对象存储服务数据源示例)，并将 /home/kuscia/var/storage/data/scql-bob.csv 示例数据放入 OSS 中。
     :::
 
 3. 创建 DomainData

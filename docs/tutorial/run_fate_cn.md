@@ -4,6 +4,16 @@
 
 **注： 该模式目前还处于研发阶段，在体验的时候，需要依赖源代码进行编译。**
 
+## 前置条件
+
+在开始前，请确认：
+
+- 已完成 Kuscia 节点部署，且 Master 与 Lite / Autonomy 状态正常；
+- 节点至少有 **4 核 CPU、16 GB 内存**，并为 FATE 预留约 20 GB 磁盘；
+- 已安装 Docker，且当前用户可以访问 Docker；
+- 节点可以拉取或导入 FATE 相关镜像；
+- 已阅读[部署要求](../deployment/deploy_check.md)和[FATE 部署失败排查](../troubleshoot/deployment/FATE_deploy_failed.md)。
+
 ## 准备节点
 
 准备 Kuscia 节点请参考 [快速入门](../getting_started/quickstart_cn.md)。
@@ -368,3 +378,67 @@ KusciaJob 描述了一个 Pipeline，其中一个 **KusciaTask 对应一个 op �
   }
 }
 ```
+
+## 验证作业
+
+作业提交后，按下面的顺序确认整条链路是否正常：
+
+```shell
+# 1. 查看 KusciaJob 整体状态，期望 Phase 为 Succeeded
+kubectl get kj -n cross-domain
+
+# 2. 查看每个 KusciaTask 的状态，期望全部为 Succeeded
+kubectl get kt -n cross-domain -o wide
+
+# 3. 查看任务 Pod
+kubectl get pods -n cross-domain
+
+# 4. 查看 FATE 侧作业状态（以 fate-alice 为例）
+docker logs -f fate-alice
+```
+
+在 FATE 集群内，还可以通过 FATE Flow 查询作业进度：
+
+```shell
+# 进入 fate-alice 容器
+docker exec -it fate-alice bash
+
+# 查询作业列表与状态，job_id 可通过 KusciaTask 的 taskInputConfig 或 adapter 日志获取
+flow job list
+flow job query <job_id>
+```
+
+当所有算子执行成功时，KusciaJob 状态会变为 `Succeeded`，adapter 容器日志中可以看到 `success` 字样。
+
+## 常见问题
+
+| 现象 | 可能原因 | 排查方向 |
+| --- | --- | --- |
+| KusciaJob 一直为 `Running` | FATE 集群部署未完成或数据未上传完成 | 检查 `fate-alice` 日志是否打印 **HAVE FUN**，确认 `lr_guest` / `lr_host` 数据上传成功 |
+| FATE Pod `ImagePullBackOff` | 镜像未导入或标签不匹配 | 参考 [FATE 部署失败排查](../troubleshoot/deployment/FATE_deploy_failed.md) |
+| adapter 日志连接超时 | `{{.CLUSTER_IP}}` 配置错误或 FATE 端口未开放 | 在 adapter 容器内 `curl` FATE Flow 端口，确认网络连通 |
+| `taskInputConfig` 解析失败 | alias / taskID 与 dsl 中 op name 不一致 | 核对每个 KusciaTask 的 `alias`、`taskID` 与 component name 完全相同 |
+| 作业失败 | 算子参数或数据维度不匹配 | 查看对应 KusciaTask 的 adapter 日志与 FATE Flow 日志，参考 [作业运行失败排查](../troubleshoot/runtask/run_job_failed.md) |
+
+更多 KusciaTask 层面的问题，可参考：
+
+- [作业运行失败](../troubleshoot/runtask/run_job_failed.md)
+- [FATE 作业运行失败](../troubleshoot/runtask/FATE_run_job_failed.md)
+- [Docker 内存限制](../troubleshoot/parameter_tuning/docker_memory_limit.md)
+
+## 清理
+
+如果需要释放 FATE 相关资源，可以在完成实验后执行：
+
+```shell
+# 删除示例作业（在控制容器内执行）
+kubectl delete kj -n cross-domain $(kubectl get kj -n cross-domain -o name | grep lr | head -1 | cut -d/ -f2)
+
+# 停止并删除 Alice 侧独立部署的 FATE 集群
+docker rm -f fate-alice
+
+# 清理 Bob 侧的 FATE 部署（在对应节点容器内执行）
+kubectl delete deployment -n bob -l app=fate-deploy
+```
+
+FATE 运行产生的数据位于各 FATE 容器的 `/data/projects/fate` 目录下，如不再需要可一并清理。清理前请确认没有其他作业正在使用该 FATE 集群。

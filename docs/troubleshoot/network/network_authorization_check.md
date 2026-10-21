@@ -85,7 +85,7 @@
 
 ### 查看网关日志
 
-通过日志能够很好的分析 Kuscia 运行状态、连接情况、流量信息等，详细内容请参考[日志说明](../../deployment/logdescription.md/#envoy)
+通过日志能够很好的分析 Kuscia 运行状态、连接情况、流量信息等，详细内容请参考[日志说明](../../deployment/logdescription.md#envoy-日志格式)
 
 ### 分析网络拓扑、使用抓包工具
 

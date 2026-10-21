@@ -19,16 +19,14 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 
 ## 接口详情
 
-{#create-domain-data}
-
+(create-domain-data)=
 ### 创建数据对象
 
 #### HTTP 路径
 
 /api/v1/domaindata/create
 
-{#create-domain-data-request}
-
+(create-domain-data-request)=
 #### 请求（CreateDomainDataRequest）
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -44,8 +42,7 @@ Data Mesh API 提供了从 Domain 侧的管理 DomainData 的能力，详细 API
 | partition | [Partition](#partition) | 可选 | 暂不支持 |
 | columns | [DataColumn](#data-column) array | 必填 | 列信息 |
 
-{#create-domain-data-response}
-
+(create-domain-data-response)=
 #### 响应（CreateDomainDataResponse）
 
 | 字段                 | 类型                             | 描述      |
@@ -104,8 +101,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/create' \
 }
 ```
 
-{#update-domain-data}
-
+(update-domain-data)=
 ### 更新数据对象
 
 #### HTTP 路径
@@ -180,8 +176,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/update' \
 }
 ```
 
-{#delete-domain-data}
-
+(delete-domain-data)=
 ### 删除数据对象
 
 #### HTTP 路径
@@ -233,8 +228,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/delete' \
 }
 ```
 
-{#query-domain-data}
-
+(query-domain-data)=
 ### 查询数据对象
 
 #### HTTP 路径
@@ -329,8 +323,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/query' \
 }
 ```
 
-{#batch-query-domain-data}
-
+(batch-query-domain-data)=
 ### 批量查询数据对象
 
 #### HTTP 路径
@@ -422,8 +415,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/batchQuery' \
 }
 ```
 
-{#list-domain-data}
-
+(list-domain-data)=
 ### 列出数据对象
 
 #### HTTP 路径
@@ -512,16 +504,14 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/list' \
 }
 ```
 
-{#delete-data-and-raw}
-
+(delete-data-and-raw)=
 ### 删除数据对象及其物理数据
 
 #### HTTP 路径
 
 /api/v1/domaindata/deleteDataAndRaw
 
-{#delete-domain-data-request}
-
+(delete-domain-data-request)=
 #### 请求（DeleteDomainDataRequest）
 
 | 字段            | 类型                                           | 选填 | 描述                                                                                                                            |
@@ -530,8 +520,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/list' \
 | domaindata_id | string                                       | 必填 | 数据对象 ID，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
 | domain_id     | string                                       | 必填 | 节点 ID                                                                                                                         |
 
-{#delete-domain-data-response}
-
+(delete-domain-data-response)=
 #### 响应（DeleteDomainDataResponse）
 
 | 字段                 | 类型                             | 描述      |
@@ -571,8 +560,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/deleteDataAndRaw' \
 
 ## 公共
 
-{#query-domain-data-request-data}
-
+(query-domain-data-request-data)=
 ### QueryDomainDataRequestData
 
 | 字段            | 类型     | 选填 | 描述      |
@@ -580,8 +568,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/deleteDataAndRaw' \
 | domain_id     | string | 必填 | 节点 ID   |
 | domaindata_id | string | 必填 | 数据对象 ID |
 
-{#list-domain-data-request-data}
-
+(list-domain-data-request-data)=
 #### ListDomainDataRequestData
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -590,16 +577,14 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/deleteDataAndRaw' \
 | domaindata_type | string | 可选 | 类型 |
 | domaindata_vendor | string | 可选 | 来源 |
 
-{#domain-data-list}
-
+(domain-data-list)=
 ### DomainDataList
 
 | 字段              | 类型                                  | 描述     |
 |-----------------|-------------------------------------|--------|
 | domaindata_list | [DomainData](#domain-data-entity)[] | 数据对象列表 |
 
-{#domain-data-entity}
-
+(domain-data-entity)=
 ### DomainData
 
 | 字段            | 类型                           | 描述                                                                                                                               |
@@ -616,8 +601,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/deleteDataAndRaw' \
 | vendor        | string                       | 来源，用于批量查询接口筛选数据对象，参考 [ListDomainDataRequestData](#list-domain-data-request-data) 和 [DomainData 概念](../concepts/domaindata_cn.md) |
 | author        | string                       | 表示 DomainData 的所属者的节点 ID ，用来标识这个 DomainData 是由哪个节点创建的 |
 
-{#partition}
-
+(partition)=
 ### Partition
 
 | 字段     | 类型                           | 选填 | 描述  |
@@ -625,8 +609,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindata/deleteDataAndRaw' \
 | type   | string                       | 必填 | 类型  |
 | fields | [DataColumn](#data-column)[] | 必填 | 列信息 |
 
-{#data-column}
-
+(data-column)=
 ### DataColumn
 
 | 字段 | 类型 | 选填 | 描述 |

@@ -16,8 +16,7 @@
 
 ## 接口详情
 
-{#create-appimage}
-
+(create-appimage)=
 ### 创建应用镜像模版
 
 #### HTTP 路径
@@ -30,7 +29,7 @@
 | ----------------- | ---------------------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------- |
 | header | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容 |
 | name | string | 必填 | 应用镜像名称，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
-| image | [AppImageInfo](#AppImageInfo) | 必填 | 基础镜像信息 ID |
+| image | [AppImageInfo](#appimageinfo) | 必填 | 基础镜像信息 ID |
 | config_templates | map<string, string> | 可选 | 应用启动依赖的配置模版信息，参考 [AppImage 概念](../concepts/appimage_cn.md) |
 | deploy_templates | [DeployTemplate](#DeployTemplate)[] | 必填 | 应用部署模版配置信息 |
 
@@ -168,8 +167,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/create' \
 }
 ```
 
-{#update-appimage}
-
+(update-appimage)=
 ### 更新应用镜像模版
 
 #### HTTP 路径
@@ -184,7 +182,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/create' \
 |------------------|----------------------------------------------|----|--------------------------------------------------------------------------------------|
 | header           | [RequestHeader](summary_cn.md#requestheader) | 可选 | 自定义请求内容                                                                              |
 | name          | string                                       | 必填 | 应用镜像名称，满足 [RFC 1123 标签名规则要求](https://kubernetes.io/zh-cn/docs/concepts/overview/working-with-objects/names/#dns-label-names) |
-| image       | [AppImageInfo](#AppImageInfo)                                       | 必填 | 基础镜像信息 ID                                                                                                                   |
+| image       | [AppImageInfo](#appimageinfo)                                       | 必填 | 基础镜像信息 ID                                                                                                                   |
 | config_templates | [ConfigTemplate](#ConfigTemplate)                                        | 可选 | 应用启动依赖的配置模版信息，参考 [AppImage 概念](../concepts/appimage_cn.md)                                                                         |
 | deploy_templates           | [DeployTemplate](#DeployTemplate)[]                              | 可选 | 应用部署模版配置信息                                                                                                                       |
 
@@ -267,8 +265,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/update' \
 }
 ```
 
-{#delete-appimage}
-
+(delete-appimage)=
 ### 删除应用镜像模版
 
 #### HTTP 路径
@@ -318,8 +315,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/delete' \
 }
 ```
 
-{#query-appimage}
-
+(query-appimage)=
 ### 查询应用镜像模版
 
 #### HTTP 路径
@@ -340,7 +336,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/delete' \
 | status                     | [Status](summary_cn.md#status)              |  状态信息                                                         |
 | data                       | QueryAppImageResponseData                   |                                                              |
 | data.name                  | string                                      | 应用镜像名称 |
-| data.image                 | [AppImageInfo](#AppImageInfo)               | 基础镜像信息                                                       |
+| data.image                 | [AppImageInfo](#appimageinfo)               | 基础镜像信息                                                       |
 | data.config_templates      | [ConfigTemplate](#ConfigTemplate)           | 应用启动依赖的配置模版信息，参考 [AppImage 概念](../concepts/appimage_cn.md)                                                                         |
 | data.deploy_templates      | [DeployTemplate](#DeployTemplate)[]       | 应用部署模版配置信息                                                 |
 
@@ -385,8 +381,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/query' \
 }
 ```
 
-{#batch-query-appimage}
-
+(batch-query-appimage)=
 ### 批量查询节点状态
 
 #### HTTP 路径
@@ -407,7 +402,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/query' \
 | status       | [Status](summary_cn.md#status) | 状态信息 |
 | data         | QueryAppImageResponseData[]   |     |
 | data[].name                  | string                                      | 应用镜像名称 |
-| data[].image                 | [AppImageInfo](#AppImageInfo)               | 基础镜像信息                                                       |
+| data[].image                 | [AppImageInfo](#appimageinfo)               | 基础镜像信息                                                       |
 | data[].config_templates      | [ConfigTemplate](#ConfigTemplate)           | 应用启动依赖的配置模版信息，参考 [AppImage 概念](../concepts/appimage_cn.md)                                                                         |
 | data[].deploy_templates      | [DeployTemplate](#DeployTemplate)[]       | 应用部署模版配置信息                                                 |
 
@@ -458,8 +453,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/batchQuery' \
 }
 ```
 
-{#list-appimage}
-
+(list-appimage)=
 ### 查询应用镜像模版列表
 
 #### HTTP 路径
@@ -482,7 +476,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/batchQuery' \
 | data                                  | AppImageList                        | 镜像列表                                                     |
 | next_page_token                       | string                              | 下一页分页参数                                                  |
 | data.appimage_list[].name             | string                              | 应用镜像名称                                                   |
-| data.appimage_list[].image            | [AppImageInfo](#AppImageInfo)       | 基础镜像信息                                                   |
+| data.appimage_list[].image            | [AppImageInfo](#appimageinfo)       | 基础镜像信息                                                   |
 | data.appimage_list[].config_templates | [ConfigTemplate](#ConfigTemplate)   | 应用启动依赖的配置模版信息，参考 [AppImage 概念](../concepts/appimage_cn.md) |
 | data.appimage_list[].deploy_templates              | [DeployTemplate](#DeployTemplate)[] | 应用部署模版配置信息                                               |
 
@@ -631,8 +625,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 
 ## 公共
 
-{#AppImageInfo}
-
+(appimageinfo)=
 ### AppImageInfo
 
 | 字段                    | 类型                                          | 描述                                                           |
@@ -642,8 +635,18 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 | id                  | string                                      |   应用镜像的 ID 信息    |
 | sign         | string                | 应用镜像的签名信息                                                     |
 
-{#DeployTemplate}
+(configtemplate)=
 
+### ConfigTemplate
+
+`config_templates` 是「配置文件名 → 配置内容」的映射。Kuscia 会把内容渲染为文件，并通过 `config_volume_mounts` 挂载到应用容器；内容支持 Go Template 变量，可用变量见 [AppImage 概念](../concepts/appimage_cn.md#参考)。
+
+| 字段 | 类型 | 描述 |
+| --- | --- | --- |
+| `<file-name>` | string | 配置文件名，例如 `task-config.conf` |
+| `<file-content>` | string | 配置内容，支持 `{{.TASK_ID}}`、`{{.TASK_INPUT_CONFIG}}`、`{{.TASK_CLUSTER_DEFINE}}`、`{{.ALLOCATED_PORTS}}` 等变量 |
+
+(deploytemplate)=
 ### DeployTemplate
 
 | 字段                    | 类型                                          | 描述                                                           |
@@ -652,7 +655,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 | role                  | string                                      | 应用作为该角色时，使用的部署模版配置 |
 | replicas                  | int32                                      |   应用运行的副本数，默认为1    |
 | restart_policy         | string                | 应用的重启策略, 支持Always，Never，OnFailure。Always：当容器终止退出后，总是重启容器；OnFailure：当容器终止异常退出（退出码非0）时，才重启容器；Never：当容器终止退出时，从不重启容器。                                                     |
-| containers         | [Container](#Container)[]               | 应用容器配置信息                                                     |
+| containers         | [Container](#container)[]               | 应用容器配置信息                                                     |
 
 ### Container
 
@@ -663,7 +666,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 | args             | string[]                                      |    应用的启动参数                              |
 | working_dir             | string                                      |   应用容器的工作目录                               |
 | config_volume_mounts             | [ConfigVolumeMount](#ConfigVolumeMount)                                      |    应用启动的挂载配置                              |
-| ports             | [ContainerPort](#ContainerPort)[]                                      |   应用容器的启动端口色                               |
+| ports             | [ContainerPort](#containerport)[]                                      |   应用容器的启动端口色                               |
 | env_from             | [EnvFromSource](#EnvFromSource)                                      |  使用envFrom为应用容器设置环境变量                                |
 | env             | [EnvVar](#EnvVar)                                      |   使用env为应用容器设置环境变量                               |
 | resources             | [ResourceRequirements](#ResourceRequirements)                                      |    应用容器申请的资源配置                              |
@@ -672,8 +675,18 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 | startup_probe             | [Probe](#Probe)                                      |   应用容器的启动探针配置                               |
 | image_pull_policy             | string                                      |   应用容器的镜像拉取策略                               |
 
-{#ConfigVolumeMount}
+(resourcerequirements)=
 
+### ResourceRequirements
+
+| 字段 | 类型 | 描述 |
+| --- | --- | --- |
+| limits | map<string, string> | 容器可使用的资源上限，常用键为 `cpu`、`memory` |
+| requests | map<string, string> | 调度时预留的资源，常用键为 `cpu`、`memory` |
+
+资源值使用 Kubernetes 数量格式，例如 `100m`、`1`、`128Mi`、`1Gi`。
+
+(configvolumemount)=
 ### ConfigVolumeMount
 
 | 字段                    | 类型                                          | 描述                                                           |
@@ -681,8 +694,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 | mount_path             | string                                      |  文件挂载到容器中的路径                                |
 | sub_path             | string                                      |   文件挂载到容器中的子路径                               |
 
-{#ContainerPort}
-
+(containerport)=
 ### ContainerPort
 
 | 字段                    | 类型                                          | 描述                                                           |
@@ -691,8 +703,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 | protocol             | string                                      |   应用容器的端口使用的协议类型。支持两种类型：HTTP、GRPC                               |
 | scope             | string                                      |    应用端口使用范围。支持三种模式：Cluster、Domain、Local                              |
 
-{#EnvFromSource}
-
+(envfromsource)=
 ### EnvFromSource
 
 | 字段                    | 类型                                          | 描述                                                           |
@@ -703,8 +714,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 | secret_ref             | object                                      |    使用secret里的变量                              |
 | secret_ref.name             | string                                      |    secret的名称                              |
 
-{#EnvVar}
-
+(envvar)=
 ### EnvVar
 
 | 字段                    | 类型                                          | 描述                                                           |
@@ -712,8 +722,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 | name             | string                                      |  变量名                                |
 | value             | string                                      |   变量值                               |
 
-{#Probe}
-
+(probe)=
 ### Probe
 
 | 字段                    | 类型                                          | 描述                                                           |
@@ -729,16 +738,14 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 | failure_threshold             | int32                                      |  探针失败阈值                                |
 | termination_grace_period_seconds             | int64                                      |   优雅中止时长                               |
 
-{#ExecAction}
-
+(execaction)=
 ### ExecAction
 
 | 字段                    | 类型                                          | 描述                                                           |
 |-----------------------|---------------------------------------------|--------------------------------------------------------------|
 | command             | string[]                                      |  命令                                |
 
-{#HTTPGetAction}
-
+(httpgetaction)=
 ### HTTPGetAction
 
 | 字段                    | 类型                                          | 描述                                                           |
@@ -751,8 +758,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 | http_headers[].name             | string                                      |   HTTP头的键                               |
 | http_headers[].value             | string                                      |   HTTP头的值                               |
 
-{#TCPSocketAction}
-
+(tcpsocketaction)=
 ### TCPSocketAction
 
 | 字段                    | 类型                                          | 描述                                                           |
@@ -760,8 +766,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/appimage/list' \
 | port             | string                                      |   TCP端口                               |
 | host             | string                                      |  TCP域名                                |
 
-{#GRPCAction}
-
+(grpcaction)=
 ### GRPCAction
 
 | 字段                    | 类型                                          | 描述                                                           |

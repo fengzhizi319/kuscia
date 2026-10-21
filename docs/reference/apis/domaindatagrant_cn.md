@@ -15,16 +15,14 @@ DomainDataGrant 表示被 Kuscia 管理的数据授权对象。请参考 [Domain
 
 ## 接口详情
 
-{#create-domain-data-grant}
-
+(create-domain-data-grant)=
 ### 创建数据对象授权
 
 #### HTTP 路径
 
 /api/v1/domaindatagrant/create
 
-{#create-domain-data-grant-request}
-
+(create-domain-data-grant-request)=
 #### 请求（CreateDomainDataGrantRequest）
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -38,8 +36,7 @@ DomainDataGrant 表示被 Kuscia 管理的数据授权对象。请参考 [Domain
 | domain_id | string | 必填 | 授权信息所有者节点ID |
 | signature | string | 可选 | 表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。 目前该字段为预留字段，暂未开启，填空字符串即可 |
 
-{#create-domain-data-grant-response}
-
+(create-domain-data-grant-response)=
 #### 响应（CreateDomainDataGrantResponse）
 
 | 字段                 | 类型                             | 描述      |
@@ -83,8 +80,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/create' \
 }
 ```
 
-{#update-domain-data-grant}
-
+(update-domain-data-grant)=
 ### 更新数据对象授权
 
 #### HTTP 路径
@@ -143,8 +139,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/update' \
 }
 ```
 
-{#delete-domain-data-grant}
-
+(delete-domain-data-grant)=
 ### 删除数据对象授权
 
 #### HTTP 路径
@@ -196,8 +191,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/delete' \
 }
 ```
 
-{#query-domain-data-grant}
-
+(query-domain-data-grant)=
 ### 查询数据对象授权
 
 #### HTTP 路径
@@ -287,8 +281,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/query' \
 }
 ```
 
-{#batch-query-domain-data-grant}
-
+(batch-query-domain-data-grant)=
 ### 批量查询数据对象授权
 
 #### HTTP 路径
@@ -370,12 +363,10 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/batchQuery' \
 }
 ```
 
-{#list-domain-data-grant}
-
+(list-domain-data-grant)=
 ## 公共
 
-{#grant-limit-entity}
-
+(grant-limit-entity)=
 ### GrantLimit
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -387,8 +378,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/batchQuery' \
 | initiator | string | 选填 | 授权指定的发起方 |
 | input_config | string | 选填 | 授权指定的算子输入参数 |
 
-{#query-domain-data-grant-request-data}
-
+(query-domain-data-grant-request-data)=
 ### QueryDomainDataGrantRequestData
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -396,8 +386,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/batchQuery' \
 | domain_id | string | 必填 | 节点 ID |
 | domaindatagrant_id | string | 必填 | 数据对象授权 ID |
 
-{#domain-data-grant-entity}
-
+(domain-data-grant-entity)=
 ### DomainDataGrant
 
 | 字段 | 类型 | 描述 |
@@ -405,8 +394,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/batchQuery' \
 | data | [DomainDataGrantData](#domain-data-grant-data-entity)       | 数据对象ID  |
 | status | [DomainDataGrantStatus](#domain-data-grant-status-entity)   | 数据对象授权 ID |
 
-{#domain-data-grant-data-entity}
-
+(domain-data-grant-data-entity)=
 ### DomainDataGrantData
 
 | 字段 | 类型 | 描述 |
@@ -420,8 +408,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatagrant/batchQuery' \
 | domain_id | string | 授权信息所有者节点 ID |
 | signature | string | 表示授权信息的签名，是用 author 的节点私钥进行签名的。grantDomain 可以用 author 的公钥进行验证授权信息的真假。目前该字段为预留字段，暂未开启，暂时为空字符串 |
 
-{#domain-data-grant-status-entity}
-
+(domain-data-grant-status-entity)=
 ### DomainDataGrantStatus
 
 | 字段 | 类型 | 描述 |

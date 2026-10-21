@@ -49,6 +49,7 @@
 
 ![network](../imgs/network.png)
 
+(nginx)=
 ## Nginx 代理参数配置示例
 
 - 推荐使用 Nginx release-1.15.3 及以上版本，详情参考[github/nginx](https://github.com/nginx/nginx)

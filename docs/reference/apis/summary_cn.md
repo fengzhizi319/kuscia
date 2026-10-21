@@ -1,12 +1,11 @@
 # 概览
 
-{#api-all}
-
+(api-all)=
 ## K8s API 和 Kuscia API
 
 Kuscia 提供了两套 API 接口，分别是 K8s API 和 Kuscia API。
 
-K8s API 是基于 K8s 接口，以 CRD 的形式提供，请参考 [概念](../concepts/index) 。
+K8s API 是基于 K8s 接口，以 CRD 的形式提供，请参考 [概念](../concepts/index.rst) 。
 您可以通过 kubectl 或 类似于 [client-go](https://github.com/kubernetes/client-go) 这样的 Go 客户端 进行接入。
 其他语言的接入方式，可以参考[这里](https://kubernetes.io/docs/reference/using-api/client-libraries/)。
 
@@ -15,8 +14,7 @@ Kuscia API 是在 K8s API 上的一层封装，提供了更加上层的逻辑，
 当前我们推荐基于 Kuscia API 接入隐语能力；仅当业务方对 K3s 非常熟悉，并且有很多 Kuscia API 无法满足的复杂功能需要实现，才推荐基于
 K8s API 接入。
 
-{#kuscia-api}
-
+(kuscia-api)=
 ## Kuscia API 约定
 
 Kuscia API 提供 HTTP 和 GRPC 两种访问方法。
@@ -38,8 +36,7 @@ protobuf
 响应总是携带一个 status 字段，类型为 [Status](#status) ，
 如 [CreateDomainDataResponse](domaindata_cn.md#响应createdomaindataresponse) ， 该字段描述了响应的状态信息。
 
-{#requestheader}
-
+(requestheader)=
 #### RequestHeader
 
 RequestHeader 可以携带自定义的信息。
@@ -48,8 +45,7 @@ RequestHeader 可以携带自定义的信息。
 |----------------|---------------------|----|---------|
 | custom_headers | map<string, string> | 可选 | 自定义的键值对 |
 
-{#status}
-
+(status)=
 #### Status
 
 Status 携带请求响应的状态信息。

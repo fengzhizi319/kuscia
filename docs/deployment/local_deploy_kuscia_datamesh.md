@@ -439,7 +439,7 @@ chmod u+x uninstall.sh
 
 ### 9.3 参考文档
 
-- [Kuscia 快速开始](./quickstart_cn.md)
+- [Kuscia 快速开始](../getting_started/quickstart_cn.md)
 - [多机部署中心化集群](./Docker_deployment_kuscia/deploy_master_lite_cn.md)
 - [多机部署 P2P 集群](./Docker_deployment_kuscia/deploy_p2p_cn.md)
 - [DataMesh API 概览](../reference/apis/datamesh/summary_cn.md)

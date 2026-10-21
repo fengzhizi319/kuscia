@@ -14,8 +14,7 @@
 - **模型训练** 将参与方的训练集作为输入，训练出算法模型。
 - **预测** 将算法模型和测试集作为输入，计算出预测结果。
 
-{#kuscia-job-state}
-
+(kuscia-job-state)=
 ## 状态说明
 
 下图为 KusciaJob 的状态流转图，其中红色字体表示 KusciaAPI 接口操作。
@@ -25,23 +24,22 @@
 KusciaJob 在其生命周期中会处于以下几种状态：
 
 - Initialized: 此时 Job 刚被发起方在发起方侧创建完成，但 Job 信息还未同步至其他参与方。若 Job 已同步至其他所有参与方则 Job 进入 AwaitingApproval 状态。
-- AwaitingApproval: 只有在 P2P 组网模式下且[开启 Job 审批](#enable-approval)的情况下，KusciaJob 才会进入到 AwaitingApproval 状态。AwaitingApproval 状态的 Job 需要参与方调用 KusciaAPI 的 [ApproveJob 接口](../apis/kusciajob_cn.md#approval-job)进行审批。待 Job 的所有参与方审批通过则 Job 进入 Pending 状态。若任一参与方审批拒绝则 Job 进入到 ApprovalReject 状态。
+- AwaitingApproval: 只有在 P2P 组网模式下且[开启 Job 审批](#enable-approval)的情况下，KusciaJob 才会进入到 AwaitingApproval 状态。AwaitingApproval 状态的 Job 需要参与方调用 KusciaAPI 的 [ApproveJob 接口](../apis/kusciajob_cn.md#审批-job)进行审批。待 Job 的所有参与方审批通过则 Job 进入 Pending 状态。若任一参与方审批拒绝则 Job 进入到 ApprovalReject 状态。
 - Pending: 此时 Job 已被所有参与方审批通过，等待 Job 的发起方发起 Start 命令，待所有参与方接收到 Start 信令后，Job 进入到 Running 状态（注：仅 BFIA 互联互通协议时发起方会向各参与方显式的发送 Start 信令，在 Kuscia 内部协议中无需显式发送 Start 信令，Job 会自动从 Pending 状态进入到 Running 状态）。
 - Running: 此时 Job 已进入到调度状态，注：Job 是 Running 状态时，'并不意味' 着 Job 中至少有一个 Task 是 Running 状态，因 Job 刚进入 Running 状态时，Task 并未创建完成。 当 Job 的所有 Task 均执行成功时，Job 进入 Succeeded 状态。 当 Job 中的 [关键 Task](#task-classification) 执行失败，则 Job 进入到 Failed 状态。
-- Suspended: Running 状态的 Job 被某一参与方执行了 [Suspend 操作](../apis/kusciajob_cn.md#suspend-job)，则会进入此状态，执行 Suspend 操作后，Job 中处于 Running 状态的 Task 会被终止掉，Task 进入到 Failed 状态。 Suspended 状态的 Job 可通过 [Restart 接口](../apis/kusciajob_cn.md#restart-job)重新运行。
+- Suspended: Running 状态的 Job 被某一参与方执行了 [Suspend 操作](../apis/kusciajob_cn.md#暂停-job)，则会进入此状态，执行 Suspend 操作后，Job 中处于 Running 状态的 Task 会被终止掉，Task 进入到 Failed 状态。 Suspended 状态的 Job 可通过 [Restart 接口](../apis/kusciajob_cn.md#重跑-job)重新运行。
 - Succeeded: 所有 Task 都是 Succeeded 或 Failed 状态且所有 Critical KusciaTask 都是 Succeeded 状态。 Succeeded 状态是一种终态，终态则不会再流转到其他状态。
-- Failed: 所有 Task 都是 Succeeded 或 Failed 状态且至少有一个 Critical KusciaTask 是 Failed 状态。 Failed 状态的 Job 可通过 [Restart 接口](../apis/kusciajob_cn.md#restart-job)重新运行。
+- Failed: 所有 Task 都是 Succeeded 或 Failed 状态且至少有一个 Critical KusciaTask 是 Failed 状态。 Failed 状态的 Job 可通过 [Restart 接口](../apis/kusciajob_cn.md#重跑-job)重新运行。
 - ApprovalReject: Job 被某一参与方审批为拒绝执行。 ApprovalReject 状态是一种终态，终态则不会再流转到其他状态。
 - Cancelled: Job 被某一方取消，被取消的 Job 不可被再次执行。 Cancelled 状态是一种终态，终态则不会再流转到其他状态。
 
-{#enable-approval}
-
+(enable-approval)=
 ### 开启 Job 审批
 
 Job 审批即发起方（Alice）执行 Job 时，若参与方（Bob）开启了 Job 审批配置，则需要参与方（Bob）调用 KusciaAPI 进行 Job 审批，审批通过才可在参与方（Bob）侧执行 Job，否则 Job 则一直处于待审批（AwaitingApproval）或审批拒绝（ApprovalReject）的状态不会被调度执行，作为发起方（Alice）无需要调用 KusciaAPI 审批 Job。
 
-在 P2P 组网模式下，可在控制面（Master 或 Autonomy）开启 Job 审批配置。通过修改配置文件 [kuscia.yaml](../../deployment/kuscia_config_cn.md#configuration-detail) 中的 `enableWorkloadApprove` 字段为 `true` 的方式开启 Job 审批，
-开启 Job 审批后，当本方作为参与方时需要调用 [KusciaAPI](../apis/kusciajob_cn.md#approval-job) 进行 Job 审批，审批通过后 Job 才可以在本方执行，否则 Job 不执行。当本方作为发起方时，本方无需审批。
+在 P2P 组网模式下，可在控制面（Master 或 Autonomy）开启 Job 审批配置。通过修改配置文件 [kuscia.yaml](../../deployment/kuscia_config_cn.md#配置项详解) 中的 `enableWorkloadApprove` 字段为 `true` 的方式开启 Job 审批，
+开启 Job 审批后，当本方作为参与方时需要调用 [KusciaAPI](../apis/kusciajob_cn.md#审批-job) 进行 Job 审批，审批通过后 Job 才可以在本方执行，否则 Job 不执行。当本方作为发起方时，本方无需审批。
 
 在中心化组网模式下，仅有一个 Master 控制中心，且由唯一的控制中心完成 Job 的调度，所以无法开启 Job 审批配置也无需调用 KusciaAPI 进行 Job 审批。
 
@@ -56,8 +54,7 @@ Job 审批即发起方（Alice）执行 Job 时，若参与方（Bob）开启了
 - 停止 KusciaJob。
 - 清理 KusciaJob。
 
-{#create-kuscia-job}
-
+(create-kuscia-job)=
 ## 创建 KusciaJob
 
 下面是一个 KusciaJob 的示例。
@@ -121,8 +118,7 @@ KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算
 
 ## KusciaJob 的调度
 
-{#task-classification}
-
+(task-classification)=
 ### 任务分类
 
 某些情况下，您可能有一些非关键的任务需要编排到 KusciaJob 中，这些任务即使失败也不应该对整个 KusciaJob 的调度结果有影响。
@@ -137,8 +133,7 @@ KusciaJob 的算子参数由 `taskInputConfig` 字段定义，对于不同的算
 
 字段 `tasks[].tolerable` 可以描述 KusciaJob 中的 Task 是否是容忍失败的， 默认值为 false。
 
-{#scheduling-mode}
-
+(scheduling-mode)=
 ### KusciaJob 的调度模式
 
 KusciaJob 目前支持两种调度模式，分别是 BestEffort 尽力模式和 Strict 严格模式。
@@ -387,7 +382,7 @@ KusciaJob `spec` 的子字段详细介绍如下：
   - `tasks[].appImage`： 表示任务使用的 AppImage，详见 [AppImage](./appimage_cn.md)。
   - `tasks[].parties`：表示任务参与方的信息。
     - `tasks[].parties[].domainID`：表示任务参与方的节点 ID。
-    - `tasks[].parties[].role`：表示任务参与方的角色，这个是由引擎自定义的；比如常见的 Host 、Guest ，Kuscia 会结合 [appImage](./appimage_cn.md#appimage-ref) 中的 role 字段，选择对应的部署模版启动引擎。
+    - `tasks[].parties[].role`：表示任务参与方的角色，这个是由引擎自定义的；比如常见的 Host 、Guest ，Kuscia 会结合 [appImage](./appimage_cn.md#参考) 中的 role 字段，选择对应的部署模版启动引擎。
     - `tasks[].parties[].resources`：表示任务参与方的资源信息，详见 [K8s 资源要求和限制](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)。 除了 K8s 原生的 `cpu`、`memory` 等资源字段外，Kuscia 还扩展了带宽资源字段，用于调度时感知节点带宽能力：
       - `kuscia.io/bandwidth`：表示任务对网络带宽的请求与限制。该字段与 cpu、memory 一样参与调度决策。填写时只需数值，不需要写单位；单位默认为 Mbps。
         - `requests.kuscia.io/bandwidth`：表示任务运行所需的最小带宽需求。例如 `10`，则调度器只会把任务分配到具备 ≥ 10 Mbps 可用带宽容量的节点上。

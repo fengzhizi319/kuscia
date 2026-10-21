@@ -16,8 +16,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 
 ## 接口详情
 
-{#create-domain-data-source}
-
+(create-domain-data-source)=
 ### 创建数据源
 
 如果创建的数据源是为了DataMesh（DataProxy）使用，需要确保数据源的配置满足一定的权限要求。详情请见 [DataMesh数据读写-注意事项](./datamesh/datacrud_cn.md#注意事项)
@@ -26,8 +25,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 
 /api/v1/domaindatasource/create
 
-{#create-domain-data-source-request}
-
+(create-domain-data-source-request)=
 #### 请求（CreateDomainDataSourceRequest）
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -41,8 +39,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 | info_key | string | 选填 | info 与 info_key 字段二者填一个即可，info_key 用于从 Kuscia ConfigManager 的加密后端中获取数据源的信息。 |
 | access_directly | bool | 可选 | 隐私计算应用（如 SecretFlow ）是否可直连访问数据源的标志位，true：应用直连访问数据源（不经过 DataProxy），false: 应用可通过 DataProxy 访问数据源。当前默认设置为 false，使用 odps 类型时目前必须经过 DataProxy。 |
 
-{#create-domain-data-source-response}
-
+(create-domain-data-source-response)=
 #### 响应（CreateDomainDataSourceResponse）
 
 | 字段                 | 类型                             | 描述     |
@@ -79,6 +76,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
 }'
 ```
 
+(oss-datasource-example)=
 ##### 创建对象存储服务数据源示例
 
 ```sh
@@ -184,8 +182,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/create' \
 }
 ```
 
-{#update-domain-data-source}
-
+(update-domain-data-source)=
 ### 更新数据源
 
 #### HTTP 路径
@@ -250,8 +247,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/update' \
 }
 ```
 
-{#delete-domain-data-source}
-
+(delete-domain-data-source)=
 ### 删除数据源
 
 #### HTTP 路径
@@ -303,8 +299,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/delete' \
 }
 ```
 
-{#query-domain-data-source}
-
+(query-domain-data-source)=
 ### 查询数据源
 
 #### HTTP 路径
@@ -386,8 +381,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/query' \
 }
 ```
 
-{#batch-query-domain-data-source}
-
+(batch-query-domain-data-source)=
 ### 批量查询数据源
 
 #### HTTP 路径
@@ -508,8 +502,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/batchQuery' \
 }
 ```
 
-{#list-domain-data-source}
-
+(list-domain-data-source)=
 ### 列出数据源
 
 #### HTTP 路径
@@ -638,8 +631,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 
 ## 公共
 
-{#data-source-info}
-
+(data-source-info)=
 ### DataSourceInfo
 
 | 字段       | 类型                                                   | 选填 | 描述         |
@@ -649,16 +641,14 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 | database | [DatabaseDataSourceInfo](#database-data-source-info) | 选填 | 数据库相关信息    |
 | odps     | [OdpsDataSourceInfo](#odps-data-source-info)         | 选填 | ODPS 相关信息  |
 
-{#local-data-source-info}
-
+(local-data-source-info)=
 ### LocalDataSourceInfo
 
 | 字段   | 类型     | 选填 | 描述                                                                              |
 |------|--------|----|---------------------------------------------------------------------------------|
 | path | string | 必填 | 本地文件系统绝对路径，建议为 /home/kuscia/var/storage/data/ 或 /home/kuscia/var/storage/data/ 的子目录 |
 
-{#oss-data-source-info}
-
+(oss-data-source-info)=
 ### OssDataSourceInfo
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -671,8 +661,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 | virtualhost | bool | 选填 | 若为阿里云 OSS 需要设置 virtualhost=true，[详见文档](https://help.aliyun.com/zh/oss/developer-reference/overview-24?scm=20140722.S_help%40%40%E6%96%87%E6%A1%A3%40%40375247.S_RQW%40ag0%2BBB2%40ag0%2BBB1%40ag0%2Bos0.ID_375247-RL_virtualhost-LOC_doc%7EUND%7Eab-OR_ser-V_4-P0_1&spm=a2c4g.11186623.0.i3) 。 |
 | version | string | 选填 | AWS S3 协议版本号，可不填 |
 
-{#database-data-source-info}
-
+(database-data-source-info)=
 ### DatabaseDataSourceInfo
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -682,8 +671,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 | password | string | 必填 | 数据库密码 |
 | database | string | 必填 | 数据库名称 |
 
-{#odps-data-source-info}
-
+(odps-data-source-info)=
 ### OdpsDataSourceInfo
 
 | 字段 | 类型 | 选填 | 描述 |
@@ -693,8 +681,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 | access_key_secret | string | 必填 | 访问 ODPS 所需的 SK |
 | project | string | 必填 | 访问 ODPS 的项目 |
 
-{#query-domain-data-source-request-data}
-
+(query-domain-data-source-request-data)=
 ### QueryDomainDataSourceRequestData
 
 | 字段            | 类型     | 选填 | 描述     |
@@ -702,8 +689,7 @@ curl -k -X POST 'https://localhost:8082/api/v1/domaindatasource/list' \
 | domain_id     | string | 必填 | 节点 ID  |
 | datasource_id | string | 必填 | 数据源 ID |
 
-{#domain-data-source-entity}
-
+(domain-data-source-entity)=
 ### DomainDataSource
 
 | 字段              | 类型                                  | 描述                                                                                                                                        |

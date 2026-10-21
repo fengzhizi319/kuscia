@@ -1,6 +1,6 @@
 # DomainDataSource
 
-DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource](../concepts/domaindatasource_cn.md)。
+DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource](../../concepts/domaindatasource_cn.md)。
 您可以从 [这里](https://github.com/secretflow/kuscia/tree/main/proto/api/v1alpha1/kusciaapi/domaindatasource.proto) 找到对应的 protobuf 文件。
 
 ## 接口总览
@@ -11,8 +11,7 @@ DomainDataSource 表示 Kuscia 管理的数据源。请参考 [DomainDataSource]
 
 ## 接口详情
 
-{#datamesh-query-domain-data-source}
-
+(datamesh-query-domain-data-source)=
 ### 查询数据源
 
 #### HTTP 路径

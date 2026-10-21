@@ -148,6 +148,7 @@ deployment/index
 tutorial/index
 development/index
 troubleshoot/index
+deep_dive/index
 change_log
 ```
 
