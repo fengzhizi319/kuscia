@@ -33,7 +33,7 @@
 #   - SecretFlow 构建时若未指定 --sf-wheel，需要本地存在 secretflow/release-ci:latest
 #
 # 使用方式：
-#   cd /home/charles/code/sfwork
+#   cd /home/charles/code/clwork
 #   bash kuscia/scripts/build-kuscia-secretflow-images.sh [OPTIONS]
 #
 # 示例：

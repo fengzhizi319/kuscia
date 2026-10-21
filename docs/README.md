@@ -56,11 +56,12 @@
 ### 2.4 开发或二次开发 Kuscia
 
 1. [构建命令](./development/build_kuscia_cn.md)：搭建开发环境并编译。
-2. [Cobra 命令执行逻辑说明](./development/cobra_execution_explanation.md)：理解 CLI 入口。
-3. [Kubernetes CRD 代码生成完全指南](./development/code_generation_guide.md)：修改 CRD 后如何生成代码。
-4. [Makefile 子模块详解](./development/Makefile%20子模块详解.md)：理解构建目标与各 `.mk` 文件。
-5. [注册自定义算法镜像](./development/register_custom_image.md)、[扩展其他数据源](./development/add_datamesh_io.md)。
-6. [Kuscia 中 Kubernetes 配置与运行模式详解](./development/kuscia_kubernetes_architecture.md)：深入 runc/runk/runp 与嵌入式 K3s。
+2. [Kuscia / SecretFlow 源码二次开发镜像打包指南](./development/build_kuscia_secretflow_images_cn.md)：从源码构建、推送和导出 Kuscia 与 SecretFlow 镜像，并注册 AppImage。
+3. [Cobra 命令执行逻辑说明](./development/cobra_execution_explanation.md)：理解 CLI 入口。
+4. [Kubernetes CRD 代码生成完全指南](./development/code_generation_guide.md)：修改 CRD 后如何生成代码。
+5. [Makefile 子模块详解](./development/makefile_submodules.md)：理解构建目标与各 `.mk` 文件。
+6. [注册自定义算法镜像](./development/register_custom_image.md)、[扩展其他数据源](./development/add_datamesh_io.md)。
+7. [Kuscia 中 Kubernetes 配置与运行模式详解](./development/kuscia_kubernetes_architecture.md)：深入 runc/runk/runp 与嵌入式 K3s。
 
 ### 2.5 排查问题
 
@@ -219,13 +220,14 @@
 | 文档 | 具体内容 |
 | --- | --- |
 | [构建命令](./development/build_kuscia_cn.md) | 开发环境搭建与 Kuscia 构建命令。 |
+| [Kuscia / SecretFlow 源码二次开发镜像打包指南](./development/build_kuscia_secretflow_images_cn.md) | 一键打包脚本与 `make image` 的差异、Kuscia/SecretFlow 镜像构建、AppImage 注册、端口映射，以及 AppImage → KusciaJob 的调度原理。 |
 | [Cobra 命令执行逻辑说明](./development/cobra_execution_explanation.md) | `Execute()`、`ExecuteC()`、`execute()` 的调用链，Run 钩子执行顺序，以及对阅读 Kuscia CLI 代码的建议。 |
 | [注册自定义算法镜像](./development/register_custom_image.md) | 准备工具脚本、准备 AppImage、加载镜像到节点、注册镜像并使用自定义镜像运行作业。 |
 | [Kubernetes CRD 代码生成完全指南](./development/code_generation_guide.md) | Kubernetes 与 CRD 基础、CRD YAML 与客户端代码生成、应用 CRD、验证注册与资源操作。 |
 | [Kuscia 中 Kubernetes 配置与运行模式详解](./development/kuscia_kubernetes_architecture.md) | K8s 与 K3s 的区别、runc/runk/runp 三种运行模式、嵌入式 K3s 架构、K8s 配置适用性、命名空间隔离、网络与服务发现、容器运行时、场景对比、镜像体系与 FAQ。 |
 | [如何扩展其他数据源](./development/add_datamesh_io.md) | DataMesh IO 扩展流程、业务要求、添加步骤与注意事项。 |
 | [golangci-lint 修复汇总](./development/lint-fixes-summary.md) | `govet inline`、`goconst` 等 lint 问题的修复方式、验证结果与注意事项。 |
-| [Kuscia Makefile 子模块详解](./development/Makefile%20子模块详解.md) | 顶层 Makefile 的转发机制，`common.mk`、`docs.mk`、`image.mk`、`golang.mk`、`lint.mk`、`fate.mk` 的职责，变量覆盖规则与常用命令。 |
+| [Kuscia Makefile 子模块详解](./development/makefile_submodules.md) | 顶层 Makefile 的转发机制，`common.mk`、`docs.mk`、`image.mk`、`golang.mk`、`lint.mk`、`fate.mk` 的职责，变量覆盖规则与常用命令。 |
 
 ---
 
@@ -328,7 +330,7 @@ index.md（首页）
 - 参考：`overview`、`architecture_cn`、`kuscia_scheduling_architecture_cn`、`domaindata_specification`、`api_whitelist_config_cn`、`scripts_deploy_guide`、全部 `concepts/` 文档、全部 `apis/` 文档、`apis/datamesh/` 文档。
 - 部署：`kuscia_deployment_instructions`、`deploy_check`、Docker 6 篇、K8s 3 篇、`deploy_with_runp_cn`、`local_deploy_kuscia_datamesh`、`local_deploy_secretpad_kuscia_datamesh`、`operation_cn`、`networkrequirements`、`diagnose_tool`、`logdescription`、`kuscia_monitor`、`kuscia_engine_monitor`、`kuscia_config_cn`、`kuscia_ports_cn`。
 - 指南：`run_sf_job_with_api_cn`、`run_sf_serving_with_api_cn`、`run_dp_on_kuscia_cn`、`run_scql_on_kuscia_cn`、`run_bfia_job_cn`、`run_fate_cn`、`upgrade_engine`、`custom_registry`、`config_render`、`kuscia_gateway_with_path`、`user_defined_service_route`、`security_plan_cn`。
-- 开发：`build_kuscia_cn`、`cobra_execution_explanation`、`register_custom_image`、`add_datamesh_io`、`code_generation_guide`、`kuscia_kubernetes_architecture`、`Makefile 子模块详解`、`lint-fixes-summary`。
+- 开发：`build_kuscia_cn`、`build_kuscia_secretflow_images_cn`、`makefile_submodules`、`cobra_execution_explanation`、`register_custom_image`、`add_datamesh_io`、`code_generation_guide`、`kuscia_kubernetes_architecture`、`lint-fixes-summary`。
 - 排障：`concept/` 2 篇、`deployment/` 6 篇、`network/` 2 篇、`runtask/` 2 篇、`parameter_tuning/` 8 篇。
 - 深度解析：`设计文档`、`任务调度`、`组网模式`、`数据代理`、`通信与数据注册流程`、`联邦逻辑回归全流程`，统一由 [`deep_dive/index.rst`](./deep_dive/index.rst) 挂载。
 
@@ -337,7 +339,7 @@ index.md（首页）
 1. **锚点写法**：MyST 中目标锚点使用 `(label)=`（如 `(configtemplate)=`），不要写成 `{#label}` 或 `#(label)=`；后者不会生成有效锚点。
 2. **跨文档链接**：Sphinx 的 MyST 交叉引用仅对**标题 slug** 做跨文档解析，链接其他文档的章节时请使用归一化后的标题 slug（如 `other.md#配置项详解`），不要依赖显式 label。
 3. **相对路径**：按当前文件所在目录计算层级；`troubleshoot/` 与 `tutorial/` 同为一级目录，互相引用使用 `../` 而非 `../../`。
-4. **文件名空格**：`development/Makefile 子模块详解.md` 的链接需使用 `%20` 转义。
+4. **文件命名**：新增文档使用小写 ASCII 加下划线（如 `build_kuscia_cn.md`），避免空格和中文文件名，便于链接、检索和翻译。
 5. **构建校验**：提交前执行 `secretflow-doctools build --lang zh_CN --lang en` 或下方的 `sphinx-build -b dummy`，目标为 **0 warning**。
 
 ---

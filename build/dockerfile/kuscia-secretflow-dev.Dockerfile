@@ -28,7 +28,7 @@
 #   3. 把 wheel 文件放到本 Dockerfile 同目录下，构建时通过 --build-arg SF_WHEEL 指定文件名
 #
 # 构建示例：
-#   cd /home/charles/code/sfwork/kuscia
+#   cd /home/charles/code/clwork/kuscia
 #   cp ../secretflow/docker/dev/secretflow-1.15.0.dev20260708-...-linux_x86_64.whl build/dockerfile/
 #   docker build \
 #       --build-arg KUSCIA_IMAGE=secretflow/kuscia:v1.15.0-dev-20260708120000 \

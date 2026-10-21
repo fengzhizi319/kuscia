@@ -4,7 +4,7 @@
 
 ### 开发环境依赖
 
-* Golang: 1.19.4+
+* Golang: 1.24.7+（与 `kuscia/go.mod` 保持一致）
 * Protoc
 * Docker
 
@@ -69,6 +69,7 @@ Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 [Kusci
 如果您想依赖指定的 Kuscia-Envoy 镜像构建 Kuscia 镜像，您可以通过 `make image KUSCIA_ENVOY_IMAGE=${KUSCIA_ENVOY_IMAGE}` 来指定依赖镜像的名称。
 
 (kuscia-secretflow-image)=
+
 ### 构建 Kuscia-Secretflow Image
 
 在 kuscia/build/dockerfile 目录下：
@@ -76,6 +77,8 @@ Kuscia 镜像的构建依赖 Kuscia-Envoy 镜像，Kuscia 提供默认的 [Kusci
 执行 `docker build -f ./kuscia-secretflow.Dockerfile .` 命令会构建出 Kuscia-Secretflow 镜像。Kuscia-Secretflow 镜像在 Kuscia 镜像的基础上集成了 Secretflow 镜像。
 
 需要注意的是，仅 `RunP` 模式下需要构建 kuscia-secretflow 镜像。
+
+> 本节使用官方 Dockerfile，从 PyPI 安装已发布的 `secretflow-lite`。如果需要把**本地源码构建的 SecretFlow wheel** 与 Kuscia 镜像打成一个一体化镜像，请参考 [Kuscia / SecretFlow 源码二次开发 Docker 镜像打包指南](./build_kuscia_secretflow_images_cn.md)；镜像构建完成后的 AppImage 注册步骤见 [注册自定义算法镜像](./register_custom_image.md)。
 
 kuscia-secretflow.Dockerfile 文件里默认的 Kuscia 镜像版本是 latest，Secretflow 版本是 1.11.0b1，如果需要指定其他版本，可以使用如下命令：
 

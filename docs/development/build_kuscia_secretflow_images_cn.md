@@ -1,8 +1,12 @@
 # Kuscia / SecretFlow 源码二次开发 Docker 镜像打包指南
 
-> 目标：基于当前 `sfwork` 工作区里的 `kuscia/` 与 `secretflow/` 源码，完成二次开发后的 Docker 镜像构建，并能够将自定义 SecretFlow 镜像注册到 Kuscia 集群中使用。
+> 目标：基于当前 `clwork` 工作区里的 `kuscia/` 与 `secretflow/` 源码，完成二次开发后的 Docker 镜像构建，并能够将自定义 SecretFlow 镜像注册到 Kuscia 集群中使用。
+>
+> 路径约定：以下命令默认在 `clwork` 工作区根目录执行（该目录同时包含 `kuscia/` 与 `secretflow/`）。若只克隆了 Kuscia 仓库，请去掉命令中的 `kuscia/` 前缀，并直接在 Kuscia 仓库根目录执行。
 >
 > 本指南参考了官方 Kuscia 镜像（`secretflow/kuscia`）与 SecretFlow 官方开发镜像（`sf-dev-ubuntu` / `secretflow-ubuntu`）的构建方式。
+>
+> 相关文档：[构建命令](./build_kuscia_cn.md)（本地编译 Kuscia 与集成测试）、[注册自定义算法镜像](./register_custom_image.md)（AppImage 注册与作业使用）、[Makefile 子模块详解](./makefile_submodules.md)（构建目标与变量）。
 
 ---
 
@@ -36,7 +40,7 @@
 
 ## 2. 快速开始：一键打包脚本
 
-项目根目录已提供统一打包脚本：
+`clwork` 工作区根目录已提供统一打包脚本：
 
 ```bash
 bash kuscia/scripts/build-kuscia-secretflow-images.sh [OPTIONS]
@@ -84,7 +88,7 @@ bash kuscia/scripts/build-kuscia-secretflow-images.sh -p secretflow \
 >
 > 注意：
 >
-> - Kuscia 镜像默认使用 `docker buildx` 构建，脚本会自动创建名为 `sfwork-kuscia` 的 builder。
+> - Kuscia 镜像默认使用 `docker buildx` 构建，脚本会自动创建名为 `sfwork-kuscia` 的 builder（名称沿用历史工作区名）。
 > - SecretFlow 开发镜像默认依赖 `secretflow/release-ci:latest` 容器构建 wheel；如果该镜像不可用，可通过 `--sf-wheel` 传入预先构建好的 wheel 包。
 
 ---
@@ -96,7 +100,7 @@ bash kuscia/scripts/build-kuscia-secretflow-images.sh -p secretflow \
 Kuscia 的构建入口在 `kuscia/Makefile`，所有镜像相关逻辑在 `kuscia/scripts/make/image.mk`。
 
 ```bash
-cd /home/charles/code/sfwork/kuscia
+cd kuscia
 
 # 构建当前宿主机架构镜像
 make image
@@ -130,7 +134,7 @@ make image IMG=myregistry.example.com/secretflow/kuscia:$(git describe --tags --
 如果你只想快速出包，不想触发 `go fmt`、`go vet`、`verify_error_code`，可以按以下步骤手动构建：
 
 ```bash
-cd /home/charles/code/sfwork/kuscia
+cd kuscia
 
 ARCH=$(uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
 VERSION=$(git describe --tags --always)
@@ -182,7 +186,7 @@ SecretFlow 的 Docker 构建分为两类：
 ### 4.1 官方开发镜像构建
 
 ```bash
-cd /home/charles/code/sfwork/secretflow/docker/dev
+cd secretflow/docker/dev
 
 # 构建 sf-dev-ubuntu:<version>
 bash build.sh -v 1.15.0-dev
@@ -212,7 +216,7 @@ bash build.sh -v 1.15.0-dev -r myregistry.example.com/secretflow -u -l
 如果你已经有构建好的 wheel，或希望完全在本地控制构建过程：
 
 ```bash
-cd /home/charles/code/sfwork/secretflow
+cd secretflow
 
 VERSION="1.15.0-dev"
 IMAGE="secretflow/sf-dev-ubuntu:${VERSION}"
@@ -259,7 +263,7 @@ Kuscia 不直接运行任意容器，而是通过 **AppImage** CRD 注册应用�
 Kuscia 已提供注册脚本：
 
 ```bash
-cd /home/charles/code/sfwork/kuscia
+cd kuscia
 
 # 注册 SecretFlow 类型应用镜像
 ./scripts/deploy/create_sf_app_image.sh \
@@ -321,7 +325,7 @@ spec:
 ### 6.1 官方一体化镜像
 
 ```bash
-cd /home/charles/code/sfwork/kuscia
+cd kuscia
 
 # 先构建 Kuscia 镜像
 make image
@@ -1132,7 +1136,7 @@ fi
 
 ## 12. 附录：一键打包脚本与 `make image` / `image.mk` 的区别
 
-在 `sfwork` 工作区里，构建 Kuscia / SecretFlow 镜像有两个主要入口：
+在 `clwork` 工作区里，构建 Kuscia / SecretFlow 镜像有两个主要入口：
 
 - `kuscia/scripts/build-kuscia-secretflow-images.sh`（一键打包脚本）
 - `kuscia/Makefile` → `kuscia/scripts/make/image.mk`（官方 `make image`）
@@ -1207,7 +1211,7 @@ fi
 build-kuscia-secretflow-images.sh          make image (image.mk)
         │                                       │
         ├─ 可构建 Kuscia + SecretFlow            ├─ 仅构建 Kuscia
-        ├─ 自动定位 sfwork 根目录                ├─ 需在 kuscia/ 目录执行
+        ├─ 自动定位工作区根目录                  ├─ 需在 kuscia/ 目录执行
         ├─ 直接调用 hack/build.sh                ├─ 依赖 build → fmt/vet/check_code
         ├─ 支持 --push / --tar / --sf-wheel      ├─ 需手动 push/save
         ├─ 使用 buildx builder sfwork-kuscia     ├─ 使用 buildx builder kuscia
@@ -1215,8 +1219,9 @@ build-kuscia-secretflow-images.sh          make image (image.mk)
 ```
 
 > 一句话总结：
+>
 > - **`make image`** 是 Kuscia 官方单项目构建入口，执行完整的代码检查，适合 Kuscia 独立开发。
-> - **`build-kuscia-secretflow-images.sh`** 是 sfwork 工作区层面的统一打包脚本，能把 Kuscia 与 SecretFlow 一起构建、推送、导出 tar，适合二次开发和 CI 场景。
+> - **`build-kuscia-secretflow-images.sh`** 是 clwork 工作区层面的统一打包脚本，能把 Kuscia 与 SecretFlow 一起构建、推送、导出 tar，适合二次开发和 CI 场景。
 
 ### 12.9 `build-kuscia-secretflow-images.sh` 会调用 `kuscia/scripts/make/*.mk` 吗？
 
@@ -1267,7 +1272,7 @@ build-kuscia-secretflow-images.sh          make image (image.mk)
 | 需要修改 Kuscia 的编译参数、Docker build arg、代码检查流程 | 需要，修改对应 `.mk` 文件 |
 | 想统一两种构建方式的基础镜像版本 | 需要，同时修改 `.mk` 和脚本中的变量 |
 
-> 一句话：`build-kuscia-secretflow-images.sh` 和 `scripts/make/*.mk` 是平行的两套构建入口，前者不调用后者；前者为 sfwork 工作区二次开发提供一站式打包，后者是 Kuscia 官方 `make` 构建子模块。
+> 一句话：`build-kuscia-secretflow-images.sh` 和 `scripts/make/*.mk` 是平行的两套构建入口，前者不调用后者；前者为 clwork 工作区二次开发提供一站式打包，后者是 Kuscia 官方 `make` 构建子模块。
 
 ### 12.10 `hack/build.sh` 与 `make build` 的关系
 
@@ -1296,7 +1301,7 @@ make image
 #### 实际使用示例
 
 ```bash
-cd /home/charles/code/sfwork/kuscia
+cd kuscia
 
 # 只编译二进制，不检查代码，不整理到 build/linux/
 bash hack/build.sh -t kuscia
@@ -1383,7 +1388,7 @@ GOOS=linux GOARCH="${ARCH}" bash hack/build.sh -t kuscia
 
 Kuscia 仓库里已经有一个官方的一体化 Dockerfile：
 
-```
+```text
 kuscia/build/dockerfile/kuscia-secretflow.Dockerfile
 ```
 
@@ -1400,7 +1405,7 @@ kuscia/build/dockerfile/kuscia-secretflow.Dockerfile
 
 为了支持“本地源码构建出来的 SecretFlow dev wheel + Kuscia 镜像”打包成一体化镜像，已新增：
 
-```
+```text
 kuscia/build/dockerfile/kuscia-secretflow-dev.Dockerfile
 ```
 
@@ -1423,7 +1428,7 @@ kuscia/build/dockerfile/kuscia-secretflow-dev.Dockerfile
 执行以下命令构建一体化镜像：
 
 ```bash
-cd /home/charles/code/sfwork/kuscia
+cd kuscia
 
 # 把 wheel 复制到 Dockerfile 所在目录（因为 docker build context 需要包含它）
 cp ../secretflow/docker/dev/secretflow-1.15.0.dev20260708-cp310-cp310-linux_x86_64.whl \

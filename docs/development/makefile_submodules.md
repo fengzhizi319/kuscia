@@ -481,7 +481,7 @@ make deploy-image
 
 子 make 按以下顺序读取 `.mk` 文件：
 
-```
+```text
 common.mk → docs.mk → image.mk → golang.mk → lint.mk → fate.mk
 ```
 

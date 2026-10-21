@@ -133,9 +133,17 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 ## 开发 Kuscia
 
 - [构建 Kuscia][build-kuscia]
+- [构建 Kuscia / SecretFlow 镜像][build-images]
+- [Makefile 子模块详解][makefile-docs]
+- [Kubernetes CRD 代码生成完全指南][codegen-docs]
+- [Kubernetes 配置与运行模式详解][k8s-runtime-docs]
 - [注册自定义算法镜像][custom-image]
 
 [build-kuscia]: ./development/build_kuscia_cn.md
+[build-images]: ./development/build_kuscia_secretflow_images_cn.md
+[makefile-docs]: ./development/makefile_submodules.md
+[codegen-docs]: ./development/code_generation_guide.md
+[k8s-runtime-docs]: ./development/kuscia_kubernetes_architecture.md
 [custom-image]: ./development/register_custom_image.md
 
 ```{toctree}

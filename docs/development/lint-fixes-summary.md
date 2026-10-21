@@ -14,7 +14,7 @@
 修复后执行：
 
 ```bash
-cd /home/charles/code/sfwork/kuscia
+# 在 Kuscia 仓库根目录执行
 golangci-lint run --config=.golangci.yml
 ```
 

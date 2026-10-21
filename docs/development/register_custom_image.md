@@ -4,6 +4,8 @@
 
 若你想使用自定义算法镜像运行任务，那么可参考下面步骤准备算法镜像 [AppImage](../reference/concepts/appimage_cn.md) 和将算法镜像加载到节点容器中。
 
+> 镜像来源：可以使用已发布的算法镜像，也可以从源码构建。Kuscia 与 SecretFlow 源码的构建与打包流程见 [Kuscia / SecretFlow 源码二次开发 Docker 镜像打包指南](./build_kuscia_secretflow_images_cn.md)，Kuscia 本体的构建见 [构建命令](./build_kuscia_cn.md)。
+
 ## 准备工具脚本
 
 ### 获取工具脚本
@@ -47,6 +49,13 @@ docker pull ${KUSCIA_IMAGE} && docker run --rm ${KUSCIA_IMAGE} cat /home/kuscia/
 - 自定义算法配置文件渲染参考： [配置文件渲染](../tutorial/config_render.md)
 
 ## 加载自定义算法镜像到节点容器
+
+`register_app_image.sh` 通过 `--import` 参数把镜像导入节点容器：
+
+- 点对点模式：Autonomy 节点同时注册 AppImage 并导入镜像，注册时带上 `--import`。
+- 中心化模式：Master 节点只注册 AppImage；各 Lite 节点单独执行带 `--import` 的命令导入镜像。
+
+具体命令见下一节。
 
 ## 注册镜像
 
