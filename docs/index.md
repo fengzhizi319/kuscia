@@ -7,7 +7,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 - 统一的 API 接口：您可以使用 [HTTP/GRPC API 接口](./reference/apis/summary_cn.md)集成隐私计算能力。
 - 互联互通：您可以与行业内多种隐私计算系统进行互联互通。
 
-更多 Kuscia 的能力介绍，请参考 [Kuscia 概述](./reference/overview.md)。
+更多 Kuscia 的能力介绍，请参考 [Kuscia 概述](./reference/overview.md)。完整的文档分类、每篇文档的内容说明和推荐阅读路径，请参阅 [Kuscia 文档总览](./README.md)。
 
 ## 入门
 
@@ -35,6 +35,24 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 [concept-kusciadeployment]: ./reference/concepts/kusciadeployment_cn.md
 [concept-appimage]: ./reference/concepts/appimage_cn.md
 [concept-interopconfig]: ./reference/concepts/interopconfig_cn.md
+
+## 深入解析
+
+面向源码与端到端流程的中文长文，适合在熟悉基础概念后阅读。
+
+- [Kuscia 架构及各模块设计文档][deep-design]
+- [任务调度全流程][deep-scheduling]
+- [组网模式与认证机制][deep-network]
+- [数据代理 DataProxy][deep-dataproxy]
+- [通信与数据注册流程][deep-data-registration]
+- [联邦逻辑回归全流程][deep-flr]
+
+[deep-design]: ./设计文档.md
+[deep-scheduling]: ./任务调度.md
+[deep-network]: ./组网模式.md
+[deep-dataproxy]: ./数据代理.md
+[deep-data-registration]: ./通信与数据注册流程.md
+[deep-flr]: ./联邦逻辑回归全流程.md
 
 ## Kuscia API
 
@@ -123,6 +141,7 @@ Kuscia（Kubernetes-based Secure Collaborative InfrA）是一款基于 K3s 的�
 ```{toctree}
 :hidden:
 
+README
 getting_started/index
 reference/index
 deployment/index

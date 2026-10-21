@@ -5,7 +5,6 @@
     :maxdepth: 2
 
     concept/index
-    configuration/index
     deployment/index
     network/index
     runtask/index
